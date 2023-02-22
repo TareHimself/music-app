@@ -1,0 +1,51 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  release:
+    strategy:
+      matrix:
+        platform: [ubuntu-latest, windows-latest]
+
+    runs-on: ${{ matrix.platform }}
+    permissions:
+      contents: write
+
+    steps:
+      # ...
+      - name: Check out Git repository
+        uses: actions/checkout@v1
+
+      - name: Install Node.js and NPM
+        uses: actions/setup-node@v2
+        with:
+          node-version: 16
+          cache: npm
+
+      - name: npm install
+        run: |
+          npm install
+
+      - name: Test & Build
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          npm run lint
+          npm exec tsc
+          npm run ghpackage
+
+      - name: Create Release Draft
+        uses: softprops/action-gh-release@v1
+        with:
+          body: 'Insert Changes Here'
+          draft: true
+          files: |
+            release/build/*.exe
+            release/build/*.blockmap
+            release/build/*.AppImage
+            release/build/latest-linux.yml
+            release/build/latest.yml
