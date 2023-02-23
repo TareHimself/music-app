@@ -1,15 +1,8 @@
 /* eslint-disable import/no-named-as-default */
 import { configureStore } from '@reduxjs/toolkit';
-import wallpapersSlice from './wallpapersSlice';
-import currentUserSlice from './currentUserSlice';
-import appStateSlice from './appStateSlice';
 
 export const store = configureStore({
-  reducer: {
-    currentUser: currentUserSlice,
-    wallpapers: wallpapersSlice,
-    app: appStateSlice,
-  },
+  reducer: {},
 });
 
 // Infer the `RootState` and `AppDispatch` types from the store itself

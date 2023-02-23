@@ -2,6 +2,7 @@
 import { URL } from 'url';
 import path from 'path';
 
+// eslint-disable-next-line no-unused-vars
 export let resolveHtmlPath: (htmlFileName: string) => string;
 
 if (process.env.NODE_ENV === 'development') {

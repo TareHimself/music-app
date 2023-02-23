@@ -17,11 +17,6 @@ body {
   -khtml-user-select: none;
   -webkit-user-select: none;
   -o-user-select: none;
-  /*background: url(https://wallpaperz.nyc3.cdn.digitaloceanspaces.com/wallpapers/2ae88c51-3f27-493a-bfd0-e078a61b14ec.png);*/
-  background-size: cover;
-}
-
-.theme-dark {
   --level0: #2c2f33;
   --level1: #44494f;
   --level2: #7a7a7a;
@@ -30,34 +25,27 @@ body {
   --icon-color-hover: rgb(46, 227, 0);
   --scroll0: white;
   --scroll1: white;
-}
-
-.theme-light {
-  --level0: #cdcdcd;
-  --level1: #444444;
-  --level2: #1f1f1f;
-  --primaryText: rgb(255, 255, 255);
-  --icon-color: rgb(255, 255, 255);
-  --icon-color-hover: rgb(46, 227, 0);
-  --scroll0: rgb(41, 41, 41);
-  --scroll1: white;
+  --top-frame-height: 30px;
+  --player-frame-height: 100px;
+  --player-bar-foreground: white;
+  --player-bar-background: #44494f;
+  /*background: url(https://wallpaperz.nyc3.cdn.digitaloceanspaces.com/wallpapers/2ae88c51-3f27-493a-bfd0-e078a61b14ec.png);*/
+  background-size: cover;
 }
 
 #root {
-  height: 100%;
-  width: 100%;
+  height: 100vh;
+  width: 100vw;
 }
 
 #sub-root {
-  height: calc(100% - 170px);
+  height: calc(100vh - (var(--player-frame-height) + var(--top-frame-height)));
   width: inherit;
   overflow-y: overlay;
-  margin-top: 170px;
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
   align-items: center;
-  position: absolute;
 }
 
 /* width */
@@ -79,12 +67,11 @@ body {
 #top-frame {
   display: flex;
   flex-direction: row;
-  position: absolute;
   z-index: 1;
   width: 100%;
   box-sizing: border-box;
   padding: 0 5px;
-  height: 30px;
+  height: var(--top-frame-height);
 }
 
 #top-frame span[data-type='drag'] {
@@ -147,6 +134,46 @@ p {
   font-size: 10px;
   display: block;
   color: var(--primaryText);
+}
+
+#player-tab {
+  display: flex;
+  height: var(--player-frame-height);
+  width: 100%;
+  flex-direction: row;
+  justify-content: space-around;
+  align-items: center;
+  align-content: center;
+}
+
+.player-controls {
+  display: flex;
+}
+
+.player-controls .icon {
+  display: flex;
+  color: var(--icon-color);
+  transition: all 0.3s ease-in-out;
+}
+
+.player-bar {
+  display: flex;
+  height: 5px;
+  width: 500px;
+  background-color: var(--player-bar-background);
+  border-radius: 20px;
+}
+
+.player-bar-time {
+  margin: 0px 13px;
+}
+
+#player-bar-inner {
+  display: flex;
+  height: 100%;
+  width: 100%;
+  background-color: var(--player-bar-foreground);
+  border-radius: 15px;
 }
 
 #dashboard {
@@ -639,7 +666,6 @@ p {
   50% {
     transform: rotate(180deg);
   }
-
 
   to {
     transform: rotate(360deg);

@@ -4,11 +4,9 @@
     ".prettierrc": "jsonc",
     ".eslintignore": "ignore"
   },
-
   "javascript.validate.enable": false,
   "javascript.format.enable": false,
   "typescript.format.enable": false,
-
   "search.exclude": {
     ".git": true,
     ".eslintcache": true,
@@ -25,5 +23,8 @@
   "editor.formatOnPaste": false,
   "[css]": {
     "editor.defaultFormatter": "vscode.css-language-features"
+  },
+  "[typescriptreact]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
   }
 }

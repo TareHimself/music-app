@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { INotificationInfo } from 'renderer/types';
+import { INotificationInfo } from '../../types';
 
 const NOTIFICATION_TIMEOUT_TIME = 2750;
 
@@ -37,7 +37,6 @@ export default function NotificationContainer() {
   const currentHiddenNotifications = useRef(0);
 
   useEffect(() => {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     function onNotificationRecieved(e: Event) {
       const actualEvent = e as CustomEvent;
       const notificationData = actualEvent.detail as INotificationInfo;

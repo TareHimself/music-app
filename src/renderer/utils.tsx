@@ -1,4 +1,5 @@
-import { INotificationInfo } from './types';
+import AppConstants from 'data';
+import { INotificationInfo } from '../types';
 
 function pad(number: number) {
   return number < 10 ? `0${number}` : `${number}`;
@@ -40,17 +41,12 @@ export function addNotification(noti: string) {
   );
 }
 
-export async function getServerUrl() {
-  if (window.electron && (await window.electron.ipcRenderer?.isDev())) {
-    return 'http://localhost:3001';
-  }
-  return 'https://wallpaperz-server.oyintare.dev';
+export function getAudioPlayer() {
+  return document.getElementById(
+    AppConstants.AUDIO_PLAYER_ID
+  ) as HTMLAudioElement | null;
 }
 
-export async function getDatabaseUrl() {
-  return 'https://wallpaperz-database.oyintare.dev';
-  if (window.electron && (await window.electron.ipcRenderer?.isDev())) {
-    return 'http://localhost:3002';
-  }
-  return 'https://wallpaperz-database.oyintare.dev';
+export function toTimeString(timeNumber: number) {
+  return `${pad(Math.floor(timeNumber / 60))}:${pad(timeNumber % 60)}`;
 }
