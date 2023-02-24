@@ -1,5 +1,5 @@
 import { contextBridge, ipcRenderer, IpcRendererEvent } from 'electron';
-import { MusicAppIpcEvents } from 'types';
+import { ILocalAlbum, ILocalPlaylist, MusicAppIpcEvents } from 'types';
 
 const validChannels: (keyof MusicAppIpcEvents)[] = [
   'windowClose',
@@ -33,6 +33,32 @@ contextBridge.exposeInMainWorld('electron', {
         });
         ipcRenderer.send('toStreamUrl', uri);
       });
+    },
+    getLocalAlbums() {
+      return new Promise<ILocalAlbum[]>((resolve) => {
+        ipcRenderer.once('getLocalAlbums', (_e, d) => {
+          resolve(d);
+        });
+        ipcRenderer.send('getLocalAlbums');
+      });
+    },
+    getLocalPlaylists() {
+      return new Promise<ILocalPlaylist[]>((resolve) => {
+        ipcRenderer.once('getLocalPlaylists', (_e, d) => {
+          resolve(d);
+        });
+        ipcRenderer.send('getLocalPlaylists');
+      });
+    },
+    getLocalTracks(context) {
+      return new Promise<Awaited<ReturnType<typeof this.getLocalTracks>>>(
+        (resolve) => {
+          ipcRenderer.once('getLocalTracks', (_e, d) => {
+            resolve(d);
+          });
+          ipcRenderer.send('getLocalTracks', context);
+        }
+      );
     },
     // eslint-disable-next-line no-unused-vars
     on(channel, func) {

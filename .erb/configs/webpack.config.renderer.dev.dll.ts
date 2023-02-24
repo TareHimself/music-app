@@ -74,4 +74,6 @@ const configuration: webpack.Configuration = {
   ],
 };
 
+console.log('EXTERNALS = ', baseConfig.externals);
+
 export default merge(baseConfig, configuration);

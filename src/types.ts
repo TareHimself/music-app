@@ -17,6 +17,10 @@ export interface ILocalPlaylist {
   position: number;
 }
 
+export interface ILocalPlaylistMetaUpdate extends Partial<ILocalPlaylist> {
+  id: ILocalPlaylist['id'];
+}
+
 export interface ILocalAlbum {
   id: string;
   title: string;

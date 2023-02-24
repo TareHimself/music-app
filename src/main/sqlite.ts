@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import Database from 'better-sqlite3';
-import { ILocalAlbum, ILocalArtist, ILocalPlaylist, ILocalTrack } from 'types';
+import { ILocalPlaylist, ILocalPlaylistMetaUpdate } from 'types';
 
 const DATABASE_DIR = 'library.db';
 
@@ -65,12 +65,39 @@ db.transaction((statements: string[]) => {
     db.prepare(statement).run();
   });
 }).immediate(TABLE_STATEMENTS);
+
+function objectToSetStatement(obj: object) {
+  const keys = Object.keys(obj);
+  return keys.reduce((t, c) => {
+    return `${t} ${c} = @${c}`;
+  }, 'SET');
+}
+const InsertNewPlaylistStatement = db.prepare<ILocalPlaylist>(
+  'INSERT INTO playlists (id,title,cover,position) VALUES (@id,@title,@cover,@position)'
+);
 // const tInsertArtists = db.transaction((artists: ILocalArtist[]) => {});
 
 // const tInsertTracks = db.transaction((artists: ILocalTrack[]) => {});
 
 // const tInsertAlbums = db.transaction((albums: ILocalAlbum[]) => {});
 
-// const tInsertPlaylists = db.transaction((playlists: ILocalPlaylist[]) => {});
+const tCreatePlaylists: Database.Transaction<
+  (playlists: ILocalPlaylist[]) => void
+> = db.transaction((playlists: ILocalPlaylist[]) => {
+  for (let i = 0; i < playlists.length; i++) {
+    InsertNewPlaylistStatement.run(playlists[i]);
+  }
+});
 
+const tUpdatePlaylistsMeta: Database.Transaction<
+  (updates: ILocalPlaylistMetaUpdate[]) => void
+> = db.transaction((updates: ILocalPlaylistMetaUpdate[]) => {
+  for (let i = 0; i < updates.length; i++) {
+    db.prepare<ILocalPlaylistMetaUpdate>(
+      `UPDATE playlists ${objectToSetStatement(updates[i])} WHERE id=@id`
+    ).run(updates[i]);
+  }
+});
+
+export { tCreatePlaylists, tUpdatePlaylistsMeta };
 // export { tInsertArtists, tInsertTracks, tInsertAlbums, tInsertPlaylists };

@@ -4,9 +4,11 @@
 import path from 'path';
 import { app, BrowserWindow, shell, ipcMain } from 'electron';
 import * as play from 'play-dl';
+import { v4 as uuidv4 } from 'uuid';
 import MenuBuilder from './menu';
 import { resolveHtmlPath } from './util';
-import './sqlite';
+
+// import { tCreatePlaylists } from './sqlite';
 
 let mainWindow: BrowserWindow | null = null;
 
@@ -162,3 +164,19 @@ ipcMain.on('windowMinimize', () => {
 ipcMain.on('windowClose', () => {
   mainWindow?.close();
 });
+
+ipcMain.on('getLocalAlbums', () => {
+  mainWindow?.close();
+});
+
+ipcMain.on('getLocalPlaylists', () => {
+  mainWindow?.close();
+});
+
+ipcMain.on('createPlaylist', () => {});
+
+ipcMain.on('getLocalTracks', () => {
+  mainWindow?.close();
+});
+
+console.log(uuidv4());

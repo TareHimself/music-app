@@ -73,7 +73,7 @@ export default class PlayerTab extends React.Component<
 
   async resume() {
     if (!this.player.src) {
-      await this.audioTest('Sincerely by TRUE Japanese Audio');
+      await this.audioTest('Yoasobi 群青 Audio');
       return;
     }
     this.player.play();
@@ -97,12 +97,18 @@ export default class PlayerTab extends React.Component<
     const { isPaused, trackProgress, trackLength } = this.state;
     return (
       <div id="player-tab">
-        <span />
         <span
+          className="player-section"
           style={{
-            display: 'flex',
+            maxWidth: '100px',
+          }}
+        />
+        <span
+          className="player-section"
+          style={{
             flexDirection: 'column',
             alignItems: 'center',
+            maxWidth: '500px',
           }}
         >
           <span className="player-controls">
@@ -125,6 +131,7 @@ export default class PlayerTab extends React.Component<
               display: 'flex',
               flexDirection: 'row',
               alignItems: 'center',
+              width: '100%',
             }}
           >
             <p className="player-bar-time">{toTimeString(trackProgress)}</p>
@@ -132,19 +139,22 @@ export default class PlayerTab extends React.Component<
               min={0}
               max={trackLength}
               value={trackProgress}
-              style={{ width: '500px' }}
               onUserUpdate={(u, d) => this.onSeekSliderChanged(u, d)}
             />
             <p className="player-bar-time">{toTimeString(trackLength)}</p>
           </span>
         </span>
-        <span className="volume-control">
+        <span
+          className="player-section"
+          style={{
+            maxWidth: '100px',
+          }}
+        >
           <ControllableSlider
             min={0}
             max={this.maxVolume}
             defaultValue={this.volume}
             step={0.001}
-            style={{ width: '100px' }}
             onUserUpdate={(u) => this.onVolumeSliderChanged(u)}
           />
         </span>

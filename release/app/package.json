@@ -9,10 +9,11 @@
   "scripts": {
     "electron-rebuild": "node -r ts-node/register ../../.erb/scripts/electron-rebuild.js",
     "link-modules": "node -r ts-node/register ../../.erb/scripts/link-modules.ts",
-    "postinstall": "npm run electron-rebuild && npm run link-modules"
+    "postinstall": "npx electron-rebuild -f && npm run link-modules",
+    "sqlite-db": "npm install better-sqlite3 --build-from-source --runtime=electron --target=18.0.1 --dist-url=https://electronjs.org/headers --force"
   },
   "dependencies": {
-    "better-sqlite3": "^8.1.0",
+    "better-sqlite3": "7.4.0",
     "discord-rich-presence": "^0.0.8"
   }
 }
