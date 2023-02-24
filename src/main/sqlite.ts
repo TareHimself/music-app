@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import Database from 'better-sqlite3';
-import { ILocalPlaylist, ILocalPlaylistMetaUpdate } from 'types';
+import { ILocalPlaylist, ILocalPlaylistMetaUpdate } from '../types';
 
 const DATABASE_DIR = 'library.db';
 
@@ -75,6 +75,8 @@ function objectToSetStatement(obj: object) {
 const InsertNewPlaylistStatement = db.prepare<ILocalPlaylist>(
   'INSERT INTO playlists (id,title,cover,position) VALUES (@id,@title,@cover,@position)'
 );
+
+const GetPlaylistsStatement = db.prepare("SELECT * FROM playlists")
 // const tInsertArtists = db.transaction((artists: ILocalArtist[]) => {});
 
 // const tInsertTracks = db.transaction((artists: ILocalTrack[]) => {});
@@ -98,6 +100,10 @@ const tUpdatePlaylistsMeta: Database.Transaction<
     ).run(updates[i]);
   }
 });
+
+export function getPlaylists() {
+  return GetPlaylistsStatement.all() as ILocalPlaylist[];
+}
 
 export { tCreatePlaylists, tUpdatePlaylistsMeta };
 // export { tInsertArtists, tInsertTracks, tInsertAlbums, tInsertPlaylists };

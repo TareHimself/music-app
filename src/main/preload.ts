@@ -1,93 +1,70 @@
-import { contextBridge, ipcRenderer, IpcRendererEvent } from 'electron';
-import { ILocalAlbum, ILocalPlaylist, MusicAppIpcEvents } from 'types';
+// See the Electron documentation for details on how to use preload scripts:
+// https://www.electronjs.org/docs/latest/tutorial/process-model#preload-scripts
+import { contextBridge, ipcRenderer } from 'electron';
+import { BridgeEventReturn, IBridgeEvents, ILocalAlbum, ILocalPlaylist, ILocalPlaylistTrack, ILocalTrack, LocalPlaylistTracksContext, LocalTracksContext } from '../types';
 
-const validChannels: (keyof MusicAppIpcEvents)[] = [
-  'windowClose',
-  'windowMaximize',
-  'windowMinimize',
-];
+const bridge: IBridgeEvents = {
+    getPreloadPath: () => ipcRenderer.sendSync('getPreloadPath'),
+    windowMinimize: function (): void {
+        ipcRenderer.send('windowMinimize');
+    },
+    windowMaximize: () => {
+        ipcRenderer.send('windowMaximize');
+    },
+    windowClose: () => {
+        ipcRenderer.send('windowMinimize');
+    },
+    toStreamUrl: (uri: string) => {
+        return new Promise<BridgeEventReturn<'toStreamUrl'>>((resolve) => {
+            ipcRenderer.once('toStreamUrl', (_, d) => {
+                resolve(d);
+            })
+            ipcRenderer.send('toStreamUrl', uri)
+        })
+    },
+    searchForStream: (search: string) => {
+        return new Promise<BridgeEventReturn<'searchForStream'>>((resolve) => {
+            ipcRenderer.once('searchForStream', (_, d) => {
+                resolve(d);
+            })
+            ipcRenderer.send('searchForStream', search)
+        })
+    },
+    getLocalPlaylists: () => {
+        console.log("Fetching playlists")
+        return new Promise<BridgeEventReturn<'getLocalPlaylists'>>((resolve) => {
+            ipcRenderer.once('getLocalPlaylists', (_, d) => {
+                resolve(d);
+            })
+            ipcRenderer.send('getLocalPlaylists')
+        })
+    },
+    getLocalAlbums: () => {
+        return new Promise<BridgeEventReturn<'getLocalAlbums'>>((resolve) => {
+            ipcRenderer.once('', (_, d) => {
+                resolve(d);
+            })
+            ipcRenderer.send('getLocalAlbums')
+        })
+    },
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    getLocalTracks: (context: LocalTracksContext): Promise<any> => {
+        return new Promise<BridgeEventReturn<'getLocalTracks'>>((resolve) => {
+            ipcRenderer.once('getLocalTracks', (_, d) => {
+                resolve(d);
+            })
+            ipcRenderer.send('getLocalTracks', context);
+        })
+    },
+    createPlaylist(name, position) {
+        return new Promise<BridgeEventReturn<'createPlaylist'>>((resolve) => {
+            ipcRenderer.once('createPlaylist', (_, d) => {
+                resolve(d);
+            })
+            ipcRenderer.send('createPlaylist', name, position);
+        })
+    },
+}
+contextBridge.exposeInMainWorld('bridge', bridge);
 
-contextBridge.exposeInMainWorld('electron', {
-  bridge: {
-    windowMinimize() {
-      ipcRenderer.send('windowMinimize');
-    },
-    windowMaximize() {
-      ipcRenderer.send('windowMaximize');
-    },
-    windowClose() {
-      ipcRenderer.send('windowClose');
-    },
-    searchForStream(search) {
-      return new Promise<string>((resolve) => {
-        ipcRenderer.once('searchForStream', (_e, d) => {
-          resolve(d);
-        });
-        ipcRenderer.send('searchForStream', search);
-      });
-    },
-    toStreamUrl(uri) {
-      return new Promise<string>((resolve) => {
-        ipcRenderer.once('toStreamUrl', (_e, d) => {
-          resolve(d);
-        });
-        ipcRenderer.send('toStreamUrl', uri);
-      });
-    },
-    getLocalAlbums() {
-      return new Promise<ILocalAlbum[]>((resolve) => {
-        ipcRenderer.once('getLocalAlbums', (_e, d) => {
-          resolve(d);
-        });
-        ipcRenderer.send('getLocalAlbums');
-      });
-    },
-    getLocalPlaylists() {
-      return new Promise<ILocalPlaylist[]>((resolve) => {
-        ipcRenderer.once('getLocalPlaylists', (_e, d) => {
-          resolve(d);
-        });
-        ipcRenderer.send('getLocalPlaylists');
-      });
-    },
-    getLocalTracks(context) {
-      return new Promise<Awaited<ReturnType<typeof this.getLocalTracks>>>(
-        (resolve) => {
-          ipcRenderer.once('getLocalTracks', (_e, d) => {
-            resolve(d);
-          });
-          ipcRenderer.send('getLocalTracks', context);
-        }
-      );
-    },
-    // eslint-disable-next-line no-unused-vars
-    on(channel, func) {
-      if (validChannels.includes(channel)) {
-        const subscription = (
-          _event: IpcRendererEvent,
-          ...args: Parameters<MusicAppIpcEvents[typeof channel]>
-        ) => func(...args);
-        // Deliberately strip event as it includes `sender`
-        ipcRenderer.on(channel, subscription);
 
-        return () => ipcRenderer.removeListener(channel, subscription);
-      }
-
-      // eslint-disable-next-line no-console
-      console.error('Blocked Event From Channel', channel);
-
-      return undefined;
-    },
-    // eslint-disable-next-line no-unused-vars
-    once(channel, func) {
-      if (validChannels.includes(channel)) {
-        // Deliberately strip event as it includes `sender`
-        ipcRenderer.once(channel, (_event, ...args) => func(...args));
-        return;
-      }
-
-      // eslint-disable-next-line no-console
-      console.error('Blocked Event From Channel', channel);
-    },
-  },
-} as { bridge: typeof window.electron.bridge });
