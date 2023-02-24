@@ -50,3 +50,15 @@ export function getAudioPlayer() {
 export function toTimeString(timeNumber: number) {
   return `${pad(Math.floor(timeNumber / 60))}:${pad(timeNumber % 60)}`;
 }
+
+export async function wait(timeout: number) {
+  // eslint-disable-next-line no-promise-executor-return
+  return new Promise<void>((resolve) => setTimeout(resolve, timeout));
+}
+
+export async function ensureBridge(interval: number = 200) {
+  while (!window.electron?.bridge) {
+    // eslint-disable-next-line no-await-in-loop
+    await wait(interval);
+  }
+}

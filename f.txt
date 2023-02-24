@@ -1,0 +1,2 @@
+"discord-rich-presence": "^0.0.8",
+    "play-dl": "^1.9.6"

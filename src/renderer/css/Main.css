@@ -8,7 +8,7 @@
 body {
   margin: 0;
   position: relative;
-  background-color: var(--level0);
+  background-color: var(--screens-bg);
   font-family: sans-serif;
   height: 100vh;
   overflow: hidden;
@@ -17,18 +17,21 @@ body {
   -khtml-user-select: none;
   -webkit-user-select: none;
   -o-user-select: none;
-  --level0: #2c2f33;
-  --level1: #44494f;
-  --level2: #7a7a7a;
+  --screens-bg: #121212;
+  --nav-bg: #000000;
+  --player-tab-bg: #181818;
+  --play-tab-top: #282828;
   --primaryText: white;
-  --icon-color: white;
-  --icon-color-hover: rgb(46, 227, 0);
+  --icon-fg: white;
+  --icon-fg-inactive: rgb(143, 143, 143);
+  --icon-fg-hover: rgb(46, 227, 0);
+  --nav-divider-bg: rgba(255, 255, 255, 0.664);
   --scroll0: white;
   --scroll1: white;
   --top-frame-height: 30px;
-  --player-frame-height: 100px;
-  --player-bar-foreground: white;
-  --player-bar-background: #44494f;
+  --player-frame-height: 85px;
+  --slider-fg: white;
+  --slider-bg: #44494f;
   /*background: url(https://wallpaperz.nyc3.cdn.digitaloceanspaces.com/wallpapers/2ae88c51-3f27-493a-bfd0-e078a61b14ec.png);*/
   background-size: cover;
 }
@@ -43,7 +46,7 @@ body {
   width: inherit;
   overflow-y: overlay;
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   justify-content: flex-start;
   align-items: center;
 }
@@ -96,12 +99,12 @@ body {
 #top-frame svg {
   display: flex;
   margin: 0 10px;
-  color: var(--icon-color);
+  color: var(--icon-fg);
   transition: all 0.3s ease-in-out;
 }
 
 #top-frame span span:hover svg {
-  color: var(--icon-color-hover);
+  color: var(--icon-fg-hover);
 }
 
 h1 {
@@ -144,6 +147,8 @@ p {
   justify-content: space-around;
   align-items: center;
   align-content: center;
+  background-color: var(--player-tab-bg);
+  border-top: 1px solid var(--player-tab-bg);
 }
 
 .player-controls {
@@ -152,29 +157,135 @@ p {
 
 .player-controls .icon {
   display: flex;
-  color: var(--icon-color);
+  color: var(--icon-fg);
   transition: all 0.3s ease-in-out;
 }
 
-.player-bar {
+
+.slider-bar {
+  position: relative;
   display: flex;
   height: 5px;
-  width: 500px;
-  background-color: var(--player-bar-background);
+  width: 100%;
+  background-color: var(--slider-bg);
   border-radius: 20px;
+  align-items: center;
+  flex-direction: row;
+}
+
+.slider-knob {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  border-radius: 30px;
+  left: 100%;
+  transform: translate(-50%);
+  background-color: var(--slider-fg);
+}
+
+.slider-progress {
+  display: flex;
+  height: 100%;
+  width: 100%;
+  background-color: var(--slider-fg);
+  border-radius: 15px;
+}
+
+.player-bar {
+  appearance: none;
+  outline: none;
+  width: 40vw;
+  min-width: 300px;
+
+}
+
+.player-seek-bar {
+  width: 40vw;
+  min-width: 300px;
 }
 
 .player-bar-time {
   margin: 0px 13px;
 }
 
-#player-bar-inner {
+#nav-panel {
   display: flex;
+  flex-direction: column;
+  justify-items: flex-start;
+  height: 100%;
+  width: 300px;
+  background-color: var(--nav-bg);
+  padding: 0px 20px;
+  box-sizing: border-box;
+  gap: 10px;
+}
+
+.nav-items {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  padding-top: 20px;
+}
+
+.nav-item {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
+  transition: all 0.3s ease-in-out;
+  pointer-events: all;
+  gap: 20px;
+}
+
+.nav-divider {
+  display: block;
+  width: 100%;
+  background-color: var(--nav-divider-bg);
+  height: 1px;
+}
+
+.nav-item .no-icon {
+  display: none;
+}
+
+.nav-item svg {
+  color: var(--icon-fg);
+  width: 23px;
+  height: 23px;
+  transition: inherit;
+}
+
+.nav-item h3 {
+  font-size: 15px;
+  margin: 10px 0px;
+  transition: inherit;
+}
+
+.playlists .nav-item h3 {
+  margin: 7px 0px;
+}
+
+.nav-item[data-active="false"] svg,
+.nav-item[data-active="false"] h3 {
+  color: var(--icon-fg-inactive);
+}
+
+.nav-item:hover svg,
+.nav-item:hover h3 {
+  color: var(--icon-fg);
+}
+
+#screens {
+  background-color: var(--screens-bg);
   height: 100%;
   width: 100%;
-  background-color: var(--player-bar-foreground);
-  border-radius: 15px;
 }
+
+
+
+
+
+
 
 #dashboard {
   position: absolute;
@@ -184,7 +295,7 @@ p {
   width: 85%;
   display: flex;
   border-radius: 0 0 25px 25px;
-  background-color: var(--level0);
+  background-color: var(--screens-bg);
   transform: translateX(-50%);
   margin: 0 auto;
   align-items: center;
@@ -195,7 +306,7 @@ p {
   height: 20px;
   display: flex;
   padding: 5px 10px;
-  border: solid 2px var(--icon-color);
+  border: solid 2px var(--icon-fg);
   border-radius: 25px;
   align-items: center;
   transition: all 0.3s ease-in-out;
@@ -208,21 +319,21 @@ p {
   background-color: rgba(0, 0, 0, 0);
   border-radius: 25px;
   border: rgba(0, 0, 0, 0);
-  color: var(--icon-color);
+  color: var(--icon-fg);
 }
 
 #search svg {
   font-size: 20px;
-  color: var(--icon-color);
+  color: var(--icon-fg);
   transition: all 0.3s ease-in-out;
 }
 
 #search:hover {
-  border: solid 2px var(--icon-color-hover);
+  border: solid 2px var(--icon-fg-hover);
 }
 
 #search:hover svg {
-  color: var(--icon-color-hover);
+  color: var(--icon-fg-hover);
 }
 
 #search input:focus {
@@ -233,12 +344,12 @@ p {
   height: auto;
   position: relative;
   font-size: 35px;
-  color: var(--icon-color);
+  color: var(--icon-fg);
   transition: all 0.3s ease-in-out;
 }
 
 .dashboard-icon:hover {
-  color: var(--icon-color-hover);
+  color: var(--icon-fg-hover);
 }
 
 .page {
@@ -270,7 +381,7 @@ p {
   border-radius: 20px;
   align-items: center;
   justify-content: center;
-  border: 1px solid var(--level0);
+  border: 1px solid var(--screens-bg);
 }
 
 .grid-item img {
@@ -314,7 +425,7 @@ p {
   height: 40px;
   width: 30%;
   border-radius: 0px 0px 20px 0px;
-  background-color: var(--level1);
+  background-color: var(--nav-bg);
   overflow: hidden;
   transition: all 0.3s ease-in-out;
   flex-direction: row;
@@ -331,7 +442,7 @@ p {
   height: 40px;
   width: 30%;
   border-radius: 20px 0px 0px 0px;
-  background-color: var(--level1);
+  background-color: var(--nav-bg);
   overflow: hidden;
   transition: all 0.3s ease-in-out;
   flex-direction: row;
@@ -342,7 +453,7 @@ p {
 .wp-preview-downloads,
 .wp-preview-size svg {
   font-size: 20px;
-  color: var(--icon-color);
+  color: var(--icon-fg);
 }
 
 .wp-view {
@@ -363,13 +474,13 @@ p {
 .wp-view .next-item-left {
   height: 60%;
   font-size: 100px;
-  color: var(--icon-color);
+  color: var(--icon-fg);
   transition: all 0.3s ease-in-out;
 }
 
 .wp-view .next-item-right:hover,
 .wp-view .next-item-left:hover {
-  color: var(--icon-color-hover);
+  color: var(--icon-fg-hover);
 }
 
 .next-item-disabled {
@@ -408,7 +519,7 @@ p {
   width: 100%;
   height: 80px;
   min-height: 80px;
-  background-color: var(--level1);
+  background-color: var(--nav-bg);
   border-radius: 20px;
   align-items: center;
   justify-content: space-evenly;
@@ -421,7 +532,7 @@ p {
 }
 
 .wp-view-panel-top span svg {
-  color: var(--icon-color);
+  color: var(--icon-fg);
   font-size: 25px;
   margin: 0 10px;
 }
@@ -430,7 +541,7 @@ p {
 .wp-view-panel-top svg {
   margin: 5px;
   font-size: 40px;
-  color: var(--icon-color);
+  color: var(--icon-fg);
   transition: all 0.2s ease-in-out;
 }
 
@@ -438,7 +549,7 @@ p {
 .wp-view-panel-top svg:hover[data-interact='true'] {
   margin: 0px;
   font-size: 50px;
-  color: var(--icon-color-hover);
+  color: var(--icon-fg-hover);
 }
 
 #wp-in-view {
@@ -481,7 +592,7 @@ p {
   left: 50%;
   transform: translate(-50%, -50%);
   padding: 20px 40px;
-  background-color: var(--level1);
+  background-color: var(--nav-bg);
   border-radius: 20px;
   animation-duration: 3s;
   animation-name: slidein;
@@ -536,7 +647,7 @@ p {
   height: 40px;
   width: 40%;
   border-radius: 20px 0px 20px 0px;
-  background-color: var(--level1);
+  background-color: var(--nav-bg);
   overflow: hidden;
   transition: all 0.3s ease-in-out;
   flex-direction: row;
@@ -546,7 +657,7 @@ p {
 
 .wp-upload-size svg {
   font-size: 20px;
-  color: var(--icon-color);
+  color: var(--icon-fg);
 }
 
 .wp-upload-buttons {
@@ -558,7 +669,7 @@ p {
   height: 9%;
   max-height: 90px;
   width: 70%;
-  background-color: var(--level1);
+  background-color: var(--nav-bg);
   overflow: hidden;
   transition: all 0.3s ease-in-out;
   flex-direction: row;
@@ -571,7 +682,7 @@ p {
   position: relative;
   display: flex;
   background: transparent;
-  border: 2px solid var(--icon-color);
+  border: 2px solid var(--icon-fg);
   padding: 0;
   border-radius: 20px;
   height: 55%;
@@ -588,11 +699,11 @@ p {
 }
 
 .wp-upload-buttons button:hover {
-  border: 2px solid var(--icon-color-hover);
+  border: 2px solid var(--icon-fg-hover);
 }
 
 .wp-upload-buttons button:hover h2 {
-  color: var(--icon-color-hover);
+  color: var(--icon-fg-hover);
 }
 
 .upload-item {
@@ -616,7 +727,7 @@ p {
   width: calc(100% - 24px);
   padding: 0 10px;
   display: flex;
-  border: solid 2px var(--icon-color);
+  border: solid 2px var(--icon-fg);
   border-radius: 25px;
   align-items: center;
   transition: all 0.3s ease-in-out;
@@ -629,7 +740,7 @@ p {
   background-color: rgba(0, 0, 0, 0);
   border-radius: 25px;
   border: rgba(0, 0, 0, 0);
-  color: var(--icon-color);
+  color: var(--icon-fg);
   width: 100%;
   text-align: center;
 }
@@ -713,7 +824,7 @@ p {
 .wp-settings-container {
   position: relative;
   height: 100%;
-  background-color: var(--level0);
+  background-color: var(--screens-bg);
   width: 0px;
 }
 
@@ -751,7 +862,7 @@ p {
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  border-bottom: 2px solid var(--icon-color);
+  border-bottom: 2px solid var(--icon-fg);
 }
 
 .wp-settings-login img {
@@ -767,7 +878,7 @@ p {
   height: 55px;
   padding-top: 5px;
   padding-left: 5px;
-  background-color: var(--level0);
+  background-color: var(--screens-bg);
   align-items: center;
   justify-content: flex-start;
 }
@@ -777,7 +888,7 @@ p {
   aspect-ratio: 1;
   font-size: 40px;
   padding-left: 5px;
-  color: var(--icon-color);
+  color: var(--icon-fg);
   transition: all 0.1s ease-in-out;
   transform: rotate(180deg);
 }
@@ -785,7 +896,7 @@ p {
 .wp-settings-back svg:hover {
   font-size: 50px;
   padding-left: 0px;
-  color: var(--icon-color-hover);
+  color: var(--icon-fg-hover);
 }
 
 .wp-settings-login img {
@@ -799,7 +910,7 @@ p {
   position: relative;
   display: flex;
   background: transparent;
-  border: 2px solid var(--icon-color);
+  border: 2px solid var(--icon-fg);
   margin-top: 10px;
   border-radius: 20px;
   height: 50px;
@@ -816,11 +927,11 @@ p {
 }
 
 .wp-settings-login button:hover {
-  border: 2px solid var(--icon-color-hover);
+  border: 2px solid var(--icon-fg-hover);
 }
 
 .wp-settings-login button:hover h2 {
-  color: var(--icon-color-hover);
+  color: var(--icon-fg-hover);
 }
 
 .wp-settings-item {
@@ -839,7 +950,7 @@ p {
   min-height: 60px;
   height: 60px;
   width: 100%;
-  background-color: var(--level1);
+  background-color: var(--nav-bg);
   border-radius: 40px;
   justify-content: center;
 }
@@ -878,7 +989,7 @@ p {
   position: relative;
   display: flex;
   background: transparent;
-  border: 2px solid var(--icon-color);
+  border: 2px solid var(--icon-fg);
   padding: 0;
   border-radius: 50%;
   height: 37px;
@@ -895,18 +1006,18 @@ p {
 .range-setting-button svg,
 .wp-page-select button svg {
   font-size: 25px;
-  color: var(--icon-color);
+  color: var(--icon-fg);
   transition: all 0.3s ease-in-out;
 }
 
 .range-setting-button:hover,
 .wp-page-select button:hover {
-  border-color: var(--icon-color-hover);
+  border-color: var(--icon-fg-hover);
 }
 
 .range-setting-button:hover svg,
 .wp-page-select button:hover svg {
-  color: var(--icon-color-hover);
+  color: var(--icon-fg-hover);
 }
 
 .boolean-setting-true,
@@ -915,7 +1026,7 @@ p {
   position: relative;
   display: flex;
   background: transparent;
-  border: 2px solid var(--icon-color);
+  border: 2px solid var(--icon-fg);
   padding: 0;
   border-radius: 15px;
   height: 37px;
@@ -928,7 +1039,7 @@ p {
 .boolean-setting-true:hover,
 .boolean-setting-false:hover,
 .setting-button:hover {
-  border-color: var(--icon-color-hover);
+  border-color: var(--icon-fg-hover);
 }
 
 .boolean-setting-true h3,
@@ -940,11 +1051,11 @@ p {
 .boolean-setting-true:hover h3,
 .boolean-setting-false:hover h3,
 .setting-button:hover h3 {
-  color: var(--icon-color-hover);
+  color: var(--icon-fg-hover);
 }
 
 .boolean-setting-true {
-  border-color: var(--icon-color-hover);
+  border-color: var(--icon-fg-hover);
 }
 
 .wp-page-select {
@@ -1027,7 +1138,7 @@ p {
   top: 120px;
   left: 0;
   margin-top: 10px;
-  background-color: var(--level2);
+  background-color: var(--player-tab-bg);
   border-radius: 0 20px 20px 0;
   align-items: center;
   flex-direction: row;
@@ -1069,7 +1180,7 @@ p {
 }
 
 #wp-drag-upload svg {
-  color: var(--icon-color);
+  color: var(--icon-fg);
   font-size: 100px;
 }
 
@@ -1097,7 +1208,7 @@ p {
   position: relative;
   display: flex;
   flex-direction: column;
-  background-color: var(--level1);
+  background-color: var(--nav-bg);
   width: 500px;
   height: 400px;
   border-radius: 20px;
@@ -1108,12 +1219,12 @@ p {
 
 .wp-view-info-content svg {
   font-size: 20px;
-  color: var(--icon-color);
+  color: var(--icon-fg);
   transition: all 0.3s ease-in-out;
 }
 
 .wp-view-info-content svg:hover {
-  color: var(--icon-color-hover);
+  color: var(--icon-fg-hover);
 }
 
 .wp-view-info-content-btns {
@@ -1163,7 +1274,7 @@ p {
 }
 
 .wp-view-info-content-data textarea:read-write {
-  border: solid 2px var(--icon-color);
+  border: solid 2px var(--icon-fg);
   pointer-events: all;
 }
 
@@ -1171,7 +1282,7 @@ p {
   position: relative;
   display: flex;
   background: transparent;
-  border: 2px solid var(--icon-color);
+  border: 2px solid var(--icon-fg);
   padding: 0;
   border-radius: 20px;
   align-items: center;
@@ -1179,13 +1290,13 @@ p {
   width: 200px;
   height: 50px;
   font-size: 20px;
-  color: var(--icon-color);
+  color: var(--icon-fg);
   transition: all 0.3s ease-in-out;
 }
 
 .wp-view-info-content-btns button:hover {
-  border: 2px solid var(--icon-color-hover);
-  color: var(--icon-color-hover);
+  border: 2px solid var(--icon-fg-hover);
+  color: var(--icon-fg-hover);
 }
 
 @media only screen and (max-width: 1580px) {

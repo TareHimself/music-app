@@ -1,63 +1,67 @@
 import { contextBridge, ipcRenderer, IpcRendererEvent } from 'electron';
+import { MusicAppIpcEvents } from 'types';
 
-const validChannels = [
-  'ipc-example',
-  'upload-files',
-  'load-settings',
-  'save-settings',
-  'open-login',
-  'get-login',
-  'update-login',
-  'logout',
-  'upload-images',
-  'clear-cache',
-  'download-image',
-  'window-min',
-  'window-max',
-  'window-close',
+const validChannels: (keyof MusicAppIpcEvents)[] = [
+  'windowClose',
+  'windowMaximize',
+  'windowMinimize',
 ];
 
 contextBridge.exposeInMainWorld('electron', {
-  ipcRenderer: {
-    myPing() {
-      ipcRenderer.send('ipc-example', 'ping');
-    },
+  bridge: {
     windowMinimize() {
-      ipcRenderer.send('window-min');
+      ipcRenderer.send('windowMinimize');
     },
     windowMaximize() {
-      ipcRenderer.send('window-max');
+      ipcRenderer.send('windowMaximize');
     },
     windowClose() {
-      ipcRenderer.send('window-close');
+      ipcRenderer.send('windowClose');
     },
-    setDownloadPath(currentPath: string) {
-      ipcRenderer.send('set-download-path', currentPath);
+    searchForStream(search) {
       return new Promise<string>((resolve) => {
-        ipcRenderer.once('set-download-path', (_event, result) => {
-          resolve(result);
+        ipcRenderer.once('searchForStream', (_e, d) => {
+          resolve(d);
         });
+        ipcRenderer.send('searchForStream', search);
+      });
+    },
+    toStreamUrl(uri) {
+      return new Promise<string>((resolve) => {
+        ipcRenderer.once('toStreamUrl', (_e, d) => {
+          resolve(d);
+        });
+        ipcRenderer.send('toStreamUrl', uri);
       });
     },
     // eslint-disable-next-line no-unused-vars
-    on(channel: string, func: (...args: unknown[]) => void) {
+    on(channel, func) {
       if (validChannels.includes(channel)) {
-        const subscription = (_event: IpcRendererEvent, ...args: unknown[]) =>
-          func(...args);
+        const subscription = (
+          _event: IpcRendererEvent,
+          ...args: Parameters<MusicAppIpcEvents[typeof channel]>
+        ) => func(...args);
         // Deliberately strip event as it includes `sender`
         ipcRenderer.on(channel, subscription);
 
         return () => ipcRenderer.removeListener(channel, subscription);
       }
 
+      // eslint-disable-next-line no-console
+      console.error('Blocked Event From Channel', channel);
+
       return undefined;
     },
     // eslint-disable-next-line no-unused-vars
-    once(channel: string, func: (...args: unknown[]) => void) {
+    once(channel, func) {
       if (validChannels.includes(channel)) {
         // Deliberately strip event as it includes `sender`
         ipcRenderer.once(channel, (_event, ...args) => func(...args));
+        return;
       }
+
+      // eslint-disable-next-line no-console
+      console.error('Blocked Event From Channel', channel);
     },
   },
-});
+} as { bridge: typeof window.electron.bridge });

@@ -3,8 +3,10 @@
 /* eslint-disable global-require */
 import path from 'path';
 import { app, BrowserWindow, shell, ipcMain } from 'electron';
+import * as play from 'play-dl';
 import MenuBuilder from './menu';
 import { resolveHtmlPath } from './util';
+import './sqlite';
 
 let mainWindow: BrowserWindow | null = null;
 
@@ -111,11 +113,38 @@ app
   })
   .catch(console.log);
 
-ipcMain.on('window-close', () => {
-  mainWindow?.close();
+async function uriToStream(uri: string): Promise<string> {
+  console.log('Fetching stream for uri', uri);
+  const stream = await play.stream(uri);
+  console.log('Stream found');
+  return (stream as typeof stream & { url: string }).url;
+}
+
+ipcMain.on('searchForStream', async (ev, search) => {
+  console.log(ev.target);
+  console.log('Searching for stream for term', search);
+  const result = await play.search(search, {
+    source: {
+      youtube: 'video',
+    },
+    limit: 1,
+  });
+
+  if (result.length) {
+    console.log('Stream found, fetching url');
+    ev.sender.send('searchForStream', await uriToStream(result[0].url));
+    return;
+  }
+
+  console.log('Stream not found');
+  ev.sender.send('searchForStream', '');
 });
 
-ipcMain.on('window-max', () => {
+ipcMain.on('toStreamUrl', async (ev, uri) => {
+  ev.reply(await uriToStream(uri));
+});
+
+ipcMain.on('windowMaximize', () => {
   console.log(mainWindow?.isMaximizable(), mainWindow?.isMaximized());
   if (mainWindow) {
     if (mainWindow.isMaximized()) {
@@ -126,10 +155,10 @@ ipcMain.on('window-max', () => {
   }
 });
 
-ipcMain.on('window-min', () => {
+ipcMain.on('windowMinimize', () => {
   mainWindow?.minimize();
 });
 
-ipcMain.on('window-close', () => {
+ipcMain.on('windowClose', () => {
   mainWindow?.close();
 });

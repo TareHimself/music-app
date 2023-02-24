@@ -11,7 +11,7 @@ export default function TopFrame() {
           <AiOutlineMinus
             fontSize={20}
             onClick={() => {
-              window.electron.ipcRenderer.windowMinimize();
+              window.electron.bridge.windowMinimize();
             }}
           />
         </span>
@@ -19,7 +19,7 @@ export default function TopFrame() {
           <BsSquare
             fontSize={12}
             onClick={() => {
-              window.electron.ipcRenderer.windowMaximize();
+              window.electron.bridge.windowMaximize();
             }}
           />
         </span>
@@ -27,7 +27,7 @@ export default function TopFrame() {
           <IoCloseOutline
             fontSize={22}
             onClick={() => {
-              window.electron.ipcRenderer.windowClose();
+              window.electron.bridge.windowClose();
             }}
           />
         </span>

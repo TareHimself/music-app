@@ -11,5 +11,8 @@
     "link-modules": "node -r ts-node/register ../../.erb/scripts/link-modules.ts",
     "postinstall": "npm run electron-rebuild && npm run link-modules"
   },
-  "dependencies": {}
+  "dependencies": {
+    "better-sqlite3": "^8.1.0",
+    "discord-rich-presence": "^0.0.8"
+  }
 }
