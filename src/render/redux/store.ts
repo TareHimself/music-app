@@ -9,7 +9,7 @@ export const store = configureStore({
     playlists: PlaylistsSlice,
     app: AppSlice,
     tracks: TracksSlice,
-    albums: AlbumsSlice
+    albums: AlbumsSlice,
   },
 });
 

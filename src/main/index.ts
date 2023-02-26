@@ -1,6 +1,6 @@
 import { app } from "electron";
-import path from 'path';
-import { existsSync, mkdirSync } from 'fs';
+import path from "path";
+import { existsSync, mkdirSync } from "fs";
 import { getLibraryPath } from "./utils";
 const gotTheLock = app.requestSingleInstanceLock();
 
@@ -9,7 +9,7 @@ if (gotTheLock) {
 
   if (!existsSync(libraryPath)) {
     mkdirSync(libraryPath, {
-      recursive: true
+      recursive: true,
     });
   }
 

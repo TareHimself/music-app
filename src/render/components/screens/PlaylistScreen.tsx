@@ -36,9 +36,7 @@ export default function PlaylistScreen() {
         </div>
 
         <div className="screen-content">
-          <TracksView
-            data={playlist.tracks}
-          />
+          <TracksView data={playlist.tracks} />
         </div>
       </div>
     </div>

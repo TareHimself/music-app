@@ -11,47 +11,46 @@ import { IPlayTrackEventData, IQueueTrackEventData } from "../types";
 import { useAppDispatch, useAppSelector } from "./redux/hooks";
 import { loadAlbums, setAlbumsStatus } from "./redux/slices/albums";
 
-
 export function RootApp() {
-
   const dispatch = useAppDispatch();
-  const albumsStatus = useAppSelector(s => s.albums.status);
+  const albumsStatus = useAppSelector((s) => s.albums.status);
   useEffect(() => {
-    if (albumsStatus === 'empty') {
-      console.log("Running use Effect")
-      dispatch(setAlbumsStatus('loading'))
-      dispatch(loadAlbums())
+    if (albumsStatus === "empty") {
+      console.log("Running use Effect");
+      dispatch(setAlbumsStatus("loading"));
+      dispatch(loadAlbums());
     }
+  }, [dispatch]);
 
-  }, [dispatch])
-
-  return (<><TopFrame />
-    <App />
-    <PlayerTab />
-    <NotificationContainer /></>)
+  return (
+    <>
+      <TopFrame />
+      <App />
+      <PlayerTab />
+      <NotificationContainer />
+    </>
+  );
 }
 const container = document.getElementById("root");
 if (container) {
   const root = createRoot(container);
 
-
-
   window.utils = {
     playTrack: async (data: IPlayTrackEventData) => {
       document.dispatchEvent(
-        new CustomEvent<IPlayTrackEventData>('custom-play-track', {
+        new CustomEvent<IPlayTrackEventData>("custom-play-track", {
           detail: data,
         })
       );
     },
     queueTrack: async (data: IQueueTrackEventData) => {
       document.dispatchEvent(
-        new CustomEvent<IQueueTrackEventData>('custom-queue-track', {
+        new CustomEvent<IQueueTrackEventData>("custom-queue-track", {
           detail: data,
         })
       );
-    }
-  }
+    },
+  };
 
   root.render(
     <StrictMode>

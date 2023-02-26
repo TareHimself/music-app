@@ -45,11 +45,14 @@ const createPlaylist = createAsyncThunk(
     try {
       await ensureBridge();
 
-      return await window.bridge.createPlaylists([{
-        title: title,
-        position: position,
-        cover: 'https://e-cdn-images.dzcdn.net/images/cover/e5575c7a8dbda3440911c64f1508f15c/264x264-000000-80-0-0.jpg'
-      }]);
+      return await window.bridge.createPlaylists([
+        {
+          title: title,
+          position: position,
+          cover:
+            "https://e-cdn-images.dzcdn.net/images/cover/e5575c7a8dbda3440911c64f1508f15c/264x264-000000-80-0-0.jpg",
+        },
+      ]);
     } catch (e: unknown) {
       // eslint-disable-next-line no-console
       console.error(e);
@@ -65,9 +68,7 @@ export const playlistsSlice = createSlice({
   reducers: {
     editPlaylist: (
       state,
-      action: PayloadAction<
-        Partial<IPlaylist> & { id: IPlaylist['id'] }
-      >
+      action: PayloadAction<Partial<IPlaylist> & { id: IPlaylist["id"] }>
     ) => {
       state.data.playlists[action.payload.id] = {
         ...state.data.playlists[action.payload.id],
@@ -86,10 +87,10 @@ export const playlistsSlice = createSlice({
     });
     builder.addCase(createPlaylist.fulfilled, (state, action) => {
       if (action.payload) {
-        action.payload.forEach(p => {
+        action.payload.forEach((p) => {
           state.data.playlists[p.id] = p;
-          state.data.playlistsIds.unshift(p.id)
-        })
+          state.data.playlistsIds.unshift(p.id);
+        });
         state.data.playlistsIds.sort(
           (a, b) =>
             state.data.playlists[b].position - state.data.playlists[a].position

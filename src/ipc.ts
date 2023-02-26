@@ -3,147 +3,195 @@
  */
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { contextBridge, IpcMainEvent, ipcRenderer as electronIpcRenderer, IpcRendererEvent, ipcMain as electronIpcMain } from "electron";
-import { Awaitable, BridgeEventParams, BridgeEventReturn, IBridgeEvents } from "./types";
+import {
+  contextBridge,
+  IpcMainEvent,
+  ipcRenderer as electronIpcRenderer,
+  IpcRendererEvent,
+  ipcMain as electronIpcMain,
+} from "electron";
+import {
+  Awaitable,
+  BridgeEventParams,
+  BridgeEventReturn,
+  IBridgeEvents,
+} from "./types";
 // (...args: any) => any, (...args: any) => any
 
-
-export type IpcCallbackItem = Map<(...args: any) => any, (...args: any) => any>
+export type IpcCallbackItem = Map<(...args: any) => any, (...args: any) => any>;
 
 class IpcRendererWrapper {
-    _callbacks: Map<string, IpcCallbackItem> = new Map()
+  _callbacks: Map<string, IpcCallbackItem> = new Map();
 
-    on<T extends keyof IBridgeEvents>(event: T, callback: (result: BridgeEventReturn<T>) => Awaitable<any>): this {
-
-        if (!this._callbacks.get(event)) {
-            this._callbacks.set(event, new Map())
-        }
-
-        const midWay = (_: IpcRendererEvent, data: BridgeEventReturn<T>) => callback(data)
-
-        this._callbacks.get(event)?.set(callback, midWay);
-
-        electronIpcRenderer.on(event, midWay);
-
-        return this;
+  on<T extends keyof IBridgeEvents>(
+    event: T,
+    callback: (result: BridgeEventReturn<T>) => Awaitable<any>
+  ): this {
+    if (!this._callbacks.get(event)) {
+      this._callbacks.set(event, new Map());
     }
 
-    once<T extends keyof IBridgeEvents>(event: T, callback: (result: BridgeEventReturn<T>) => Awaitable<any>): this {
+    const midWay = (_: IpcRendererEvent, data: BridgeEventReturn<T>) =>
+      callback(data);
 
-        const midWay = (_: IpcRendererEvent, data: BridgeEventReturn<T>) => callback(data)
+    this._callbacks.get(event)?.set(callback, midWay);
 
-        electronIpcRenderer.once(event, midWay);
+    electronIpcRenderer.on(event, midWay);
 
-        return this;
+    return this;
+  }
+
+  once<T extends keyof IBridgeEvents>(
+    event: T,
+    callback: (result: BridgeEventReturn<T>) => Awaitable<any>
+  ): this {
+    const midWay = (_: IpcRendererEvent, data: BridgeEventReturn<T>) =>
+      callback(data);
+
+    electronIpcRenderer.once(event, midWay);
+
+    return this;
+  }
+
+  off<T extends keyof IBridgeEvents>(
+    event: T,
+    callback: (result: BridgeEventReturn<T>) => Awaitable<any>
+  ): this {
+    if (!this._callbacks.get(event)) {
+      return this;
     }
 
-    off<T extends keyof IBridgeEvents>(event: T, callback: (result: BridgeEventReturn<T>) => Awaitable<any>): this {
-        if (!this._callbacks.get(event)) {
-            return this;
-        }
+    const boundMidway = this._callbacks.get(event)?.get(callback);
 
-        const boundMidway = this._callbacks.get(event)?.get(callback);
-
-        if (boundMidway) {
-            electronIpcRenderer.off(event, boundMidway);
-        }
-
-        return this;
+    if (boundMidway) {
+      electronIpcRenderer.off(event, boundMidway);
     }
 
-    send<T extends keyof IBridgeEvents>(event: T, ...args: BridgeEventParams<T>): this {
+    return this;
+  }
 
-        electronIpcRenderer.send(event, ...args)
+  send<T extends keyof IBridgeEvents>(
+    event: T,
+    ...args: BridgeEventParams<T>
+  ): this {
+    electronIpcRenderer.send(event, ...args);
 
-        return this;
-    }
+    return this;
+  }
 
-    sendSync<T extends keyof IBridgeEvents>(event: T, ...args: BridgeEventParams<T>): BridgeEventReturn<T> {
-        return electronIpcRenderer.sendSync(event, ...args)
-    }
+  sendSync<T extends keyof IBridgeEvents>(
+    event: T,
+    ...args: BridgeEventParams<T>
+  ): BridgeEventReturn<T> {
+    return electronIpcRenderer.sendSync(event, ...args);
+  }
 
-    exposeApi<T>(name: string, api: T) {
-        console.log("Exposing Api", name)
-        contextBridge.exposeInMainWorld(name, api);
-    }
+  exposeApi<T>(name: string, api: T) {
+    console.log("Exposing Api", name);
+    contextBridge.exposeInMainWorld(name, api);
+  }
 
-    asyncEventCall<T extends keyof IBridgeEvents>(event: T, ...args: BridgeEventParams<T>) {
-        return new Promise<BridgeEventReturn<T>>((resolve) => {
-            this.once(event, (d) => {
-                resolve(d);
-            });
-            this.send(event, ...args);
-        });
-    }
+  asyncEventCall<T extends keyof IBridgeEvents>(
+    event: T,
+    ...args: BridgeEventParams<T>
+  ) {
+    return new Promise<BridgeEventReturn<T>>((resolve) => {
+      this.once(event, (d) => {
+        resolve(d);
+      });
+      this.send(event, ...args);
+    });
+  }
 }
 
 export const ipcRenderer = new IpcRendererWrapper();
 
 class IpcMainEventWrapper<T extends keyof IBridgeEvents> {
-    channel: T
-    ref: IpcMainEvent
-    constructor(channel: T, ref: IpcMainEvent) {
-        this.channel = channel
-        this.ref = ref;
-    }
+  channel: T;
+  ref: IpcMainEvent;
+  constructor(channel: T, ref: IpcMainEvent) {
+    this.channel = channel;
+    this.ref = ref;
+  }
 
-    reply(data: BridgeEventReturn<T>) {
-        this.ref.reply(this.channel, data)
-    }
+  reply(data: BridgeEventReturn<T>) {
+    this.ref.reply(this.channel, data);
+  }
 
-    replySync(data: BridgeEventReturn<T>) {
-        this.ref.returnValue = data;
-    }
+  replySync(data: BridgeEventReturn<T>) {
+    this.ref.returnValue = data;
+  }
 }
 
 class IpcMainWrapper {
-    _callbacks: Map<string, IpcCallbackItem> = new Map()
+  _callbacks: Map<string, IpcCallbackItem> = new Map();
 
-    on<T extends keyof IBridgeEvents>(event: T, callback: (event: IpcMainEventWrapper<T>, ...args: BridgeEventParams<T>) => Awaitable<any>): this {
-
-        if (!this._callbacks.get(event)) {
-            this._callbacks.set(event, new Map())
-        }
-
-        const midWay = (e: IpcMainEvent, ...args: BridgeEventParams<T>) => callback(new IpcMainEventWrapper<T>(event, e), ...args)
-
-        this._callbacks.get(event)?.set(callback, midWay);
-
-        electronIpcMain.on(event, midWay);
-
-        return this;
+  on<T extends keyof IBridgeEvents>(
+    event: T,
+    callback: (
+      event: IpcMainEventWrapper<T>,
+      ...args: BridgeEventParams<T>
+    ) => Awaitable<any>
+  ): this {
+    if (!this._callbacks.get(event)) {
+      this._callbacks.set(event, new Map());
     }
 
-    once<T extends keyof IBridgeEvents>(event: T, callback: (event: IpcMainEventWrapper<T>, ...args: BridgeEventParams<T>) => Awaitable<any>): this {
+    const midWay = (e: IpcMainEvent, ...args: BridgeEventParams<T>) =>
+      callback(new IpcMainEventWrapper<T>(event, e), ...args);
 
-        const midWay = (e: IpcMainEvent, ...args: BridgeEventParams<T>) => callback(new IpcMainEventWrapper<T>(event, e), ...args)
+    this._callbacks.get(event)?.set(callback, midWay);
 
-        electronIpcMain.once(event, midWay);
+    electronIpcMain.on(event, midWay);
 
-        return this;
+    return this;
+  }
+
+  once<T extends keyof IBridgeEvents>(
+    event: T,
+    callback: (
+      event: IpcMainEventWrapper<T>,
+      ...args: BridgeEventParams<T>
+    ) => Awaitable<any>
+  ): this {
+    const midWay = (e: IpcMainEvent, ...args: BridgeEventParams<T>) =>
+      callback(new IpcMainEventWrapper<T>(event, e), ...args);
+
+    electronIpcMain.once(event, midWay);
+
+    return this;
+  }
+
+  off<T extends keyof IBridgeEvents>(
+    event: T,
+    callback: (
+      event: IpcMainEventWrapper<T>,
+      ...args: BridgeEventParams<T>
+    ) => Awaitable<any>
+  ): this {
+    if (!this._callbacks.get(event)) {
+      return this;
     }
 
-    off<T extends keyof IBridgeEvents>(event: T, callback: (event: IpcMainEventWrapper<T>, ...args: BridgeEventParams<T>) => Awaitable<any>): this {
-        if (!this._callbacks.get(event)) {
-            return this;
-        }
+    const boundMidway = this._callbacks.get(event)?.get(callback);
 
-        const boundMidway = this._callbacks.get(event)?.get(callback);
-
-        if (boundMidway) {
-            electronIpcMain.off(event, boundMidway);
-        }
-
-        return this;
+    if (boundMidway) {
+      electronIpcMain.off(event, boundMidway);
     }
 
-    sendSync<T extends keyof IBridgeEvents>(event: T, ...args: BridgeEventParams<T>): BridgeEventReturn<T> {
-        return electronIpcRenderer.sendSync(event, ...args)
-    }
+    return this;
+  }
 
-    exposeApi<T>(name: string, api: T) {
-        contextBridge.exposeInMainWorld(name, api);
-    }
+  sendSync<T extends keyof IBridgeEvents>(
+    event: T,
+    ...args: BridgeEventParams<T>
+  ): BridgeEventReturn<T> {
+    return electronIpcRenderer.sendSync(event, ...args);
+  }
+
+  exposeApi<T>(name: string, api: T) {
+    contextBridge.exposeInMainWorld(name, api);
+  }
 }
 
 export const ipcMain = new IpcMainWrapper();

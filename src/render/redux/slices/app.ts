@@ -23,7 +23,7 @@ export const AppSlice = createSlice({
     },
   },
   // eslint-disable-next-line @typescript-eslint/no-empty-function
-  extraReducers: (builder) => { },
+  extraReducers: (builder) => {},
 });
 
 export const { setScreenId } = AppSlice.actions;

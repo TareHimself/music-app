@@ -1,7 +1,14 @@
 import AppConstants from "../../data";
 import { useCallback, useEffect } from "react";
 import { BsFileEarmarkMusic, BsFileEarmarkMusicFill } from "react-icons/bs";
-import { RiSearch2Line, RiSearch2Fill, RiSettings4Line, RiSettings4Fill, RiAddCircleFill, RiAddCircleLine } from "react-icons/ri";
+import {
+  RiSearch2Line,
+  RiSearch2Fill,
+  RiSettings4Line,
+  RiSettings4Fill,
+  RiAddCircleFill,
+  RiAddCircleLine,
+} from "react-icons/ri";
 import { MdOutlineLibraryAdd } from "react-icons/md";
 import NavItem from "./NavItem";
 import { useAppDispatch, useAppSelector } from "../redux/hooks";
@@ -103,7 +110,10 @@ export default function NavPanel() {
         {playlistData.data.playlistsIds.map((p_id) => (
           <NavItem
             navId={`playlist-${p_id}`}
-            display={playlistData.data.playlists[p_id].title + ` ${playlistData.data.playlists[p_id].position}`}
+            display={
+              playlistData.data.playlists[p_id].title +
+              ` ${playlistData.data.playlists[p_id].position}`
+            }
             activeId={selectedItem}
             onSelected={onPlaylistSelected}
             key={p_id}

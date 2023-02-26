@@ -1,6 +1,17 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import Database from "better-sqlite3";
-import { IAlbumRaw, IPlaylistRaw, IPlaylistRawMetaUpdate, ITrackRaw, IPlaylist, IPlaylistTrack, IArtistRaw, IAlbum, ITrack, IArtist } from "../types";
+import {
+  IAlbumRaw,
+  IPlaylistRaw,
+  IPlaylistRawMetaUpdate,
+  ITrackRaw,
+  IPlaylist,
+  IPlaylistTrack,
+  IArtistRaw,
+  IAlbum,
+  ITrack,
+  IArtist,
+} from "../types";
 import { getDatabasePath } from "./utils";
 
 const DATABASE_DIR = getDatabasePath();
@@ -77,7 +88,9 @@ const InsertNewPlaylistStatement = db.prepare<IPlaylistRaw>(
   "REPLACE INTO playlists (id,title,cover,position) VALUES (@id,@title,@cover,@position)"
 );
 
-const InsertNewAlbumStatement = db.prepare<IAlbumRaw>("REPLACE INTO albums (id,title,cover,released,artist,genre) VALUES (@id,@title,@cover,@released,@artist,@genre)");
+const InsertNewAlbumStatement = db.prepare<IAlbumRaw>(
+  "REPLACE INTO albums (id,title,cover,released,artist,genre) VALUES (@id,@title,@cover,@released,@artist,@genre)"
+);
 
 const InsertNewArtistStatement = db.prepare<IArtistRaw>(
   "REPLACE INTO artists (id,name) VALUES (@id,@name)"
@@ -89,19 +102,29 @@ const InsertNewTrackStatement = db.prepare<ITrackRaw>(
 
 const GetPlaylistsStatement = db.prepare("SELECT * FROM playlists");
 
-const GetPlaylistsTracksStatement = db.prepare<{ id: string }>("SELECT track, added FROM playlist_tracks WHERE playlist=@id");
+const GetPlaylistsTracksStatement = db.prepare<{ id: string }>(
+  "SELECT track, added FROM playlist_tracks WHERE playlist=@id"
+);
 
 const GetArtistsStatement = db.prepare("SELECT * FROM artists");
 
-const GetSpecificArtistsStatement = db.prepare<{ ids: string }>("SELECT * FROM artists WHERE id IN (@ids)");
+const GetSpecificArtistsStatement = db.prepare<{ ids: string }>(
+  "SELECT * FROM artists WHERE id IN (@ids)"
+);
 
 const GetAlbumsStatement = db.prepare("SELECT * FROM albums");
 
-const GetSpecificAlbumsStatement = db.prepare<{ ids: string }>("SELECT * FROM albums WHERE id IN (@ids)");
+const GetSpecificAlbumsStatement = db.prepare<{ ids: string }>(
+  "SELECT * FROM albums WHERE id IN (@ids)"
+);
 
-const GetAlbumTrackIdsStatement = db.prepare<{ id: string }>("SELECT id FROM tracks WHERE album=@id");
+const GetAlbumTrackIdsStatement = db.prepare<{ id: string }>(
+  "SELECT id FROM tracks WHERE album=@id"
+);
 
-const GetAlbumTracksStatement = db.prepare<{ id: string }>("SELECT * FROM tracks WHERE album=@id");
+const GetAlbumTracksStatement = db.prepare<{ id: string }>(
+  "SELECT * FROM tracks WHERE album=@id"
+);
 
 // const tInsertArtists = db.transaction((artists: ILocalArtist[]) => {});
 
@@ -117,21 +140,19 @@ export const tCreatePlaylists: Database.Transaction<
   }
 });
 
-export const tCreateAlbums: Database.Transaction<
-  (data: IAlbumRaw[]) => void
-> = db.transaction((data) => {
-  for (let i = 0; i < data.length; i++) {
-    InsertNewAlbumStatement.run(data[i]);
-  }
-});
+export const tCreateAlbums: Database.Transaction<(data: IAlbumRaw[]) => void> =
+  db.transaction((data) => {
+    for (let i = 0; i < data.length; i++) {
+      InsertNewAlbumStatement.run(data[i]);
+    }
+  });
 
-export const tCreateTracks: Database.Transaction<
-  (data: ITrackRaw[]) => void
-> = db.transaction((data) => {
-  for (let i = 0; i < data.length; i++) {
-    InsertNewTrackStatement.run(data[i]);
-  }
-});
+export const tCreateTracks: Database.Transaction<(data: ITrackRaw[]) => void> =
+  db.transaction((data) => {
+    for (let i = 0; i < data.length; i++) {
+      InsertNewTrackStatement.run(data[i]);
+    }
+  });
 
 export const tCreateArtists: Database.Transaction<
   (data: IArtistRaw[]) => void
@@ -154,56 +175,57 @@ export const tUpdatePlaylistsMeta: Database.Transaction<
 export function getPlaylists(): IPlaylist[] {
   const playlists = GetPlaylistsStatement.all() as IPlaylistRaw[];
 
-  return playlists.map(p => {
-    const tracks = GetPlaylistsTracksStatement.all({ id: p.id }) as IPlaylistTrack[];
+  return playlists.map((p) => {
+    const tracks = GetPlaylistsTracksStatement.all({
+      id: p.id,
+    }) as IPlaylistTrack[];
 
     return { ...p, tracks: tracks };
-  })
+  });
 }
 
 export function getArtists(ids?: string): IArtist[] {
-
-  let artists: IArtistRaw[] = []
+  let artists: IArtistRaw[] = [];
 
   if (ids) {
-    artists = GetSpecificArtistsStatement.all({ ids: ids })
-  }
-  else {
+    artists = GetSpecificArtistsStatement.all({ ids: ids });
+  } else {
     artists = GetArtistsStatement.all();
   }
 
-  return artists
+  return artists;
 }
 
 export function getAlbumTracksIds(album: string): string[] {
-  return (GetAlbumTrackIdsStatement.all({ id: album }) as { id: string }[]).map(a => a.id)
+  return (GetAlbumTrackIdsStatement.all({ id: album }) as { id: string }[]).map(
+    (a) => a.id
+  );
 }
 
 export function getAlbum(id: string): IAlbum[] {
   const albums = GetAlbumsStatement.all() as IAlbumRaw[];
 
-  return albums.map(p => {
+  return albums.map((p) => {
     return { ...p, tracks: getAlbumTracksIds(p.id) };
-  })
+  });
 }
 
 export function getAlbums(ids?: string): IAlbum[] {
-
-  let albums: IAlbumRaw[] = []
+  let albums: IAlbumRaw[] = [];
 
   if (ids) {
-    albums = GetSpecificAlbumsStatement.all({ ids: ids })
-  }
-  else {
+    albums = GetSpecificAlbumsStatement.all({ ids: ids });
+  } else {
     albums = GetAlbumsStatement.all();
   }
 
-  return albums.map(p => {
+  return albums.map((p) => {
     return { ...p, tracks: getAlbumTracksIds(p.id) };
-  })
+  });
 }
 
 export function getAlbumTracks(album: string): ITrack[] {
-  return (GetAlbumTracksStatement.all({ id: album }) as ITrackRaw[]).map(a => ({ ...a, artists: a.artists.split('|') }))
+  return (GetAlbumTracksStatement.all({ id: album }) as ITrackRaw[]).map(
+    (a) => ({ ...a, artists: a.artists.split("|") })
+  );
 }
-

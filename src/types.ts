@@ -28,7 +28,6 @@ export interface IPlaylistRaw extends IPlaylistNew {
   id: string;
 }
 
-
 export interface IPlaylistTrackRaw {
   playlist: string;
   track: string;
@@ -36,8 +35,8 @@ export interface IPlaylistTrackRaw {
 }
 
 export interface IPlaylistTrack {
-  track: IPlaylistTrackRaw['track'];
-  added: IPlaylistTrackRaw['added'];
+  track: IPlaylistTrackRaw["track"];
+  added: IPlaylistTrackRaw["added"];
 }
 
 export interface IPlaylistRawMetaUpdate extends Partial<IPlaylistRaw> {
@@ -80,18 +79,17 @@ export interface IArtistNew {
 
 export interface IArtistRaw {
   id: string;
-  name: string
+  name: string;
 }
 
 export type IArtist = IArtistRaw;
-
 
 /**
  * Tracks
  */
 
 export interface ITrackNew {
-  id?: string
+  id?: string;
   title: string;
   album: string;
   uri: string;
@@ -105,15 +103,14 @@ export interface ITrackRaw extends ITrackNew {
 }
 
 export interface ITrack {
-  id: ITrackRaw['id']
-  title: ITrackRaw['title'];
-  album: ITrackRaw['album'];
-  uri: ITrackRaw['uri'];
-  artists: ITrackRaw['artists'][];
-  duration: ITrackRaw['duration'];
-  position: ITrackRaw['position'];
+  id: ITrackRaw["id"];
+  title: ITrackRaw["title"];
+  album: ITrackRaw["album"];
+  uri: ITrackRaw["uri"];
+  artists: ITrackRaw["artists"][];
+  duration: ITrackRaw["duration"];
+  position: ITrackRaw["position"];
 }
-
 
 export type ControllableSliderProps = {
   min: number;
@@ -125,16 +122,15 @@ export type ControllableSliderProps = {
   step?: number;
 };
 
-export type TrackStreamInfo = { uri: string; duration: number; from: string }
+export type TrackStreamInfo = { uri: string; duration: number; from: string };
 
 export type Awaitable<T> = T | Promise<T>;
 
-
 export type IQueueTrackEventData = {
-  tracks: ITrack[]
+  tracks: ITrack[];
 };
 export type IPlayTrackEventData = {
-  track: ITrack
+  track: ITrack;
 };
 export interface IBridgeEvents {
   getPreloadPath: () => string;
@@ -146,7 +142,7 @@ export interface IBridgeEvents {
   searchForStream: (search: string) => Promise<string>;
   getPlaylists: () => Promise<IPlaylist[]>;
   getAlbums: () => Promise<IAlbum[]>;
-  getAlbumTracks: (album: string) => Promise<ITrack[]>
+  getAlbumTracks: (album: string) => Promise<ITrack[]>;
   getTracks: (trackIds: string[]) => Promise<ITrack[]>;
   getArtists: (ids: string[]) => Promise<IArtist[]>;
   createPlaylists: (data: IPlaylistNew[]) => Promise<IPlaylist[]>;
@@ -159,7 +155,6 @@ export interface IBridgeEvents {
   importSpotifyTracks: (uris: string[]) => Promise<ITrack[]>;
   importSpotifyAlbums: (uris: string[]) => Promise<IAlbum[]>;
   importSpotifyPlaylists: (uris: string[]) => Promise<IPlaylist[]>;
-
 }
 
 export type BridgeEventReturn<T extends keyof IBridgeEvents> = Awaited<
@@ -185,7 +180,7 @@ declare global {
 export interface ISpotifyArtist {
   id: string;
   name: string;
-  type: string,
+  type: string;
 }
 
 export interface ISpotifyAlbumCovers {
@@ -197,7 +192,7 @@ export interface ISpotifyTrack {
   name: string;
   artists: ISpotifyArtist[];
   disc_number: number;
-  track_number: 1
+  track_number: 1;
 }
 
 export interface ISpotifyAlbumNoTracks {
@@ -211,9 +206,9 @@ export interface ISpotifyAlbumNoTracks {
 
 export interface ISpotifyAlbum extends ISpotifyAlbumNoTracks {
   tracks: {
-    items: ISpotifyTrack[]
+    items: ISpotifyTrack[];
   };
-  genres: string[]
+  genres: string[];
 }
 
 export interface ISpotifyAlbumsResponse {
@@ -221,11 +216,11 @@ export interface ISpotifyAlbumsResponse {
 }
 
 export interface ISpotifyTracksResponse {
-  tracks: (ISpotifyTrack & { album: ISpotifyAlbum })[]
+  tracks: (ISpotifyTrack & { album: ISpotifyAlbum })[];
 }
 
-export type KeyValuePair<K extends (string | number | symbol), D> = {
+export type KeyValuePair<K extends string | number | symbol, D> = {
   [key in K]: D;
 };
 
-export { };
+export {};

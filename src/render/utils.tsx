@@ -1,5 +1,9 @@
 import AppConstants from "../data";
-import { INotificationInfo, IPlayTrackEventData, IQueueTrackEventData } from "../types";
+import {
+  INotificationInfo,
+  IPlayTrackEventData,
+  IQueueTrackEventData,
+} from "../types";
 import ColorThief from "colorthief";
 
 export const imageColor = new ColorThief();
@@ -66,4 +70,3 @@ export async function ensureBridge(interval = 200) {
     await wait(interval);
   }
 }
-

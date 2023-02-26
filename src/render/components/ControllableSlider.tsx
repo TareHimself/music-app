@@ -4,7 +4,7 @@ import { ControllableSliderProps } from "../../types";
 const DEFAULT_PROPS = {
   style: {},
   // eslint-disable-next-line @typescript-eslint/no-empty-function
-  onUserUpdate: () => { },
+  onUserUpdate: () => {},
   step: 1,
 };
 export default function ControllableSlider(props: ControllableSliderProps) {
@@ -60,7 +60,7 @@ export default function ControllableSlider(props: ControllableSliderProps) {
         }
       }
       isMouseDown.current = false;
-      console.log(isMouseDown.current)
+      console.log(isMouseDown.current);
     };
 
     document.addEventListener("mouseup", sendFinalUpdate);

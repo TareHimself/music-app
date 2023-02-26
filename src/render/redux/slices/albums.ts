@@ -1,6 +1,12 @@
 import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { ensureBridge } from "../../utils";
-import { GenericSliceData, IAlbum, IAlbumNew, IArtist, KeyValuePair } from "../../../types";
+import {
+  GenericSliceData,
+  IAlbum,
+  IAlbumNew,
+  IArtist,
+  KeyValuePair,
+} from "../../../types";
 
 export type AlbumsSliceState = GenericSliceData<{
   albums: KeyValuePair<string, IAlbum>;
@@ -20,7 +26,7 @@ const initialState: AlbumsSliceState = {
 const loadAlbums = createAsyncThunk("albums/load", async () => {
   try {
     await ensureBridge();
-    console.log("Loading albums")
+    console.log("Loading albums");
     const items = await window.bridge.getAlbums();
     const index: { [key: string]: IAlbum } = {};
 
@@ -29,16 +35,18 @@ const loadAlbums = createAsyncThunk("albums/load", async () => {
       return a.id;
     });
 
-    console.log("Loading Artists")
+    console.log("Loading Artists");
     const artists = await window.bridge.getArtists([]);
 
-    console.log(`Loaded ${items.length} albums and ${artists.length} artists`)
+    console.log(`Loaded ${items.length} albums and ${artists.length} artists`);
 
     return {
-      ids, lookup: index, artists: artists.reduce((t, a) => {
+      ids,
+      lookup: index,
+      artists: artists.reduce((t, a) => {
         t[a.id] = a;
-        return t
-      }, {} as KeyValuePair<string, IArtist>)
+        return t;
+      }, {} as KeyValuePair<string, IArtist>),
     };
   } catch (e: unknown) {
     // eslint-disable-next-line no-console
@@ -69,16 +77,17 @@ export const albumsSlice = createSlice({
   reducers: {
     editAlbum: (
       state,
-      action: PayloadAction<
-        Partial<IAlbum> & { id: IAlbum['id'] }
-      >
+      action: PayloadAction<Partial<IAlbum> & { id: IAlbum["id"] }>
     ) => {
       state.data.albums[action.payload.id] = {
         ...state.data.albums[action.payload.id],
         ...action.payload,
       };
     },
-    setAlbumsStatus: (state, action: PayloadAction<(typeof state)["status"]>) => {
+    setAlbumsStatus: (
+      state,
+      action: PayloadAction<(typeof state)["status"]>
+    ) => {
       state.status = action.payload;
     },
   },
@@ -88,14 +97,14 @@ export const albumsSlice = createSlice({
       state.data.albums = action.payload.lookup;
       state.data.artists = action.payload.artists;
       state.status = "loaded";
-      console.log(action.payload.artists)
+      console.log(action.payload.artists);
     });
     builder.addCase(createAlbums.fulfilled, (state, action) => {
       if (action.payload) {
-        action.payload.forEach(p => {
+        action.payload.forEach((p) => {
           state.data.albums[p.id] = p;
-          state.data.albumIds.unshift(p.id)
-        })
+          state.data.albumIds.unshift(p.id);
+        });
       }
     });
   },
