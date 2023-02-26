@@ -1,6 +1,6 @@
-import { BsSquare } from 'react-icons/bs';
-import { IoCloseOutline } from 'react-icons/io5';
-import { AiOutlineMinus } from 'react-icons/ai';
+import { BsSquare } from "react-icons/bs";
+import { IoCloseOutline } from "react-icons/io5";
+import { AiOutlineMinus } from "react-icons/ai";
 
 export default function TopFrame() {
   return (

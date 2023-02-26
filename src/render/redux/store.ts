@@ -1,11 +1,15 @@
 /* eslint-disable import/no-named-as-default */
-import { configureStore } from '@reduxjs/toolkit';
-import AppSlice from './slices/app';
-import PlaylistsSlice from './slices/playlists'
+import { configureStore } from "@reduxjs/toolkit";
+import AppSlice from "./slices/app";
+import PlaylistsSlice from "./slices/playlists";
+import TracksSlice from "./slices/tracks";
+import AlbumsSlice from "./slices/albums";
 export const store = configureStore({
   reducer: {
     playlists: PlaylistsSlice,
-    app: AppSlice
+    app: AppSlice,
+    tracks: TracksSlice,
+    albums: AlbumsSlice
   },
 });
 

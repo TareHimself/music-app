@@ -1,8 +1,11 @@
-import AppConstants from '../data';
-import { INotificationInfo } from '../types';
+import AppConstants from "../data";
+import { INotificationInfo, IPlayTrackEventData, IQueueTrackEventData } from "../types";
+import ColorThief from "colorthief";
+
+export const imageColor = new ColorThief();
 
 function pad(number: number) {
-  return number < 10 ? `0${number}` : `${number}`;
+  return number < 10 ? `0${number.toFixed(0)}` : `${number.toFixed(0)}`;
 }
 
 export function TimeToInteger(date: Date) {
@@ -32,7 +35,7 @@ export function SqlIntegerToTime(number: number) {
 
 export function addNotification(noti: string) {
   document.dispatchEvent(
-    new CustomEvent<INotificationInfo>('notification', {
+    new CustomEvent<INotificationInfo>("notification", {
       detail: {
         id: performance.now(),
         content: noti,
@@ -58,8 +61,9 @@ export async function wait(timeout: number) {
 
 export async function ensureBridge(interval = 200) {
   while (!window?.bridge) {
-    console.log("Waiting for bridge")
+    console.log("Waiting for bridge");
     // eslint-disable-next-line no-await-in-loop
     await wait(interval);
   }
 }
+

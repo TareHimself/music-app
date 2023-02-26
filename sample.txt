@@ -1,0 +1,9 @@
+window.bridge.createAlbums([
+    {
+title: "Pill - Single",
+        cover: "https://i.scdn.co/image/ab67616d0000b273696a94ab3ac587c2425da023",
+      released: 2016,
+        artists: "Heuse",
+        genre: ""
+    }
+])

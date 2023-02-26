@@ -1,7 +1,10 @@
-import React from 'react';
-import { BsPauseFill, BsPlayFill } from 'react-icons/bs';
-import { toTimeString } from '../utils';
-import ControllableSlider from './ControllableSlider';
+import React, { useCallback, useEffect, useRef, useState } from "react";
+import { BsPauseFill, BsPlayFill } from "react-icons/bs";
+import { TbPlayerSkipBack, TbPlayerSkipForward } from 'react-icons/tb'
+import { IPlayTrackEventData, IQueueTrackEventData, ITrack } from "../../types";
+import { useAppSelector } from "../redux/hooks";
+import { toTimeString } from "../utils";
+import ControllableSlider from "./ControllableSlider";
 
 // eslint-disable-next-line @typescript-eslint/ban-types
 export type PlayerTabProps = {};
@@ -11,164 +14,262 @@ export type PlayerTabState = {
   trackLength: number;
   isPaused: boolean;
 };
-export default class PlayerTab extends React.Component<
-  PlayerTabProps,
-  PlayerTabState
-> {
-  player: HTMLAudioElement = new Audio();
 
-  volume = 0.05;
+export default function PlayerTab() {
 
-  maxVolume = 0.5;
+  const player = useRef((() => {
+    const au = new Audio()
+    au.volume = 0.2
+    return au;
+  })()).current
 
-  constructor(props: PlayerTabProps) {
-    super(props);
-    this.player.volume = this.volume;
-    this.player.ontimeupdate = this.onTimeUpdate.bind(this);
-    this.player.onplaying = () => {
-      this.updateState({ isPaused: false });
-    };
-    this.player.onpause = () => this.updateState({ isPaused: true });
-    // eslint-disable-next-line no-console
-    this.player.onerror = console.error.bind(this, 'Player Error:');
-    this.state = {
-      seekProgress: null,
-      trackProgress: 0,
-      trackLength: 0,
-      isPaused: true,
-    };
-  }
+  const albums = useAppSelector(s => s.albums.data)
 
-  onTimeUpdate() {
-    this.updateState({
-      trackLength: Math.round(this.player.duration),
-      trackProgress: Math.round(this.player.currentTime),
-    });
-  }
+  const [currentTrack, setCurrentTrack] = useState<ITrack | null>(null);
 
-  onVolumeSliderChanged(update: number) {
-    this.volume = update;
-    this.player.volume = update;
-  }
+  const [recentTracks, setRecentTracks] = useState<ITrack[]>([]);
 
-  onSeekSliderChanged(update: number, done: boolean) {
+  const [queuedTracks, setQueuedTracks] = useState<ITrack[]>([]);
+
+  const [_, setSeekProgress] = useState<number | null>(null)
+
+  const [trackTiming, setTrackTiming] = useState<{ progress: number, length: number }>({ progress: 0, length: 0 })
+
+  const [isPaused, setIsPaused] = useState<boolean>(true)
+
+
+  const onPlayerTimeUpdate = useCallback(() => {
+    setTrackTiming({
+      progress: Math.round(player.currentTime),
+      length: Math.round(player.duration)
+    })
+  }, [setTrackTiming, player])
+
+  const onVolumeSliderChanged = useCallback((update: number) => {
+    player.volume = update;
+  }, [player])
+
+  const onSeekSliderChanged = useCallback((update: number, done: boolean) => {
     if (!done) {
-      this.updateState({ seekProgress: update });
+      setSeekProgress(update)
       return;
     }
 
-    this.player.currentTime = update;
-    this.updateState({ trackProgress: update });
-  }
+    player.currentTime = update;
 
-  updateState(update: Partial<PlayerTabState>) {
-    this.setState((prevState) => ({ ...prevState, ...update }));
-  }
+    setTrackTiming({
+      ...trackTiming,
+      progress: update
+    })
+  }, [setSeekProgress, player, setTrackTiming, trackTiming])
 
-  async audioTest(search: string) {
-    const uri = await window.bridge.searchForStream(search);
-    // eslint-disable-next-line no-console
-    console.log('Got Uri', uri);
-    this.play(uri);
-  }
-
-  async resume() {
-    if (!this.player.src) {
-      await this.audioTest('https://www.youtube.com/watch?v=PT2_F-1esPk');
+  const resumeTrack = useCallback(() => {
+    if (!player.src) {
       return;
     }
-    this.player.play();
-  }
+    player.play();
+  }, [player])
 
-  async play(uri?: string) {
-    if (uri && this.player.src !== uri) {
-      this.player.src = uri;
+  const loadAndPlayTrack = useCallback(async (track: ITrack) => {
+    const streamInfo = await window.bridge.getTrackStreamInfo(track)
+    player.src = streamInfo.uri
+    player.play();
+    setCurrentTrack(track)
+    window.bridge.updateDiscordPresence(track)
+  }, [player, setCurrentTrack, setRecentTracks, recentTracks, queuedTracks])
+
+  const onNextClicked = useCallback(async () => {
+    if (queuedTracks.length > 0) {
+      if (currentTrack) {
+        setRecentTracks([currentTrack, ...recentTracks])
+      }
+      await loadAndPlayTrack(queuedTracks.shift())
+      setQueuedTracks([...queuedTracks])
+    }
+  }, [player, recentTracks, currentTrack, queuedTracks, setCurrentTrack, setQueuedTracks, loadAndPlayTrack, setRecentTracks])
+
+  const onPreviousClicked = useCallback(async () => {
+    if (recentTracks.length > 0) {
+
+      if (currentTrack) {
+        setQueuedTracks([currentTrack, ...queuedTracks])
+      }
+
+      await loadAndPlayTrack(recentTracks.shift())
+
+      setRecentTracks([...recentTracks])
+
+      return;
     }
 
-    if (this.player) {
-      this.player.play();
+    player.currentTime = 0;
+  }, [player, recentTracks, currentTrack, queuedTracks, setCurrentTrack, setQueuedTracks, loadAndPlayTrack, setRecentTracks])
+
+  const onCurrentTrackOver = useCallback(async () => {
+    if (queuedTracks.length > 0) {
+      await onNextClicked();
     }
-  }
+    else {
+      setCurrentTrack(null);
+      player.src = "";
 
-  async pause() {
-    this.player.pause();
-  }
+      setTrackTiming({
+        progress: 0,
+        length: 0
+      })
 
-  override render(): React.ReactNode {
-    const { isPaused, trackProgress, trackLength } = this.state;
-    return (
-      <div id="player-tab">
+      await window.bridge.clearDiscordPresence()
+    }
+  }, [player, queuedTracks, onNextClicked, setCurrentTrack])
+
+  const onPlayTrack = useCallback(async (e: Event) => {
+    const actualEvent = e as CustomEvent<IPlayTrackEventData>;
+    await loadAndPlayTrack(actualEvent.detail.track);
+  }, [loadAndPlayTrack])
+
+  const onAddQueuedTrack = useCallback(async (e: Event) => {
+    const actualEvent = e as CustomEvent<IQueueTrackEventData>;
+    if (!currentTrack) {
+      await loadAndPlayTrack(actualEvent.detail.tracks.shift());
+    }
+
+    setQueuedTracks([...queuedTracks, ...actualEvent.detail.tracks])
+
+  }, [setQueuedTracks, currentTrack, onPlayTrack, queuedTracks])
+
+  const pauseTrack = useCallback(() => {
+    player.pause();
+  }, [player])
+
+  const onPlayerPause = useCallback(() => {
+    setIsPaused(true);
+  }, [setIsPaused])
+
+  const onPlayerPlay = useCallback(() => {
+    setIsPaused(false);
+  }, [setIsPaused, currentTrack])
+
+  useEffect(() => {
+    document.addEventListener('custom-play-track', onPlayTrack);
+
+    document.addEventListener('custom-queue-track', onAddQueuedTrack);
+
+    player.addEventListener('timeupdate', onPlayerTimeUpdate);
+
+    player.addEventListener('pause', onPlayerPause);
+
+    player.addEventListener('playing', onPlayerPlay);
+
+    player.addEventListener('ended', onCurrentTrackOver);
+
+    return () => {
+      document.removeEventListener('custom-play-track', onPlayTrack)
+
+      document.removeEventListener('custom-queue-track', onAddQueuedTrack)
+
+      player.removeEventListener('timeupdate', onPlayerTimeUpdate);
+
+      player.removeEventListener('pause', onPlayerPause);
+
+      player.removeEventListener('playing', onPlayerPlay);
+
+      player.removeEventListener('ended', onCurrentTrackOver);
+    }
+  }, [onPlayTrack, onAddQueuedTrack, onPlayerTimeUpdate, onPlayerPause, onPlayerPlay, onCurrentTrackOver])
+
+  return (
+    <div id="player-tab">
+      <span
+        className="player-section"
+        style={{
+          justifyContent: 'flex-start'
+        }}
+      >
+        {currentTrack && (
+          <>
+            <img src={albums.albums[currentTrack.album].cover} className="player-cover"></img>
+            <span className="player-title">
+              <h3>{currentTrack.title}</h3>
+              <p>{currentTrack.artists.map(a => albums.artists[a]?.name || `unk=${a}`).join(',')}</p>
+              {/* <h3>Title</h3>
+              <p>Artist</p> */}
+            </span>
+          </>
+        )}
+      </span>
+      <span
+        className="player-section"
+
+      >
         <span
-          className="player-section"
           style={{
-            maxWidth: '100px',
-          }}
-        />
-        <span
-          className="player-section"
-          style={{
-            flexDirection: 'column',
-            alignItems: 'center',
-            maxWidth: '500px',
-          }}
-        >
-          <span className="player-controls">
+            display: 'flex',
+            flexDirection: "column",
+            alignItems: "center",
+            width: '100%',
+          }}>
+          <span
+            className="player-controls">
+            <TbPlayerSkipBack className="icon"
+              style={{
+                width: 20,
+                height: 20,
+              }} onClick={onPreviousClicked} />
             {!isPaused ? (
               <BsPauseFill
                 className="icon"
                 size={50}
-                onClick={() => this.pause()}
+                onClick={pauseTrack}
               />
             ) : (
               <BsPlayFill
                 className="icon"
                 size={50}
-                onClick={() => this.resume()}
+                onClick={resumeTrack}
               />
             )}
+            <TbPlayerSkipForward className="icon"
+              style={{
+                width: 20,
+                height: 20,
+              }} onClick={onNextClicked} />
           </span>
           <span
             style={{
-              display: 'flex',
-              flexDirection: 'row',
-              alignItems: 'center',
-              width: '100%',
+              display: "flex",
+              flexDirection: "row",
+              alignItems: "center",
+              width: "100%",
             }}
           >
-            <p className="player-bar-time">{toTimeString(trackProgress)}</p>
+            <p className="player-bar-time">{toTimeString(trackTiming.progress)}</p>
             <ControllableSlider
               min={0}
-              max={trackLength}
-              value={trackProgress}
-              onUserUpdate={(u, d) => this.onSeekSliderChanged(u, d)}
+              max={trackTiming.length}
+              value={trackTiming.progress}
+              onUserUpdate={onSeekSliderChanged}
             />
-            <p className="player-bar-time">{toTimeString(trackLength)}</p>
+            <p className="player-bar-time">{toTimeString(trackTiming.length || 0)}</p>
           </span>
         </span>
-        <span
-          className="player-section"
-          style={{
-            maxWidth: '100px',
-          }}
-        >
-          <ControllableSlider
-            min={0}
-            max={this.maxVolume}
-            defaultValue={this.volume}
-            step={0.001}
-            onUserUpdate={(u) => this.onVolumeSliderChanged(u)}
-          />
-        </span>
-      </div>
-    );
-  }
-}
 
-/* <div className="player-bar">
-              <div
-                id="player-bar-inner"
-                style={{
-                  width: `${((trackProgress / trackLength) * 100).toFixed(2)}%`,
-                }}
-              />
-            </div> */
+      </span>
+      <span
+        className="player-section" style={{
+          justifyContent: 'flex-end'
+        }}
+      >
+        <ControllableSlider
+          style={{
+            maxWidth: "100px",
+          }}
+          min={0}
+          max={.5}
+          defaultValue={player.volume}
+          step={0.001}
+          onUserUpdate={onVolumeSliderChanged}
+        />
+      </span>
+    </div>
+  );
+}

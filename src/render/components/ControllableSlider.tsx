@@ -1,5 +1,5 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { ControllableSliderProps } from '../../types';
+import React, { useCallback, useEffect, useRef, useState } from "react";
+import { ControllableSliderProps } from "../../types";
 
 const DEFAULT_PROPS = {
   style: {},
@@ -46,7 +46,7 @@ export default function ControllableSlider(props: ControllableSliderProps) {
         onUserUpdate(newRangedValue, false);
       }
     },
-    [max, min, step, pendingUpdate, onUserUpdate]
+    [max, min, step, pendingUpdate, onUserUpdate, isMouseDown.current]
   );
 
   useEffect(() => {
@@ -60,11 +60,12 @@ export default function ControllableSlider(props: ControllableSliderProps) {
         }
       }
       isMouseDown.current = false;
+      console.log(isMouseDown.current)
     };
 
-    document.addEventListener('mouseup', sendFinalUpdate);
+    document.addEventListener("mouseup", sendFinalUpdate);
     return () => {
-      document.removeEventListener('mouseup', sendFinalUpdate);
+      document.removeEventListener("mouseup", sendFinalUpdate);
     };
   }, [onMouseMove, onUserUpdate, pendingUpdate, value]);
 
@@ -84,7 +85,7 @@ export default function ControllableSlider(props: ControllableSliderProps) {
           setPendingUpdate(value);
         }
         isMouseDown.current = true;
-        document.addEventListener('mousemove', onMouseMove, false);
+        document.addEventListener("mousemove", onMouseMove, false);
         onMouseMove(e);
       }}
       tabIndex={0}

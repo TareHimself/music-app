@@ -2,8 +2,8 @@
  * @NOTE: Prepend a `~` to css file paths that are in your node_modules
  *        See https://github.com/webpack-contrib/sass-loader#imports
  */
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@100;200;300;400;500&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@100;200;300;400;500&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&display=swap");
 
 body {
   margin: 0;
@@ -26,13 +26,16 @@ body {
   --icon-fg-inactive: rgb(143, 143, 143);
   --icon-fg-hover: rgb(46, 227, 0);
   --nav-divider-bg: rgba(255, 255, 255, 0.664);
-  --scroll0: white;
+  --scroll0: rgba(255, 255, 255, 0.556);
   --scroll1: white;
   --top-frame-height: 30px;
   --player-frame-height: 85px;
   --slider-fg: white;
   --slider-bg: #44494f;
-  /*background: url(https://wallpaperz.nyc3.cdn.digitaloceanspaces.com/wallpapers/2ae88c51-3f27-493a-bfd0-e078a61b14ec.png);*/
+  --nav-panel-width: 260px;
+  --main-border-size: 20px;
+  --big-cover-height: 250px;
+  --track-item-height: 60px;
   background-size: cover;
 }
 
@@ -42,7 +45,7 @@ body {
 }
 
 #sub-root {
-  height: calc(100vh - (var(--player-frame-height) + var(--top-frame-height)));
+  height: calc(100vh - (var(--player-frame-height)));
   width: inherit;
   overflow-y: overlay;
   display: flex;
@@ -53,7 +56,7 @@ body {
 
 /* width */
 ::-webkit-scrollbar {
-  width: 10px;
+  width: 5px;
 }
 
 /* Track */
@@ -68,24 +71,30 @@ body {
 }
 
 #top-frame {
+  position: absolute;
+  left: 100%;
+  top: 0;
+  transform: translateX(-100%);
   display: flex;
   flex-direction: row;
-  z-index: 1;
-  width: 100%;
+  z-index: 20;
+  width: max-content;
   box-sizing: border-box;
-  padding: 0 5px;
   height: var(--top-frame-height);
+  width: 100%;
 }
 
-#top-frame span[data-type='drag'] {
+#top-frame span[data-type="drag"] {
   display: flex;
   flex: 1;
   -webkit-app-region: drag;
 }
 
-#top-frame span[data-type='icons'] {
+#top-frame span[data-type="icons"] {
   display: flex;
   align-items: center;
+  background-color: var(--screens-bg);
+  padding: 0 5px;
 }
 
 #top-frame span span {
@@ -108,7 +117,7 @@ body {
 }
 
 h1 {
-  font-family: 'Roboto', sans-serif;
+  font-family: "Roboto", sans-serif;
   font-weight: bold;
   font-size: 50px;
   display: block;
@@ -116,7 +125,7 @@ h1 {
 }
 
 h2 {
-  font-family: 'Roboto', sans-serif;
+  font-family: "Roboto", sans-serif;
   font-weight: normal;
   font-size: 30px;
   display: block;
@@ -124,7 +133,7 @@ h2 {
 }
 
 h3 {
-  font-family: 'Roboto', sans-serif;
+  font-family: "Roboto", sans-serif;
   font-weight: normal;
   font-size: 20px;
   display: block;
@@ -132,7 +141,7 @@ h3 {
 }
 
 p {
-  font-family: 'Roboto', sans-serif;
+  font-family: "Roboto", sans-serif;
   font-weight: lighter;
   font-size: 10px;
   display: block;
@@ -144,7 +153,7 @@ p {
   height: var(--player-frame-height);
   width: 100%;
   flex-direction: row;
-  justify-content: space-around;
+  justify-content: space-between;
   align-items: center;
   align-content: center;
   background-color: var(--player-tab-bg);
@@ -156,7 +165,32 @@ p {
 
 .player-section {
   display: flex;
-  flex-grow: 1;
+  width: 100%;
+  align-items: center;
+}
+
+.player-cover {
+  height: calc(var(--player-frame-height) - 20px);
+  aspect-ratio: 1;
+}
+
+.player-title {
+  margin-left: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.player-title h3 {
+  margin: 0px;
+  font-size: 15px;
+}
+
+.player-title p {
+  margin: 0px;
+  font-size: 13px;
+  font-style: normal;
+  color: #b4b4b4;
 }
 
 .player-controls {
@@ -164,6 +198,8 @@ p {
   flex-grow: 1;
   width: 100%;
   justify-content: center;
+  align-items: center;
+  gap: 10px;
 }
 
 .player-controls .icon {
@@ -222,9 +258,11 @@ p {
   flex-direction: column;
   justify-items: flex-start;
   height: 100%;
-  width: 220px;
+  width: var(--nav-panel-width);
   background-color: var(--nav-bg);
-  padding: 0px 20px;
+  padding-left: var(--main-border-size);
+  padding-right: var(--main-border-size);
+  padding-top: 50px;
   box-sizing: border-box;
   gap: 10px;
 }
@@ -270,12 +308,19 @@ p {
   transition: inherit;
 }
 
-.playlists .nav-item h3 {
-  margin: 7px 0px;
+.playlists {
+  overflow-y: overlay;
+  overflow-x: hidden;
+  scrollbar-width: 0px;
 }
 
-.nav-item[data-active='false'] svg,
-.nav-item[data-active='false'] h3 {
+.playlists .nav-item h3 {
+  margin: 7px 0px;
+  font-size: 17px;
+}
+
+.nav-item[data-active="false"] svg,
+.nav-item[data-active="false"] h3 {
   color: var(--icon-fg-inactive);
 }
 
@@ -288,6 +333,135 @@ p {
   background-color: var(--screens-bg);
   height: 100%;
   width: 100%;
+}
+
+.screen {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  min-height: 100%;
+  overflow-y: overlay;
+  --prominent-color: var(--screens-bg);
+  background: var(--screens-bg);
+}
+
+.screen-fg {
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  flex: 1;
+  padding: var(--main-border-size);
+  gap: var(--main-border-size);
+  box-sizing: border-box;
+}
+
+.screen-bg {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  left: 0;
+  right: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.screen-bg-start {
+  background: linear-gradient(var(--prominent-color), var(--screens-bg));
+  height: 450px;
+  width: 100%;
+}
+
+.screen-bg-end {
+  flex: 1;
+  background-color: var(--screens-bg);
+}
+
+.screen-top {
+  display: flex;
+  height: max-content;
+  align-items: center;
+  box-sizing: border-box;
+  flex-direction: row;
+}
+
+.screen-top img {
+  display: flex;
+  height: var(--big-cover-height);
+  aspect-ratio: 1;
+  width: auto;
+  box-shadow: inset 0 -3em 3em rgb(0 0 0 / 10%), 0.3em 0.3em 1em rgb(0 0 0 / 30%);
+}
+
+.screen-top span {
+  display: flex;
+  height: var(--big-cover-height);
+  flex-direction: column;
+  margin: 0px var(--main-border-size);
+}
+
+.screen-content {
+  display: flex;
+  width: 100%;
+  flex: 1;
+  backdrop-filter: blur(50px);
+}
+
+.track-items {
+  box-sizing: border-box;
+  padding-top: var(--main-border-size);
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  gap: 10px;
+}
+
+.track-item {
+  display: flex;
+  width: 100%;
+  height: var(--track-item-height);
+  border-radius: 20px;
+  transition: all 0.5s ease-in-out;
+  justify-content: space-between;
+  box-sizing: border-box;
+  padding: 0px calc(var(--track-item-height) / 3);
+}
+
+.track-item:hover {
+  background-color: rgba(175, 175, 175, 0.307);
+}
+
+.track-title {
+  display: flex;
+  align-items: center;
+}
+
+.track-title h3[data-info="pos"] {
+  margin-right: calc(var(--track-item-height) / 3);
+}
+
+.track-title h2 {
+  margin: 0px;
+  font-size: 20px;
+}
+
+.track-title h3 {
+  margin: 0px;
+  font-size: 20px;
+}
+
+.track-title p {
+  margin: 0px;
+  font-size: 14px;
+}
+
+.track-title span[data-info="text"] {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 
 #dashboard {
@@ -316,7 +490,7 @@ p {
 }
 
 #search input {
-  font-family: 'Roboto', sans-serif;
+  font-family: "Roboto", sans-serif;
   font-weight: bold;
   font-size: 20px;
   background-color: rgba(0, 0, 0, 0);
@@ -548,8 +722,8 @@ p {
   transition: all 0.2s ease-in-out;
 }
 
-.wp-view-panel-bottom svg:hover[data-interact='true'],
-.wp-view-panel-top svg:hover[data-interact='true'] {
+.wp-view-panel-bottom svg:hover[data-interact="true"],
+.wp-view-panel-top svg:hover[data-interact="true"] {
   margin: 0px;
   font-size: 50px;
   color: var(--icon-fg-hover);
@@ -737,7 +911,7 @@ p {
 }
 
 .tags-input input {
-  font-family: 'Roboto', sans-serif;
+  font-family: "Roboto", sans-serif;
   font-weight: normal;
   font-size: 20px;
   background-color: rgba(0, 0, 0, 0);
@@ -1270,7 +1444,7 @@ p {
   background: transparent;
   color: var(--primaryText);
   border: none;
-  font-family: 'Roboto', sans-serif;
+  font-family: "Roboto", sans-serif;
   font-weight: normal;
   resize: none;
   border-radius: 20px;

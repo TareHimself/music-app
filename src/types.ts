@@ -1,164 +1,231 @@
 /* eslint-disable @typescript-eslint/no-namespace */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 
-import React from 'react';
+import React from "react";
 
 export interface GenericSliceData<T> {
-    status: 'empty' | 'loading' | 'loaded';
-    data: T;
+  status: "empty" | "loading" | "loaded";
+  data: T;
 }
 
 export interface INotificationInfo {
-    id: number;
-    content: string;
+  id: number;
+  content: string;
 }
 
-export interface ILocalPlaylist {
-    id: string;
-    title: string;
-    cover: string;
-    position: number;
+/**
+ * Playlists
+ */
+
+export interface IPlaylistNew {
+  id?: string;
+  title: string;
+  cover: string;
+  position: number;
 }
 
-export interface ILocalPlaylistMetaUpdate extends Partial<ILocalPlaylist> {
-    id: ILocalPlaylist['id'];
+export interface IPlaylistRaw extends IPlaylistNew {
+  id: string;
 }
 
-export interface ILocalAlbum {
-    id: string;
-    title: string;
-    cover: string;
-    released: number;
-    artist: string;
-    genre: string;
-}
 
-export interface ILocalPlaylistTrack {
-    playlist: string;
-    track: string;
-    added: number;
-}
-
-export interface ILocalTrack {
-    id: string;
-    title: string;
-    album: string;
-    uri: string;
-    artists: string;
-    duration: number;
-    position: number;
-}
-
-export interface ILocalArtist {
-    id: string;
-    name: string;
-}
-
-export interface IArtist {
-    id: string;
-    name: string;
-    cover: string;
-}
-
-export interface ITrack {
-    id: string;
-    title: string;
-    album: string;
-    uri: string;
-    artists: IArtist[];
-    duration: number;
-    position: number;
+export interface IPlaylistTrackRaw {
+  playlist: string;
+  track: string;
+  added: number;
 }
 
 export interface IPlaylistTrack {
-    track: ITrack;
-    added: number;
+  track: IPlaylistTrackRaw['track'];
+  added: IPlaylistTrackRaw['added'];
 }
 
-export interface IPlaylist extends ILocalPlaylist {
-    tracks: IPlaylistTrack[];
+export interface IPlaylistRawMetaUpdate extends Partial<IPlaylistRaw> {
+  id: IPlaylistRaw["id"];
 }
 
-export interface IAlbum {
-    id: string;
-    title: string;
-    cover: string;
-    released: number;
-    artists: IArtist[];
-    tracks: ILocalTrack[];
+export interface IPlaylist extends IPlaylistRaw {
+  tracks: IPlaylistTrack[];
 }
+
+/**
+ * Albums
+ */
+
+export interface IAlbumNew {
+  id?: string;
+  title: string;
+  cover: string;
+  released: number;
+  artist: string;
+  genre: string;
+}
+
+export interface IAlbumRaw extends IAlbumNew {
+  id: string;
+}
+
+export interface IAlbum extends IAlbumNew {
+  tracks: string[];
+}
+
+/**
+ * Artists
+ */
+
+export interface IArtistNew {
+  id?: string;
+  name: string;
+}
+
+export interface IArtistRaw {
+  id: string;
+  name: string
+}
+
+export type IArtist = IArtistRaw;
+
+
+/**
+ * Tracks
+ */
+
+export interface ITrackNew {
+  id?: string
+  title: string;
+  album: string;
+  uri: string;
+  artists: string;
+  duration: number;
+  position: number;
+}
+
+export interface ITrackRaw extends ITrackNew {
+  id: string;
+}
+
+export interface ITrack {
+  id: ITrackRaw['id']
+  title: ITrackRaw['title'];
+  album: ITrackRaw['album'];
+  uri: ITrackRaw['uri'];
+  artists: ITrackRaw['artists'][];
+  duration: ITrackRaw['duration'];
+  position: ITrackRaw['position'];
+}
+
 
 export type ControllableSliderProps = {
-    min: number;
-    max: number;
-    value?: number;
-    defaultValue?: number;
-    onUserUpdate?: (update: number, isFinal: boolean) => Awaitable<void>;
-    style?: React.CSSProperties;
-    step?: number;
+  min: number;
+  max: number;
+  value?: number;
+  defaultValue?: number;
+  onUserUpdate?: (update: number, isFinal: boolean) => Awaitable<void>;
+  style?: React.CSSProperties;
+  step?: number;
 };
 
-export interface SpotifyImportBundle {
-    tracks: ITrack[];
-    Albums: IAlbum[];
-    playlists: IPlaylist[];
-}
+export type TrackStreamInfo = { uri: string; duration: number; from: string }
 
-export type LocalPlaylistTracksContext = { playlistId: string };
+export type Awaitable<T> = T | Promise<T>;
 
-export type LocalAlbumsTracksContext = { albumId: string };
 
-export type LocalTracksContext =
-    | LocalPlaylistTracksContext
-    | LocalAlbumsTracksContext;
-
-export type Awaitable<T> = T | Promise<T>
-
+export type IQueueTrackEventData = {
+  tracks: ITrack[]
+};
+export type IPlayTrackEventData = {
+  track: ITrack
+};
 export interface IBridgeEvents {
-    getPreloadPath: () => string
-    windowMinimize: () => void;
-    windowMaximize: () => void;
-    windowClose: () => void;
-    toStreamUrl: (uri: string) => Promise<string>;
-    searchForStream: (search: string) => Promise<string>;
-    getLocalPlaylists: () => Promise<ILocalPlaylist[]>;
-    getLocalAlbums: () => Promise<ILocalAlbum[]>;
-    getLocalTracks: <T extends LocalTracksContext>(
-        context: LocalTracksContext
-    ) => Promise<
-        T extends LocalPlaylistTracksContext ? ILocalPlaylistTrack[] : ILocalTrack[]
-    >;
-    createPlaylist: (title: string, position: number) => Promise<ILocalPlaylist>
+  getPreloadPath: () => string;
+  windowMinimize: () => void;
+  windowMaximize: () => void;
+  windowClose: () => void;
+  getTrackStreamInfo: (track: ITrack) => Promise<TrackStreamInfo>;
+  toStreamUrl: (uri: string) => Promise<string>;
+  searchForStream: (search: string) => Promise<string>;
+  getPlaylists: () => Promise<IPlaylist[]>;
+  getAlbums: () => Promise<IAlbum[]>;
+  getAlbumTracks: (album: string) => Promise<ITrack[]>
+  getTracks: (trackIds: string[]) => Promise<ITrack[]>;
+  getArtists: (ids: string[]) => Promise<IArtist[]>;
+  createPlaylists: (data: IPlaylistNew[]) => Promise<IPlaylist[]>;
+  createAlbums: (data: IAlbumNew[]) => Promise<IAlbum[]>;
+  createTracks: (data: ITrackNew[]) => Promise<ITrack[]>;
+  createArtists: (data: IArtistNew[]) => Promise<IArtist[]>;
+  updateDiscordPresence: (data: ITrack) => Promise<void>;
+  clearDiscordPresence: () => Promise<void>;
+  getLibraryPath: () => Promise<string>;
+  importSpotifyTracks: (uris: string[]) => Promise<ITrack[]>;
+  importSpotifyAlbums: (uris: string[]) => Promise<IAlbum[]>;
+  importSpotifyPlaylists: (uris: string[]) => Promise<IPlaylist[]>;
 
 }
 
-export type BridgeEventReturn<T extends keyof IBridgeEvents> = Awaited<ReturnType<IBridgeEvents[T]>>
+export type BridgeEventReturn<T extends keyof IBridgeEvents> = Awaited<
+  ReturnType<IBridgeEvents[T]>
+>;
 
-export type BridgeEventParams<T extends keyof IBridgeEvents> = Parameters<IBridgeEvents[T]>
+export type BridgeEventParams<T extends keyof IBridgeEvents> = Parameters<
+  IBridgeEvents[T]
+>;
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type TsParameters<T extends (...args: any) => any> = Parameters<T>;
+export interface IGlobalUtils {
+  playTrack: (data: IPlayTrackEventData) => Promise<void>;
+  queueTrack: (data: IQueueTrackEventData) => Promise<void>;
+}
 
 declare global {
-    interface Window {
-        bridge: IBridgeEvents
-    }
-
-    namespace Electron {
-
-        interface IpcRenderer {
-
-            send<T extends keyof IBridgeEvents>(event: T, ...args: BridgeEventParams<T>): void;
-            once<T extends keyof IBridgeEvents>(channel: T, callback: (event: import('electron').IpcRendererEvent, data: BridgeEventReturn<T>) => Awaitable<void>): void;
-        }
-
-        interface IpcMain {
-            once<T extends keyof IBridgeEvents>(channel: T, callback: (event: import('electron').IpcMainEvent, ...args: BridgeEventParams<T>) => Awaitable<void>): void;
-            on<T extends keyof IBridgeEvents>(channel: T, callback: (event: import('electron').IpcMainEvent, ...args: BridgeEventParams<T>) => Awaitable<void>): void;
-
-        }
-    }
+  interface Window {
+    bridge: IBridgeEvents;
+    utils: IGlobalUtils;
+  }
 }
 
+export interface ISpotifyArtist {
+  id: string;
+  name: string;
+  type: string,
+}
 
-export { }
+export interface ISpotifyAlbumCovers {
+  url: string;
+}
+
+export interface ISpotifyTrack {
+  id: string;
+  name: string;
+  artists: ISpotifyArtist[];
+  disc_number: number;
+  track_number: 1
+}
+
+export interface ISpotifyAlbumNoTracks {
+  id: string;
+  artists: ISpotifyArtist[];
+  images: ISpotifyAlbumCovers[];
+  name: string;
+  release_date: string;
+  release_date_precision: string;
+}
+
+export interface ISpotifyAlbum extends ISpotifyAlbumNoTracks {
+  tracks: {
+    items: ISpotifyTrack[]
+  };
+  genres: string[]
+}
+
+export interface ISpotifyAlbumsResponse {
+  albums: ISpotifyAlbum[];
+}
+
+export interface ISpotifyTracksResponse {
+  tracks: (ISpotifyTrack & { album: ISpotifyAlbum })[]
+}
+
+export type KeyValuePair<K extends (string | number | symbol), D> = {
+  [key in K]: D;
+};
+
+export { };

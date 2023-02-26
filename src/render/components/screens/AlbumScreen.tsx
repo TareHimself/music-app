@@ -1,8 +1,5 @@
-
-import React from 'react'
+import React from "react";
 
 export default function AlbumScreen() {
-    return (
-        <div className='screen'>Album</div>
-    )
+  return <div className="screen">Album</div>;
 }

@@ -1,4 +1,4 @@
-import React from 'react';
+import React from "react";
 
 const NO_ICON_ELEMENT = <div className="no-icon" />;
 

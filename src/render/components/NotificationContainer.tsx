@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
-import { INotificationInfo } from '../../types';
+import { useEffect, useRef, useState } from "react";
+import { INotificationInfo } from "../../types";
 
 const NOTIFICATION_TIMEOUT_TIME = 2750;
 
@@ -13,7 +13,7 @@ function NotificationItem({
   function removeNotification() {
     const elementToRemove = document.getElementById(data.id.toString());
     if (elementToRemove) {
-      elementToRemove.className = 'wp-notification-item-closed';
+      elementToRemove.className = "wp-notification-item-closed";
       setTimeout(reduceNotifications, 500);
     }
   }
@@ -43,10 +43,10 @@ export default function NotificationContainer() {
       setCurrentNotifications([...currentNotifications, notificationData]);
     }
 
-    document.addEventListener('notification', onNotificationRecieved);
+    document.addEventListener("notification", onNotificationRecieved);
 
     return () => {
-      document.removeEventListener('notification', onNotificationRecieved);
+      document.removeEventListener("notification", onNotificationRecieved);
     };
   }, [currentNotifications]);
 
