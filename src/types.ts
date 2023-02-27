@@ -214,4 +214,4 @@ export type KeyValuePair<K extends string | number | symbol, D> = {
   [key in K]: D | undefined;
 };
 
-export { };
+export {};

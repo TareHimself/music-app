@@ -5,11 +5,10 @@ import { imageColor } from "../../utils";
 import TracksView from "../tracks/TracksList";
 
 export default function PlaylistScreen() {
-
   const location = useLocation();
 
   const playlist = useAppSelector(
-    (s) => s.app.data.playlists[location.pathname.split('/')[2]]
+    (s) => s.app.data.playlists[location.pathname.split("/")[2]]
   );
 
   const onImageLoaded = useCallback(

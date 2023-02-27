@@ -12,7 +12,7 @@ import {
   ITrack,
   ITrackRaw,
 } from "../types";
-import { app } from 'electron'
+import { app } from "electron";
 import { getDatabasePath } from "./utils";
 
 const DATABASE_DIR = getDatabasePath();
@@ -215,7 +215,13 @@ export function getArtists(ids: string[] = []): IArtist[] {
   let artists: IArtistRaw[] = [];
 
   if (ids.length) {
-    artists = db.prepare(`SELECT * FROM artists WHERE id IN (${ids.map(a => `'${a}'`).join(",")})`).all();
+    artists = db
+      .prepare(
+        `SELECT * FROM artists WHERE id IN (${ids
+          .map((a) => `'${a}'`)
+          .join(",")})`
+      )
+      .all();
   } else {
     artists = GetArtistsStatement.all();
   }
@@ -236,7 +242,9 @@ export function getAlbum(id: string): IAlbum[] {
     return {
       ...p,
       tracks: getAlbumTracksIds(p.id),
-      artists: GetAlbumArtistsStatement.all({ album: p.id }).map((a) => a.artist),
+      artists: GetAlbumArtistsStatement.all({ album: p.id }).map(
+        (a) => a.artist
+      ),
     };
   });
 }
@@ -245,7 +253,13 @@ export function getAlbums(ids: string[] = []): IAlbum[] {
   let albums: IAlbumRaw[] = [];
 
   if (ids.length) {
-    albums = db.prepare(`SELECT * FROM albums WHERE id IN (${ids.map(a => `'${a}'`).join(",")})`).all();
+    albums = db
+      .prepare(
+        `SELECT * FROM albums WHERE id IN (${ids
+          .map((a) => `'${a}'`)
+          .join(",")})`
+      )
+      .all();
   } else {
     albums = GetAlbumsStatement.all();
   }
@@ -254,7 +268,9 @@ export function getAlbums(ids: string[] = []): IAlbum[] {
     return {
       ...p,
       tracks: getAlbumTracksIds(p.id),
-      artists: GetAlbumArtistsStatement.all({ album: p.id }).map((a) => a.artist),
+      artists: GetAlbumArtistsStatement.all({ album: p.id }).map(
+        (a) => a.artist
+      ),
     };
   });
 }
@@ -263,7 +279,9 @@ export function getAlbumTracks(album: string): ITrack[] {
   return (GetAlbumTracksStatement.all({ id: album }) as ITrackRaw[]).map(
     (a) => ({
       ...a,
-      artists: GetTrackArtistsStatement.all({ track: a.id }).map((a) => a.artist),
+      artists: GetTrackArtistsStatement.all({ track: a.id }).map(
+        (a) => a.artist
+      ),
     })
   );
 }
@@ -272,7 +290,13 @@ export function getTracks(ids: string[] = []): ITrack[] {
   let tracks: ITrackRaw[] = [];
 
   if (ids.length) {
-    tracks = db.prepare(`SELECT * FROM tracks WHERE id IN (${ids.map(a => `'${a}'`).join(",")})`).all();
+    tracks = db
+      .prepare(
+        `SELECT * FROM tracks WHERE id IN (${ids
+          .map((a) => `'${a}'`)
+          .join(",")})`
+      )
+      .all();
   } else {
     tracks = GetTracksStatement.all();
   }
@@ -280,7 +304,9 @@ export function getTracks(ids: string[] = []): ITrack[] {
   return tracks.map((p) => {
     return {
       ...p,
-      artists: GetTrackArtistsStatement.all({ track: p.id }).map((a) => a.artist),
+      artists: GetTrackArtistsStatement.all({ track: p.id }).map(
+        (a) => a.artist
+      ),
     };
   });
 }

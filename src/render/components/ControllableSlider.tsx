@@ -4,7 +4,7 @@ import { ControllableSliderProps } from "../../types";
 const DEFAULT_PROPS = {
   style: {},
   // eslint-disable-next-line @typescript-eslint/no-empty-function
-  onUserUpdate: () => { },
+  onUserUpdate: () => {},
   step: 1,
 };
 export default function ControllableSlider(props: ControllableSliderProps) {

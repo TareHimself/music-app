@@ -49,7 +49,11 @@ const initApp = createAsyncThunk("app/load", async () => {
       (a) => a
     );
 
-    console.log(`Loaded ${playlists.length} Playlists, ${albums.length} Albums and ${Object.keys(artistsIndex).length} Artists`)
+    console.log(
+      `Loaded ${playlists.length} Playlists, ${albums.length} Albums and ${
+        Object.keys(artistsIndex).length
+      } Artists`
+    );
 
     return [playlistsIndex, artistsIndex, albumsIndex] as [
       KeyValuePair<string, IPlaylist>,
@@ -67,67 +71,87 @@ const initApp = createAsyncThunk("app/load", async () => {
   }
 });
 
-const loadTracks = createAsyncThunk<[ITrack[], IArtist[]], { trackIds: string[] }, { state: { app: GenericSliceData<{ artists: KeyValuePair<string, IArtist>; }> } }>(
-  "app/load-tracks",
-  async ({ trackIds }, thunk) => {
-    try {
-      await ensureBridge();
-
-      await ensureBridge();
-
-      const existingArtists = thunk.getState().app.data.artists
-
-      const tracks = await window.bridge.getTracks(trackIds);
-
-      const artistsNeeded = Array.from(new Set(tracks.reduce((t, c) => {
-        const missingArtists = c.artists.filter(c => existingArtists[c] === undefined)
-        if (missingArtists.length > 0) {
-          t.push(...c.artists)
-        }
-        return t;
-      }, [])))
-
-      const artistsGotten = await window.bridge.getArtists(artistsNeeded);
-
-
-      return [tracks, artistsGotten] as [ITrack[], IArtist[]]
-    } catch (e: unknown) {
-      // eslint-disable-next-line no-console
-      console.error(e);
-      return [[], []];
-    }
+const loadTracks = createAsyncThunk<
+  [ITrack[], IArtist[]],
+  { trackIds: string[] },
+  {
+    state: {
+      app: GenericSliceData<{ artists: KeyValuePair<string, IArtist> }>;
+    };
   }
-);
+>("app/load-tracks", async ({ trackIds }, thunk) => {
+  try {
+    await ensureBridge();
 
-const loadTracksForAlbum = createAsyncThunk<[ITrack[], IArtist[]], { albumId: string }, { state: { app: GenericSliceData<{ artists: KeyValuePair<string, IArtist>; }> } }>(
-  "app/load-album-tracks",
-  async ({ albumId }, thunk) => {
-    try {
-      await ensureBridge();
+    await ensureBridge();
 
-      const existingArtists = thunk.getState().app.data.artists
+    const existingArtists = thunk.getState().app.data.artists;
 
-      const tracks = await window.bridge.getAlbumTracks(albumId);
+    const tracks = await window.bridge.getTracks(trackIds);
 
-      const artistsNeeded = Array.from(new Set(tracks.reduce((t, c) => {
-        const missingArtists = c.artists.filter(c => existingArtists[c] === undefined)
-        if (missingArtists.length > 0) {
-          t.push(...c.artists)
-        }
-        return t;
-      }, [])))
+    const artistsNeeded = Array.from(
+      new Set(
+        tracks.reduce((t, c) => {
+          const missingArtists = c.artists.filter(
+            (c) => existingArtists[c] === undefined
+          );
+          if (missingArtists.length > 0) {
+            t.push(...c.artists);
+          }
+          return t;
+        }, [])
+      )
+    );
 
-      const artistsGotten = await window.bridge.getArtists(artistsNeeded);
+    const artistsGotten = await window.bridge.getArtists(artistsNeeded);
 
-
-      return [tracks, artistsGotten];
-    } catch (e: unknown) {
-      // eslint-disable-next-line no-console
-      console.error(e);
-      return [[], []];
-    }
+    return [tracks, artistsGotten] as [ITrack[], IArtist[]];
+  } catch (e: unknown) {
+    // eslint-disable-next-line no-console
+    console.error(e);
+    return [[], []];
   }
-);
+});
+
+const loadTracksForAlbum = createAsyncThunk<
+  [ITrack[], IArtist[]],
+  { albumId: string },
+  {
+    state: {
+      app: GenericSliceData<{ artists: KeyValuePair<string, IArtist> }>;
+    };
+  }
+>("app/load-album-tracks", async ({ albumId }, thunk) => {
+  try {
+    await ensureBridge();
+
+    const existingArtists = thunk.getState().app.data.artists;
+
+    const tracks = await window.bridge.getAlbumTracks(albumId);
+
+    const artistsNeeded = Array.from(
+      new Set(
+        tracks.reduce((t, c) => {
+          const missingArtists = c.artists.filter(
+            (c) => existingArtists[c] === undefined
+          );
+          if (missingArtists.length > 0) {
+            t.push(...c.artists);
+          }
+          return t;
+        }, [])
+      )
+    );
+
+    const artistsGotten = await window.bridge.getArtists(artistsNeeded);
+
+    return [tracks, artistsGotten];
+  } catch (e: unknown) {
+    // eslint-disable-next-line no-console
+    console.error(e);
+    return [[], []];
+  }
+});
 
 const createPlaylist = createAsyncThunk(
   "app/create-playlist",
@@ -163,7 +187,7 @@ export const AppSlice = createSlice({
     },
     setCurrentTrack: (state, action: PayloadAction<ITrack | null>) => {
       state.data.currentTrack = action.payload;
-    }
+    },
   },
   // eslint-disable-next-line @typescript-eslint/no-empty-function
   extraReducers: (builder) => {

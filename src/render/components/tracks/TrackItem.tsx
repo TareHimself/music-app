@@ -36,7 +36,12 @@ export default function TrackItem(props: {
         <h3 data-info="pos">{position}</h3>
         <span data--info="text">
           <h2>{title}</h2>
-          <p>{artists.map(a => allArtists[a].name).join(" , ").trim()}</p>
+          <p>
+            {artists
+              .map((a) => allArtists[a].name)
+              .join(" , ")
+              .trim()}
+          </p>
         </span>
       </span>
 

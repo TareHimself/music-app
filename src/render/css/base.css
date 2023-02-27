@@ -518,7 +518,6 @@ p {
   transition: all 0.2s ease-in-out;
 }
 
-
 .album-item:hover img {
   transform: scale(1.1);
 }

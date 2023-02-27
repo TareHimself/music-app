@@ -29,10 +29,10 @@ export default function PlayerTab() {
   const [albums, artists, currentTrack] = useAppSelector((s) => [
     s.app.data.albums,
     s.app.data.artists,
-    s.app.data.currentTrack
+    s.app.data.currentTrack,
   ]);
 
-  const dispatch = useAppDispatch()
+  const dispatch = useAppDispatch();
 
   const [recentTracks, setRecentTracks] = useState<ITrack[]>([]);
 
@@ -96,7 +96,14 @@ export default function PlayerTab() {
         StreamManager.getStreamInfo(queuedTracks[0]);
       }
     },
-    [player, dispatch, setCurrentTrack, setRecentTracks, recentTracks, queuedTracks]
+    [
+      player,
+      dispatch,
+      setCurrentTrack,
+      setRecentTracks,
+      recentTracks,
+      queuedTracks,
+    ]
   );
 
   const onNextClicked = useCallback(async () => {

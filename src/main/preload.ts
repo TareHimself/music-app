@@ -61,5 +61,3 @@ ipcRenderer.exposeApi<IBridgeEvents>("bridge", {
     return ipcRenderer.asyncEventCall("getArtists", ids);
   },
 });
-
-

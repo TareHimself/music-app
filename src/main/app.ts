@@ -61,7 +61,7 @@ const createWindow = (): void => {
   mainWindow.webContents.openDevTools();
 };
 
-app.commandLine.appendSwitch('js-flags', '--max-old-space-size=8192');
+app.commandLine.appendSwitch("js-flags", "--max-old-space-size=8192");
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
@@ -108,7 +108,6 @@ async function uriToStream(uri: string): Promise<string> {
 }
 
 ipcMain.on("searchForStream", async (ev, search) => {
-
   const result = await play.search(search, {
     source: {
       youtube: "video",

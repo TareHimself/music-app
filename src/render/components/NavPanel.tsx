@@ -12,15 +12,14 @@ import {
 import AppConstants from "../../data";
 import { useAppDispatch, useAppSelector } from "../redux/hooks";
 import { createPlaylist, setScreenId } from "../redux/slices/app";
-import { useNavigate, useLocation } from 'react-router-dom'
+import { useNavigate, useLocation } from "react-router-dom";
 import NavItem from "./NavItem";
 
 export default function NavPanel() {
-
   const location = useLocation();
   const navigate = useNavigate();
 
-  const selectedItem = location.pathname
+  const selectedItem = location.pathname;
 
   const playlistData = useAppSelector((s) =>
     Object.values(s.app.data.playlists)
@@ -44,9 +43,12 @@ export default function NavPanel() {
     );
   }, [playlistData.length, dispatch, createPlaylist]);
 
-  const onPlaylistSelected = useCallback((playlist_id: string) => {
-    navigate(playlist_id)
-  }, [navigate]);
+  const onPlaylistSelected = useCallback(
+    (playlist_id: string) => {
+      navigate(playlist_id);
+    },
+    [navigate]
+  );
 
   return (
     <div id="nav-panel">

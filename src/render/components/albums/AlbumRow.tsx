@@ -11,10 +11,10 @@ export default function AlbumRow({
 
   const fakeRowsNeeded = expectedRowCount - rows.length;
 
-  const fakeElements = []
+  const fakeElements = [];
 
   for (let i = 0; i < fakeRowsNeeded; i++) {
-    fakeElements.push(<AlbumItem key={`placeholder-${i}`} />)
+    fakeElements.push(<AlbumItem key={`placeholder-${i}`} />);
   }
 
   return (

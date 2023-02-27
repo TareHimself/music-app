@@ -74,7 +74,7 @@ class IpcRendererWrapper {
     event: T,
     ...args: BridgeEventParams<T>
   ): this {
-    console.log("Sent event to channel", event)
+    console.log("Sent event to channel", event);
     electronIpcRenderer.send(event, ...args);
 
     return this;

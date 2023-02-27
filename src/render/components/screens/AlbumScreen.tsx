@@ -5,10 +5,9 @@ import { imageColor } from "../../utils";
 import TracksView from "../tracks/TracksList";
 
 export default function AlbumScreen() {
-
   const location = useLocation();
   const album = useAppSelector(
-    (s) => s.app.data.albums[location.pathname.split('/')[2]]
+    (s) => s.app.data.albums[location.pathname.split("/")[2]]
   );
 
   const onImageLoaded = useCallback(
