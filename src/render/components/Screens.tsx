@@ -1,5 +1,6 @@
+import { Route, Routes, Navigate } from "react-router-dom";
 import AppConstants from "../../data";
-import { useAppSelector } from "../redux/hooks";
+import useWindowDimensions from "../hooks/useWindowDimensions";
 import AlbumScreen from "./screens/AlbumScreen";
 import ImportScreen from "./screens/ImportScreen";
 import LibraryScreen from "./screens/LibraryScreen";
@@ -8,20 +9,17 @@ import SearchScreen from "./screens/SearchScreen";
 import SettingsScreen from "./screens/SettingsScreen";
 
 export default function Screens() {
-  const currentScreenId = useAppSelector((s) => s.app.data.screenId);
-  if (currentScreenId === AppConstants.NAV_ID_SEARCH) {
-    return <SearchScreen />;
-  } else if (currentScreenId === AppConstants.NAV_ID_LIBRARY) {
-    return <LibraryScreen />;
-  } else if (currentScreenId === AppConstants.NAV_ID_SETTINGS) {
-    return <SettingsScreen />;
-  } else if (currentScreenId === AppConstants.NAV_ID_IMPORT) {
-    return <ImportScreen />;
-  } else if (currentScreenId.startsWith("playlist-")) {
-    return <PlaylistScreen />;
-  } else if (currentScreenId.startsWith("album-")) {
-    return <AlbumScreen />;
-  }
 
-  return <div id="screens" />;
+
+  return (
+    <Routes>
+      <Route path="/" element={<Navigate to={AppConstants.NAV_ID_LIBRARY} replace />} />
+      <Route path={AppConstants.NAV_ID_LIBRARY} element={<LibraryScreen />} />
+      <Route path={AppConstants.NAV_ID_SEARCH} element={<SearchScreen />} />
+      <Route path={AppConstants.NAV_ID_SETTINGS} element={<SettingsScreen />} />
+      <Route path={AppConstants.NAV_ID_IMPORT} element={<ImportScreen />} />
+      <Route path={'/playlist/*'} element={<PlaylistScreen />} />
+      <Route path={'/album/*'} element={<AlbumScreen />} />
+    </Routes>
+  );
 }

@@ -1,8 +1,10 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { BsPauseFill, BsPlayFill } from "react-icons/bs";
 import { TbPlayerSkipBack, TbPlayerSkipForward } from "react-icons/tb";
 import { IPlayTrackEventData, IQueueTrackEventData, ITrack } from "../../types";
-import { useAppSelector } from "../redux/hooks";
+import { useAppDispatch, useAppSelector } from "../redux/hooks";
+import { setCurrentTrack } from "../redux/slices/app";
+import { StreamManager } from "../stream-manager";
 import { toTimeString } from "../utils";
 import ControllableSlider from "./ControllableSlider";
 
@@ -24,9 +26,13 @@ export default function PlayerTab() {
     })()
   ).current;
 
-  const albums = useAppSelector((s) => s.albums.data);
+  const [albums, artists, currentTrack] = useAppSelector((s) => [
+    s.app.data.albums,
+    s.app.data.artists,
+    s.app.data.currentTrack
+  ]);
 
-  const [currentTrack, setCurrentTrack] = useState<ITrack | null>(null);
+  const dispatch = useAppDispatch()
 
   const [recentTracks, setRecentTracks] = useState<ITrack[]>([]);
 
@@ -81,13 +87,16 @@ export default function PlayerTab() {
 
   const loadAndPlayTrack = useCallback(
     async (track: ITrack) => {
-      const streamInfo = await window.bridge.getTrackStreamInfo(track);
+      const streamInfo = await StreamManager.getStreamInfo(track);
       player.src = streamInfo.uri;
       player.play();
-      setCurrentTrack(track);
+      dispatch(setCurrentTrack(track));
       window.bridge.updateDiscordPresence(track);
+      if (queuedTracks[0]) {
+        StreamManager.getStreamInfo(queuedTracks[0]);
+      }
     },
-    [player, setCurrentTrack, setRecentTracks, recentTracks, queuedTracks]
+    [player, dispatch, setCurrentTrack, setRecentTracks, recentTracks, queuedTracks]
   );
 
   const onNextClicked = useCallback(async () => {
@@ -97,6 +106,9 @@ export default function PlayerTab() {
       }
       await loadAndPlayTrack(queuedTracks.shift());
       setQueuedTracks([...queuedTracks]);
+    } else if (currentTrack) {
+      player.currentTime = player.duration;
+      player.pause();
     }
   }, [
     player,
@@ -138,7 +150,7 @@ export default function PlayerTab() {
     if (queuedTracks.length > 0) {
       await onNextClicked();
     } else {
-      setCurrentTrack(null);
+      dispatch(setCurrentTrack(null));
       player.src = "";
 
       setTrackTiming({
@@ -148,7 +160,7 @@ export default function PlayerTab() {
 
       await window.bridge.clearDiscordPresence();
     }
-  }, [player, queuedTracks, onNextClicked, setCurrentTrack]);
+  }, [player, queuedTracks, dispatch, onNextClicked, setCurrentTrack]);
 
   const onPlayTrack = useCallback(
     async (e: Event) => {
@@ -228,15 +240,15 @@ export default function PlayerTab() {
         {currentTrack && (
           <>
             <img
-              src={albums.albums[currentTrack.album].cover}
+              src={albums[currentTrack.album].cover}
               className="player-cover"
             ></img>
             <span className="player-title">
               <h3>{currentTrack.title}</h3>
               <p>
                 {currentTrack.artists
-                  .map((a) => albums.artists[a]?.name || `unk=${a}`)
-                  .join(",")}
+                  .map((a) => artists[a]?.name || `unk=${a}`)
+                  .join(" , ")}
               </p>
               {/* <h3>Title</h3>
               <p>Artist</p> */}

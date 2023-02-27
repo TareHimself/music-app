@@ -5,10 +5,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import {
   contextBridge,
+  ipcMain as electronIpcMain,
   IpcMainEvent,
   ipcRenderer as electronIpcRenderer,
   IpcRendererEvent,
-  ipcMain as electronIpcMain,
 } from "electron";
 import {
   Awaitable,
@@ -74,6 +74,7 @@ class IpcRendererWrapper {
     event: T,
     ...args: BridgeEventParams<T>
   ): this {
+    console.log("Sent event to channel", event)
     electronIpcRenderer.send(event, ...args);
 
     return this;

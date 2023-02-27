@@ -1,11 +1,15 @@
-import React, { useCallback, useState } from "react";
-import { imageColor } from "../../utils";
+import React, { useCallback } from "react";
+import { useLocation } from "react-router-dom";
 import { useAppSelector } from "../../redux/hooks";
+import { imageColor } from "../../utils";
 import TracksView from "../tracks/TracksList";
 
 export default function PlaylistScreen() {
+
+  const location = useLocation();
+
   const playlist = useAppSelector(
-    (s) => s.playlists.data.playlists[s.app.data.screenId.split("-")[1]]
+    (s) => s.app.data.playlists[location.pathname.split('/')[2]]
   );
 
   const onImageLoaded = useCallback(

@@ -3,6 +3,7 @@ import {
   INotificationInfo,
   IPlayTrackEventData,
   IQueueTrackEventData,
+  KeyValuePair,
 } from "../types";
 import ColorThief from "colorthief";
 
@@ -69,4 +70,14 @@ export async function ensureBridge(interval = 200) {
     // eslint-disable-next-line no-await-in-loop
     await wait(interval);
   }
+}
+
+export function arrayToIndex<T extends { id: string }, K = T>(
+  arr: T[],
+  onItem: (item: T) => K
+) {
+  return arr.reduce((t, a) => {
+    t[a.id] = onItem(a);
+    return t;
+  }, {} as KeyValuePair<string, K>);
 }

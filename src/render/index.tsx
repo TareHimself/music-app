@@ -1,26 +1,24 @@
-import "./css/base.css";
 import { StrictMode, useEffect } from "react";
 import { createRoot } from "react-dom/client";
 import { Provider } from "react-redux";
+import { IPlayTrackEventData, IQueueTrackEventData } from "../types";
 import App from "./App";
 import NotificationContainer from "./components/NotificationContainer";
 import PlayerTab from "./components/PlayerTab";
 import TopFrame from "./components/TopFrame";
+import "./css/base.css";
+import { useAppDispatch } from "./redux/hooks";
+import { initApp } from "./redux/slices/app";
 import { store } from "./redux/store";
-import { IPlayTrackEventData, IQueueTrackEventData } from "../types";
-import { useAppDispatch, useAppSelector } from "./redux/hooks";
-import { loadAlbums, setAlbumsStatus } from "./redux/slices/albums";
+import { MemoryRouter } from 'react-router-dom'
 
 export function RootApp() {
   const dispatch = useAppDispatch();
-  const albumsStatus = useAppSelector((s) => s.albums.status);
+
   useEffect(() => {
-    if (albumsStatus === "empty") {
-      console.log("Running use Effect");
-      dispatch(setAlbumsStatus("loading"));
-      dispatch(loadAlbums());
-    }
-  }, [dispatch]);
+    console.log("Loading App inital Data");
+    dispatch(initApp());
+  }, []);
 
   return (
     <>
@@ -53,10 +51,10 @@ if (container) {
   };
 
   root.render(
-    <StrictMode>
+    <MemoryRouter>
       <Provider store={store}>
         <RootApp />
       </Provider>
-    </StrictMode>
+    </MemoryRouter>
   );
 }

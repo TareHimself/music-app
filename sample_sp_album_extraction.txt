@@ -1,0 +1,1 @@
+`https://open.spotify.com/album/2hnJVh7gOSbRDHanTb5Lnr?si=YJ2JqCOITlOKx738zC1pBA`.split('\n').map(a => a.match(/\/album\/([a-zA-Z0-9]+)/)[1])

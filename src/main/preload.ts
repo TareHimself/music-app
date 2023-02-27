@@ -1,16 +1,7 @@
 // See the Electron documentation for details on how to use preload scripts:
 // https://www.electronjs.org/docs/latest/tutorial/process-model#preload-scripts
 import { ipcRenderer } from "../ipc";
-import {
-  IBridgeEvents,
-  IAlbumNew,
-  ITrackNew,
-  ITrack,
-  IArtistNew,
-  IAlbum,
-  IPlaylist,
-  IArtistRaw,
-} from "../types";
+import { IBridgeEvents, ITrack } from "../types";
 
 ipcRenderer.exposeApi<IBridgeEvents>("bridge", {
   getPreloadPath: () => ipcRenderer.sendSync("getPreloadPath"),
@@ -32,8 +23,8 @@ ipcRenderer.exposeApi<IBridgeEvents>("bridge", {
   getPlaylists: () => {
     return ipcRenderer.asyncEventCall("getPlaylists");
   },
-  getAlbums: () => {
-    return ipcRenderer.asyncEventCall("getAlbums");
+  getAlbums: (albums: string[]) => {
+    return ipcRenderer.asyncEventCall("getAlbums", albums);
   },
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   getTracks: (trackIds): Promise<ITrack[]> => {
@@ -45,19 +36,10 @@ ipcRenderer.exposeApi<IBridgeEvents>("bridge", {
   getTrackStreamInfo: (track) => {
     return ipcRenderer.asyncEventCall("getTrackStreamInfo", track);
   },
-  getAlbumTracks: (album: string) => {
+  getAlbumTracks: (album) => {
     return ipcRenderer.asyncEventCall("getAlbumTracks", album);
   },
-  createAlbums: (data: IAlbumNew[]) => {
-    return ipcRenderer.asyncEventCall("createAlbums", data);
-  },
-  createTracks: (data: ITrackNew[]) => {
-    return ipcRenderer.asyncEventCall("createTracks", data);
-  },
-  createArtists: (data: IArtistNew[]) => {
-    return ipcRenderer.asyncEventCall("createArtists", data);
-  },
-  updateDiscordPresence: (data: ITrack) => {
+  updateDiscordPresence: (data) => {
     return ipcRenderer.asyncEventCall("updateDiscordPresence", data);
   },
   clearDiscordPresence: () => {
@@ -66,16 +48,18 @@ ipcRenderer.exposeApi<IBridgeEvents>("bridge", {
   getLibraryPath: () => {
     return ipcRenderer.asyncEventCall("getLibraryPath");
   },
-  importSpotifyTracks: (uris: string[]) => {
+  importSpotifyTracks: (uris) => {
     return ipcRenderer.asyncEventCall("importSpotifyTracks", uris);
   },
-  importSpotifyAlbums: (uris: string[]) => {
+  importSpotifyAlbums: (uris) => {
     return ipcRenderer.asyncEventCall("importSpotifyAlbums", uris);
   },
-  importSpotifyPlaylists: (uris: string[]) => {
+  importSpotifyPlaylists: (uris) => {
     return ipcRenderer.asyncEventCall("importSpotifyPlaylists", uris);
   },
-  getArtists: (ids: string[] = []) => {
+  getArtists: (ids) => {
     return ipcRenderer.asyncEventCall("getArtists", ids);
   },
 });
+
+

@@ -1,65 +1,52 @@
-import AppConstants from "../../data";
-import { useCallback, useEffect } from "react";
+import { useCallback } from "react";
 import { BsFileEarmarkMusic, BsFileEarmarkMusicFill } from "react-icons/bs";
+import { MdOutlineLibraryAdd } from "react-icons/md";
 import {
-  RiSearch2Line,
-  RiSearch2Fill,
-  RiSettings4Line,
-  RiSettings4Fill,
   RiAddCircleFill,
   RiAddCircleLine,
+  RiSearch2Fill,
+  RiSearch2Line,
+  RiSettings4Fill,
+  RiSettings4Line,
 } from "react-icons/ri";
-import { MdOutlineLibraryAdd } from "react-icons/md";
-import NavItem from "./NavItem";
+import AppConstants from "../../data";
 import { useAppDispatch, useAppSelector } from "../redux/hooks";
-import {
-  createPlaylist,
-  loadPlaylists,
-  setStatus,
-} from "../redux/slices/playlists";
-import { setScreenId } from "../redux/slices/app";
+import { createPlaylist, setScreenId } from "../redux/slices/app";
+import { useNavigate, useLocation } from 'react-router-dom'
+import NavItem from "./NavItem";
 
 export default function NavPanel() {
-  const playlistData = useAppSelector((s) => s.playlists);
 
-  const selectedItem = useAppSelector((s) => s.app.data.screenId);
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  const selectedItem = location.pathname
+
+  const playlistData = useAppSelector((s) =>
+    Object.values(s.app.data.playlists)
+  );
 
   const dispatch = useAppDispatch();
 
   const onItemSelected = useCallback(
     (selectedId: string) => {
-      dispatch(setScreenId(selectedId));
+      navigate(selectedId);
     },
-    [dispatch, setScreenId]
+    [navigate]
   );
 
   const onCreatePlaylists = useCallback(() => {
-    if (playlistData.status !== "loaded") return;
     dispatch(
       createPlaylist({
         title: "New Playlist",
-        position: playlistData.data.playlistsIds.length,
+        position: playlistData.length,
       })
     );
-  }, [
-    playlistData.data.playlistsIds.length,
-    playlistData.status,
-    dispatch,
-    createPlaylist,
-  ]);
+  }, [playlistData.length, dispatch, createPlaylist]);
 
   const onPlaylistSelected = useCallback((playlist_id: string) => {
-    console.log("Selected playlist", playlist_id);
-    dispatch(setScreenId(playlist_id));
-  }, []);
-
-  useEffect(() => {
-    console.log("Playlist Data Status", playlistData.status);
-    if (playlistData.status === "empty") {
-      dispatch(setStatus("loading"));
-      dispatch(loadPlaylists());
-    }
-  }, [dispatch, setStatus, loadPlaylists]);
+    navigate(playlist_id)
+  }, [navigate]);
 
   return (
     <div id="nav-panel">
@@ -107,18 +94,17 @@ export default function NavPanel() {
       </div>
       <span className="nav-divider" />
       <div className="playlists">
-        {playlistData.data.playlistsIds.map((p_id) => (
-          <NavItem
-            navId={`playlist-${p_id}`}
-            display={
-              playlistData.data.playlists[p_id].title +
-              ` ${playlistData.data.playlists[p_id].position}`
-            }
-            activeId={selectedItem}
-            onSelected={onPlaylistSelected}
-            key={p_id}
-          />
-        ))}
+        {playlistData
+          .sort((a, b) => a.position - b.position)
+          .map((playlist) => (
+            <NavItem
+              navId={`/playlist/${playlist.id}`}
+              display={playlist.title + ` ${playlist.position}`}
+              activeId={selectedItem}
+              onSelected={onPlaylistSelected}
+              key={playlist.id}
+            />
+          ))}
       </div>
     </div>
   );

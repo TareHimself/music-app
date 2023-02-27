@@ -21,6 +21,7 @@ import {
   getAlbums,
   getAlbumTracks,
   getArtists,
+  getTracks,
 } from "./sqlite";
 import { ipcMain } from "../ipc";
 import DiscordRichPrecenceClient from "discord-rich-presence";
@@ -60,6 +61,7 @@ const createWindow = (): void => {
   mainWindow.webContents.openDevTools();
 };
 
+app.commandLine.appendSwitch('js-flags', '--max-old-space-size=8192');
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
@@ -98,7 +100,6 @@ ipcMain.on("getPreloadPath", (e) => {
 });
 
 async function uriToStream(uri: string): Promise<string> {
-  console.log("Fetching stream for uri", uri);
   const urlInfo = await play.video_info(uri);
   const possibleFormat = urlInfo.format.filter(
     (a) => a.audioQuality === "AUDIO_QUALITY_MEDIUM"
@@ -107,7 +108,7 @@ async function uriToStream(uri: string): Promise<string> {
 }
 
 ipcMain.on("searchForStream", async (ev, search) => {
-  console.log("Searching for stream for term", search);
+
   const result = await play.search(search, {
     source: {
       youtube: "video",
@@ -146,9 +147,10 @@ ipcMain.on("searchForStream", async (ev, search) => {
 
 ipcMain.on("getTrackStreamInfo", async (ev, track) => {
   if (track.uri.length <= 0) {
-    const album = getAlbums(track.album)[0];
-    const artist = getArtists(album.artist)[0];
+    const album = getAlbums([track.album])[0];
+    const artist = getArtists(album.artists)[0];
     const searchTerm = `${album.title} - ${track.title} - ${artist.name} - Audio`;
+    console.log(`Searching using [${searchTerm}] since no uri was given.`);
     const videoDetails = await play.search(searchTerm, {
       source: {
         youtube: "video",
@@ -157,6 +159,8 @@ ipcMain.on("getTrackStreamInfo", async (ev, track) => {
     });
 
     track.uri = videoDetails[0].url;
+
+    console.log(`Found [${track.uri}] using [${searchTerm}]`);
   }
 
   let tries = 0;
@@ -204,8 +208,8 @@ ipcMain.on("windowClose", () => {
   mainWindow?.close();
 });
 
-ipcMain.on("getAlbums", (e) => {
-  e.reply(getAlbums());
+ipcMain.on("getAlbums", (e, ids) => {
+  e.reply(getAlbums(ids || []));
 });
 
 ipcMain.on("getPlaylists", (ev) => {
@@ -224,51 +228,13 @@ ipcMain.on("createPlaylists", (ev, data) => {
   ev.reply(newData.map((a) => ({ ...a, tracks: [] })));
 });
 
-ipcMain.on("createAlbums", (ev, data) => {
-  const newData: IAlbumRaw[] = data.map((a) => ({
-    ...a,
-    id: a.id || makeLocalId(),
-  }));
-
-  tCreateAlbums.deferred(newData);
-
-  // need to ensure artists are in db here
-  ev.reply(newData.map((a) => ({ ...a, tracks: [] })));
-});
-
-ipcMain.on("createTracks", (ev, data) => {
-  const newData: ITrackRaw[] = data.map((a) => ({
-    ...a,
-    id: a.id || makeLocalId(),
-  }));
-
-  tCreateTracks.deferred(newData);
-
-  // need to ensure artists are in db here
-  ev.reply(
-    newData
-      .map((a) => ({ ...a, artists: a.artists.split(" ") }))
-      .sort((a, b) => a.position - b.position)
-  );
-});
-ipcMain.on("createArtists", (ev, data) => {
-  const newData: IArtistRaw[] = data.map((a) => ({
-    ...a,
-    id: a.id || makeLocalId(),
-  }));
-
-  tCreateArtists.deferred(newData);
-
-  ev.reply(newData);
-});
-
 ipcMain.on("getAlbumTracks", (e, album) => {
   e.reply(getAlbumTracks(album).sort((a, b) => a.position - b.position));
 });
 
 ipcMain.on("updateDiscordPresence", (ev, track) => {
-  const album = getAlbums(track.album)[0];
-  const artist = getArtists(album.artist)[0];
+  const album = getAlbums([track.album])[0];
+  const artist = getArtists(album.artists)[0];
 
   PRESENCE_CLIENT.updatePresence({
     state: `by ${artist.name}`,
@@ -307,12 +273,12 @@ ipcMain.on("importSpotifyTracks", async (ev, uris) => {
 
     const allTrackArtists: KeyValuePair<string, IArtistRaw> = {};
 
-    const newAlbum: IAlbumRaw = {
+    const newAlbum: IAlbumRaw<string[]> = {
       id: makeSpotifyId(track.id),
       title: track.name,
       cover: track.album.images[0].url,
       released: parseInt(track.album.release_date.split("-")[0]),
-      artist: track.album.artists
+      artists: track.album.artists
         .filter((a) => a.type === "artist")
         .map((a) => {
           const newArtist: IArtistRaw = {
@@ -323,15 +289,15 @@ ipcMain.on("importSpotifyTracks", async (ev, uris) => {
             allTrackArtists[a.id] = newArtist;
           }
 
-          return newArtist;
-        })[0].id,
+          return newArtist.id;
+        }),
 
       genre: "",
     };
 
     const trackArtists = track.artists
       .filter((a) => a.type === "artist")
-      .reduce((all, a, idx, arr) => {
+      .map((a) => {
         const newArtist: IArtistRaw = {
           id: makeSpotifyId(a.id),
           name: a.name,
@@ -341,11 +307,8 @@ ipcMain.on("importSpotifyTracks", async (ev, uris) => {
           allTrackArtists[a.id] = newArtist;
         }
 
-        return (
-          all +
-          (idx === arr.length - 1 ? `${newArtist.id}` : `${newArtist.id}|`)
-        );
-      }, "");
+        return newArtist.id;
+      });
 
     const newTrack: ITrackRaw = {
       id: makeSpotifyId(track.id),
@@ -369,7 +332,7 @@ ipcMain.on("importSpotifyTracks", async (ev, uris) => {
     tCreateArtists(Object.values(data.artists));
     tCreateAlbums([data.album]);
     tCreateTracks([data.track]);
-    return { ...data.track, artists: data.track.artists.split("|") };
+    return data.track;
   });
 
   ev.reply(result);
@@ -398,7 +361,7 @@ ipcMain.on("importSpotifyAlbums", async (ev, uris) => {
       title: album.name,
       cover: album.images[0].url,
       released: parseInt(album.release_date.split("-")[0]),
-      artist: album.artists
+      artists: album.artists
         .filter((a) => a.type === "artist")
         .map((a) => {
           const newArtist: IArtistRaw = {
@@ -409,8 +372,8 @@ ipcMain.on("importSpotifyAlbums", async (ev, uris) => {
             allAlbumArtists[a.id] = newArtist;
           }
 
-          return newArtist;
-        })[0].id,
+          return newArtist.id;
+        }),
 
       genre: album.genres.join("|"),
     };
@@ -421,7 +384,7 @@ ipcMain.on("importSpotifyAlbums", async (ev, uris) => {
       tracks: album.tracks.items.map((currentTrack) => {
         const trackArtists = currentTrack.artists
           .filter((a) => a.type === "artist")
-          .reduce((all, a, idx, arr) => {
+          .map((a) => {
             const newArtist: IArtistRaw = {
               id: makeSpotifyId(a.id),
               name: a.name,
@@ -431,11 +394,8 @@ ipcMain.on("importSpotifyAlbums", async (ev, uris) => {
               allAlbumArtists[a.id] = newArtist;
             }
 
-            return (
-              all +
-              (idx === arr.length - 1 ? `${newArtist.id}` : `${newArtist.id}|`)
-            );
-          }, "");
+            return newArtist.id;
+          });
 
         const newTrack: ITrackRaw = {
           id: makeSpotifyId(currentTrack.id),
@@ -472,6 +432,10 @@ ipcMain.on("importSpotifyPlaylists", async (ev, uris) => {
   ev.reply([]);
 });
 
+ipcMain.on("getTracks", (ev, ids) => {
+  ev.reply(getTracks(ids || []));
+});
+
 ipcMain.on("getArtists", async (ev, ids) => {
-  ev.reply(getArtists(ids.join(",")));
+  ev.reply(getArtists(ids || []));
 });
