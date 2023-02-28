@@ -12,7 +12,6 @@ import {
   ITrack,
   ITrackRaw,
 } from "../types";
-import { app } from "electron";
 import { getDatabasePath } from "./utils";
 
 const DATABASE_DIR = getDatabasePath();
@@ -233,20 +232,6 @@ export function getAlbumTracksIds(album: string): string[] {
   return (GetAlbumTrackIdsStatement.all({ id: album }) as { id: string }[]).map(
     (a) => a.id
   );
-}
-
-export function getAlbum(id: string): IAlbum[] {
-  const albums = GetAlbumsStatement.all() as IAlbumRaw[];
-
-  return albums.map((p) => {
-    return {
-      ...p,
-      tracks: getAlbumTracksIds(p.id),
-      artists: GetAlbumArtistsStatement.all({ album: p.id }).map(
-        (a) => a.artist
-      ),
-    };
-  });
 }
 
 export function getAlbums(ids: string[] = []): IAlbum[] {

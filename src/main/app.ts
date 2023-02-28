@@ -399,7 +399,7 @@ ipcMain.on("importSpotifyAlbums", async (ev, uris) => {
   ev.reply(result);
 });
 
-ipcMain.on("importSpotifyPlaylists", async (ev, uris) => {
+ipcMain.on("importSpotifyPlaylists", async (ev) => {
   ev.reply([]);
 });
 
