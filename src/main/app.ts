@@ -106,43 +106,7 @@ async function uriToStream(uri: string): Promise<string> {
   )[0];
   return possibleFormat.url;
 }
-
-ipcMain.on("searchForStream", async (ev, search) => {
-  const result = await play.search(search, {
-    source: {
-      youtube: "video",
-    },
-    limit: 1,
-  });
-
-  if (result.length) {
-    console.log("Stream found, fetching url");
-    let uri = "";
-    let tries = 0;
-    while (tries < 10) {
-      const testUri = await uriToStream(result[0].url);
-      try {
-        const testResponse = await axios.head(testUri);
-
-        uri = testUri;
-        break;
-      } catch (error) {
-        console.log(
-          `Error fetching stream for ${result[0].url}:\n`,
-          error.message
-        );
-        tries++;
-        continue;
-      }
-    }
-
-    ev.reply(uri);
-    return;
-  }
-
-  console.log("Stream not found");
-  ev.reply("");
-});
+const MAX_URI_TRIES = 10
 
 ipcMain.on("getTrackStreamInfo", async (ev, track) => {
   if (track.uri.length <= 0) {
@@ -150,20 +114,24 @@ ipcMain.on("getTrackStreamInfo", async (ev, track) => {
     const artist = getArtists(album.artists)[0];
     const searchTerm = `${album.title} - ${track.title} - ${artist.name} - Audio`;
     console.log(`Searching using [${searchTerm}] since no uri was given.`);
-    const videoDetails = await play.search(searchTerm, {
+    const videoDetails = (await play.search(searchTerm, {
       source: {
         youtube: "video",
       },
-      limit: 1,
+      limit: 4, // 4 results so we have options
+    })).find(a => {
+      if (searchTerm.toLowerCase().includes('video')) return true; // not much of a choice here
+
+      return a.title && !a.title.toLowerCase().includes('video')
     });
 
-    track.uri = videoDetails[0].url;
+    track.uri = videoDetails.url;
 
     console.log(`Found [${track.uri}] using [${searchTerm}]`);
   }
 
   let tries = 0;
-  while (tries < 10) {
+  while (tries < MAX_URI_TRIES) {
     try {
       const urlInfo = await play.video_info(track.uri);
       const possibleFormat = urlInfo.format.filter(
@@ -179,7 +147,11 @@ ipcMain.on("getTrackStreamInfo", async (ev, track) => {
       });
       break;
     } catch (error) {
-      console.log(`Error fetching stream for ${track.uri}:\n`, error.message);
+      console.log(
+        `Error fetching stream for ${track.uri}:\n`,
+        error.message
+      );
+      console.log(`Attempting to fetch new stream url. [${tries + 1}/${MAX_URI_TRIES} Attempts]`)
       tries++;
     }
   }
