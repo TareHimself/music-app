@@ -14,7 +14,7 @@ export default function AlbumItem({ data }: { data?: IAlbum }) {
   const selectAlbum = useCallback(() => {
     dispatch(loadTracksForAlbum({ albumId: data.id }));
     navigate(`/album/${data.id}`);
-  }, [dispatch]);
+  }, [data?.id, dispatch, navigate]);
 
   if (!data || !artists.length) {
     return <div className="album-item placeholder"></div>;

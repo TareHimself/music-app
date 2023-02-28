@@ -6,7 +6,9 @@ function GetNavIcon({
   InactiveElement,
 }: {
   isActive: boolean;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   ActiveElement?: (...args: any) => JSX.Element;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   InactiveElement?: (...args: any) => JSX.Element;
 }) {
   if (!ActiveElement || !InactiveElement) {
@@ -32,7 +34,9 @@ export default function NavItem({
   navId: string;
   display: string;
   activeId: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   ActiveElement?: (...args: any) => JSX.Element;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   InactiveElement?: (...args: any) => JSX.Element;
   onSelected: (id: string) => void;
 }) {

@@ -50,6 +50,7 @@ export default function LibraryScreen() {
             "--row-width": `${maxPerRow * (itemWidth + itemGap)}px`,
             "--item-width": `${itemWidth}px`,
             "--item-gap": `${itemGap}px`,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
           } as any
         }
       >

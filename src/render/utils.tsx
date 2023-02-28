@@ -1,10 +1,5 @@
 import AppConstants from "../data";
-import {
-  INotificationInfo,
-  IPlayTrackEventData,
-  IQueueTrackEventData,
-  KeyValuePair,
-} from "../types";
+import { INotificationInfo, KeyValuePair } from "../types";
 import ColorThief from "colorthief";
 
 export const imageColor = new ColorThief();

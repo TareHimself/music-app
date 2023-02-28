@@ -122,6 +122,7 @@ export type Awaitable<T> = T | Promise<T>;
 
 export type IQueueTrackEventData = {
   tracks: ITrack[];
+  replaceQueue: boolean;
 };
 export type IPlayTrackEventData = {
   track: ITrack;
@@ -158,7 +159,7 @@ export type BridgeEventParams<T extends keyof IBridgeEvents> = Parameters<
 
 export interface IGlobalUtils {
   playTrack: (data: IPlayTrackEventData) => Promise<void>;
-  queueTrack: (data: IQueueTrackEventData) => Promise<void>;
+  queueTracks: (data: IQueueTrackEventData) => Promise<void>;
 }
 
 declare global {
@@ -213,5 +214,16 @@ export interface ISpotifyTracksResponse {
 export type KeyValuePair<K extends string | number | symbol, D> = {
   [key in K]: D | undefined;
 };
+
+export const enum ERepeatState {
+  OFF = "Off",
+  REPEAT = "Repeat",
+  REPEAT_ONE = "Repeat One",
+}
+
+export const enum EShuffleState {
+  OFF = "Off",
+  ON = "On",
+}
 
 export {};

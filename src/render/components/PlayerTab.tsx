@@ -1,9 +1,20 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { BsPauseFill, BsPlayFill } from "react-icons/bs";
-import { TbPlayerSkipBack, TbPlayerSkipForward } from "react-icons/tb";
+import {
+  TbArrowsShuffle,
+  TbPlayerSkipBack,
+  TbPlayerSkipForward,
+  TbRepeatOff,
+} from "react-icons/tb";
 import { IPlayTrackEventData, IQueueTrackEventData, ITrack } from "../../types";
 import { useAppDispatch, useAppSelector } from "../redux/hooks";
-import { setCurrentTrack } from "../redux/slices/app";
+import {
+  addQueuedTracks,
+  addRecentTracks,
+  setCurrentTrack,
+  replaceQueuedTracks,
+  replaceRecentTracks,
+} from "../redux/slices/player";
 import { StreamManager } from "../stream-manager";
 import { toTimeString } from "../utils";
 import ControllableSlider from "./ControllableSlider";
@@ -26,18 +37,21 @@ export default function PlayerTab() {
     })()
   ).current;
 
-  const [albums, artists, currentTrack] = useAppSelector((s) => [
+  const [albums, artists] = useAppSelector((s) => [
     s.app.data.albums,
     s.app.data.artists,
-    s.app.data.currentTrack,
   ]);
 
+  const [currentTrack, recentTracks, queuedTracks] = useAppSelector((s) => [
+    s.player.data.currentTrack,
+    s.player.data.recentTracks,
+    s.player.data.queuedTracks,
+  ]);
+
+  console.log(currentTrack, recentTracks, queuedTracks);
   const dispatch = useAppDispatch();
 
-  const [recentTracks, setRecentTracks] = useState<ITrack[]>([]);
-
-  const [queuedTracks, setQueuedTracks] = useState<ITrack[]>([]);
-
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [_, setSeekProgress] = useState<number | null>(null);
 
   const [trackTiming, setTrackTiming] = useState<{
@@ -96,62 +110,52 @@ export default function PlayerTab() {
         StreamManager.getStreamInfo(queuedTracks[0]);
       }
     },
-    [
-      player,
-      dispatch,
-      setCurrentTrack,
-      setRecentTracks,
-      recentTracks,
-      queuedTracks,
-    ]
+    [player, dispatch, queuedTracks]
   );
 
   const onNextClicked = useCallback(async () => {
     if (queuedTracks.length > 0) {
       if (currentTrack) {
-        setRecentTracks([currentTrack, ...recentTracks]);
+        dispatch(addRecentTracks([currentTrack]));
       }
-      await loadAndPlayTrack(queuedTracks.shift());
-      setQueuedTracks([...queuedTracks]);
+      const newQueued = [...queuedTracks];
+      await loadAndPlayTrack(newQueued.shift());
+      dispatch(replaceQueuedTracks(newQueued));
     } else if (currentTrack) {
       player.currentTime = player.duration;
       player.pause();
     }
-  }, [
-    player,
-    recentTracks,
-    currentTrack,
-    queuedTracks,
-    setCurrentTrack,
-    setQueuedTracks,
-    loadAndPlayTrack,
-    setRecentTracks,
-  ]);
+  }, [player, currentTrack, queuedTracks, loadAndPlayTrack, dispatch]);
 
   const onPreviousClicked = useCallback(async () => {
     if (recentTracks.length > 0) {
       if (currentTrack) {
-        setQueuedTracks([currentTrack, ...queuedTracks]);
+        dispatch(replaceQueuedTracks([currentTrack, ...queuedTracks]));
       }
 
-      await loadAndPlayTrack(recentTracks.shift());
+      const newRecent = [...recentTracks];
 
-      setRecentTracks([...recentTracks]);
+      await loadAndPlayTrack(newRecent.shift());
 
+      dispatch(replaceRecentTracks(newRecent));
       return;
     }
 
     player.currentTime = 0;
   }, [
-    player,
-    recentTracks,
     currentTrack,
-    queuedTracks,
-    setCurrentTrack,
-    setQueuedTracks,
+    dispatch,
     loadAndPlayTrack,
-    setRecentTracks,
+    player,
+    queuedTracks,
+    recentTracks,
   ]);
+
+  // eslint-disable-next-line @typescript-eslint/no-empty-function
+  const onToggleShuffleState = useCallback(() => {}, []);
+
+  // eslint-disable-next-line @typescript-eslint/no-empty-function
+  const onToggleRepeatState = useCallback(() => {}, []);
 
   const onCurrentTrackOver = useCallback(async () => {
     if (queuedTracks.length > 0) {
@@ -167,7 +171,7 @@ export default function PlayerTab() {
 
       await window.bridge.clearDiscordPresence();
     }
-  }, [player, queuedTracks, dispatch, onNextClicked, setCurrentTrack]);
+  }, [player, queuedTracks, dispatch, onNextClicked]);
 
   const onPlayTrack = useCallback(
     async (e: Event) => {
@@ -180,13 +184,17 @@ export default function PlayerTab() {
   const onAddQueuedTrack = useCallback(
     async (e: Event) => {
       const actualEvent = e as CustomEvent<IQueueTrackEventData>;
-      if (!currentTrack) {
+      if (!currentTrack || actualEvent.detail.replaceQueue) {
         await loadAndPlayTrack(actualEvent.detail.tracks.shift());
       }
 
-      setQueuedTracks([...queuedTracks, ...actualEvent.detail.tracks]);
+      if (actualEvent.detail.replaceQueue) {
+        dispatch(replaceQueuedTracks(actualEvent.detail.tracks));
+      } else {
+        dispatch(addQueuedTracks(actualEvent.detail.tracks));
+      }
     },
-    [setQueuedTracks, currentTrack, onPlayTrack, queuedTracks]
+    [currentTrack, dispatch, loadAndPlayTrack]
   );
 
   const pauseTrack = useCallback(() => {
@@ -199,7 +207,7 @@ export default function PlayerTab() {
 
   const onPlayerPlay = useCallback(() => {
     setIsPaused(false);
-  }, [setIsPaused, currentTrack]);
+  }, [setIsPaused]);
 
   useEffect(() => {
     document.addEventListener("custom-play-track", onPlayTrack);
@@ -234,6 +242,7 @@ export default function PlayerTab() {
     onPlayerPause,
     onPlayerPlay,
     onCurrentTrackOver,
+    player,
   ]);
 
   return (
@@ -273,6 +282,14 @@ export default function PlayerTab() {
           }}
         >
           <span className="player-controls">
+            <TbArrowsShuffle
+              className="icon"
+              style={{
+                width: 20,
+                height: 20,
+              }}
+              onClick={onToggleShuffleState}
+            />
             <TbPlayerSkipBack
               className="icon"
               style={{
@@ -293,6 +310,14 @@ export default function PlayerTab() {
                 height: 20,
               }}
               onClick={onNextClicked}
+            />
+            <TbRepeatOff
+              className="icon"
+              style={{
+                width: 20,
+                height: 20,
+              }}
+              onClick={onToggleRepeatState}
             />
           </span>
           <span

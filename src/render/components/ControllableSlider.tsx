@@ -46,7 +46,7 @@ export default function ControllableSlider(props: ControllableSliderProps) {
         onUserUpdate(newRangedValue, false);
       }
     },
-    [max, min, step, pendingUpdate, onUserUpdate, isMouseDown.current]
+    [max, min, step, pendingUpdate, onUserUpdate]
   );
 
   useEffect(() => {

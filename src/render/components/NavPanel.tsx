@@ -11,7 +11,7 @@ import {
 } from "react-icons/ri";
 import AppConstants from "../../data";
 import { useAppDispatch, useAppSelector } from "../redux/hooks";
-import { createPlaylist, setScreenId } from "../redux/slices/app";
+import { createPlaylist } from "../redux/slices/app";
 import { useNavigate, useLocation } from "react-router-dom";
 import NavItem from "./NavItem";
 
@@ -41,7 +41,7 @@ export default function NavPanel() {
         position: playlistData.length,
       })
     );
-  }, [playlistData.length, dispatch, createPlaylist]);
+  }, [playlistData.length, dispatch]);
 
   const onPlaylistSelected = useCallback(
     (playlist_id: string) => {

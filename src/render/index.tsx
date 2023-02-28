@@ -1,4 +1,4 @@
-import { StrictMode, useEffect } from "react";
+import { useEffect } from "react";
 import { createRoot } from "react-dom/client";
 import { Provider } from "react-redux";
 import { IPlayTrackEventData, IQueueTrackEventData } from "../types";
@@ -18,7 +18,7 @@ export function RootApp() {
   useEffect(() => {
     console.log("Loading App inital Data");
     dispatch(initApp());
-  }, []);
+  }, [dispatch]);
 
   return (
     <>
@@ -41,7 +41,7 @@ if (container) {
         })
       );
     },
-    queueTrack: async (data: IQueueTrackEventData) => {
+    queueTracks: async (data: IQueueTrackEventData) => {
       document.dispatchEvent(
         new CustomEvent<IQueueTrackEventData>("custom-queue-track", {
           detail: data,

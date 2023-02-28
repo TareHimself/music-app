@@ -17,7 +17,6 @@ export type AppSliceState = GenericSliceData<{
   albums: KeyValuePair<string, IAlbum>;
   playlists: KeyValuePair<string, IPlaylist>;
   artists: KeyValuePair<string, IArtist>;
-  currentTrack: ITrack | null;
 }>;
 
 const initialState: AppSliceState = {
@@ -28,7 +27,6 @@ const initialState: AppSliceState = {
     albums: {},
     playlists: {},
     artists: {},
-    currentTrack: null,
   },
 };
 
@@ -185,9 +183,6 @@ export const AppSlice = createSlice({
     setScreenId: (state, action: PayloadAction<string>) => {
       state.data.screenId = action.payload;
     },
-    setCurrentTrack: (state, action: PayloadAction<ITrack | null>) => {
-      state.data.currentTrack = action.payload;
-    },
   },
   // eslint-disable-next-line @typescript-eslint/no-empty-function
   extraReducers: (builder) => {
@@ -221,6 +216,6 @@ export const AppSlice = createSlice({
   },
 });
 
-export const { setScreenId, setCurrentTrack } = AppSlice.actions;
+export const { setScreenId } = AppSlice.actions;
 export { initApp, loadTracks, loadTracksForAlbum, createPlaylist };
 export default AppSlice.reducer;

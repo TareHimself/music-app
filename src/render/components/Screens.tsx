@@ -1,6 +1,5 @@
 import { Route, Routes, Navigate } from "react-router-dom";
 import AppConstants from "../../data";
-import useWindowDimensions from "../hooks/useWindowDimensions";
 import AlbumScreen from "./screens/AlbumScreen";
 import ImportScreen from "./screens/ImportScreen";
 import LibraryScreen from "./screens/LibraryScreen";

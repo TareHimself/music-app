@@ -1,9 +1,11 @@
 /* eslint-disable import/no-named-as-default */
 import { configureStore } from "@reduxjs/toolkit";
 import AppSlice from "./slices/app";
+import PlayerSlice from "./slices/player";
 export const store = configureStore({
   reducer: {
     app: AppSlice,
+    player: PlayerSlice,
   },
 });
 
