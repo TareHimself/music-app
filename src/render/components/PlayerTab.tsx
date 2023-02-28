@@ -48,7 +48,6 @@ export default function PlayerTab() {
     s.player.data.queuedTracks,
   ]);
 
-  console.log(currentTrack, recentTracks, queuedTracks);
   const dispatch = useAppDispatch();
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -152,10 +151,10 @@ export default function PlayerTab() {
   ]);
 
   // eslint-disable-next-line @typescript-eslint/no-empty-function
-  const onToggleShuffleState = useCallback(() => {}, []);
+  const onToggleShuffleState = useCallback(() => { }, []);
 
   // eslint-disable-next-line @typescript-eslint/no-empty-function
-  const onToggleRepeatState = useCallback(() => {}, []);
+  const onToggleRepeatState = useCallback(() => { }, []);
 
   const onCurrentTrackOver = useCallback(async () => {
     if (queuedTracks.length > 0) {
