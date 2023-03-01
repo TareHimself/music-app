@@ -11,6 +11,7 @@ import { useAppDispatch } from "./redux/hooks";
 import { initApp } from "./redux/slices/app";
 import { store } from "./redux/store";
 import { MemoryRouter } from "react-router-dom";
+import ContextMenus from "./components/ContextMenus";
 
 export function RootApp() {
   const dispatch = useAppDispatch();
@@ -22,7 +23,8 @@ export function RootApp() {
 
   return (
     <>
-      <TopFrame />
+      {window.bridge?.getPlatform() === "win32" && <TopFrame />}
+      <ContextMenus />
       <App />
       <PlayerTab />
       <NotificationContainer />

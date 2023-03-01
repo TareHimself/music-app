@@ -118,10 +118,12 @@ const InsertNewTrackArtistLinkStatement = db.prepare<{
   artist: string;
 }>("REPLACE INTO track_artist (track,artist) VALUES (@track,@artist)");
 
-const GetPlaylistsStatement = db.prepare("SELECT * FROM playlists");
+const GetPlaylistsStatement = db.prepare(
+  "SELECT * FROM playlists ORDER BY position ASC"
+);
 
 const GetPlaylistsTracksStatement = db.prepare<{ id: string }>(
-  "SELECT track, added FROM playlist_tracks WHERE playlist=@id"
+  "SELECT track, added FROM playlist_tracks WHERE playlist=@id ORDER BY added DESC"
 );
 
 const GetArtistsStatement = db.prepare("SELECT * FROM artists");
@@ -133,11 +135,11 @@ const GetAlbumArtistsStatement = db.prepare<{ album: string }>(
 );
 
 const GetAlbumTrackIdsStatement = db.prepare<{ id: string }>(
-  "SELECT id FROM tracks WHERE album=@id"
+  "SELECT id FROM tracks WHERE album=@id ORDER BY position ASC"
 );
 
 const GetAlbumTracksStatement = db.prepare<{ id: string }>(
-  "SELECT * FROM tracks WHERE album=@id"
+  "SELECT * FROM tracks WHERE album=@id ORDER BY position ASC"
 );
 
 const GetTracksStatement = db.prepare("SELECT * FROM tracks");

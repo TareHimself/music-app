@@ -1,5 +1,9 @@
 import { useCallback } from "react";
-import { BsFileEarmarkMusic, BsFileEarmarkMusicFill } from "react-icons/bs";
+import {
+  BsFileEarmarkMusic,
+  BsFileEarmarkMusicFill,
+  BsSoundwave,
+} from "react-icons/bs";
 import { MdOutlineLibraryAdd } from "react-icons/md";
 import {
   RiAddCircleFill,
@@ -78,6 +82,14 @@ export default function NavPanel() {
           onSelected={onItemSelected}
         />
         <NavItem
+          navId={AppConstants.NAV_ID_VISUALIZER}
+          display="Visualizer"
+          activeId={selectedItem}
+          ActiveElement={BsSoundwave}
+          InactiveElement={BsSoundwave}
+          onSelected={onItemSelected}
+        />
+        <NavItem
           navId={AppConstants.NAV_ID_SETTINGS}
           display="Settings"
           activeId={selectedItem}
@@ -85,6 +97,7 @@ export default function NavPanel() {
           InactiveElement={RiSettings4Line}
           onSelected={onItemSelected}
         />
+
         <NavItem
           navId="none-playlist-create"
           display="Create Playlist"

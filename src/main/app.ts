@@ -27,7 +27,9 @@ import { ipcMain } from "../ipc";
 import DiscordRichPrecenceClient from "discord-rich-presence";
 import { getLibraryPath } from "./utils";
 import { SpotifyApi } from "../api";
+import { platform } from "os";
 import axios from "axios";
+import { batchArray } from "../global-utils";
 
 declare const MAIN_WINDOW_WEBPACK_ENTRY: string;
 declare const MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY: string;
@@ -51,7 +53,7 @@ const createWindow = (): void => {
       nodeIntegration: true,
       webSecurity: false,
     },
-    frame: false,
+    frame: platform() !== "win32",
   });
 
   // and load the index.html of the app.
@@ -106,23 +108,35 @@ async function uriToStream(uri: string): Promise<string> {
   )[0];
   return possibleFormat.url;
 }
-const MAX_URI_TRIES = 10
+const MAX_URI_TRIES = 10;
+
+const AVOID_STREAM_TERMS = [
+  "official video",
+  "music video",
+  "official music video",
+];
 
 ipcMain.on("getTrackStreamInfo", async (ev, track) => {
   if (track.uri.length <= 0) {
     const album = getAlbums([track.album])[0];
-    const artist = getArtists(album.artists)[0];
-    const searchTerm = `${album.title} - ${track.title} - ${artist.name} - Audio`;
+    const artist = getArtists(track.artists).reduce(
+      (all, current) => `${all} ${current.name}`,
+      ""
+    );
+    const searchTerm = `${album.title} - ${track.title} - ${artist} - Audio`;
     console.log(`Searching using [${searchTerm}] since no uri was given.`);
-    const videoDetails = (await play.search(searchTerm, {
-      source: {
-        youtube: "video",
-      },
-      limit: 4, // 4 results so we have options
-    })).find(a => {
-      if (searchTerm.toLowerCase().includes('video')) return true; // not much of a choice here
-
-      return a.title && !a.title.toLowerCase().includes('video')
+    const videoDetails = (
+      await play.search(searchTerm, {
+        source: {
+          youtube: "video",
+        },
+        limit: 4, // 4 results so we have options
+      })
+    ).find((a) => {
+      return AVOID_STREAM_TERMS.every((b) => {
+        const test = a.title?.toLowerCase() || "";
+        return !test.includes(b);
+      });
     });
 
     track.uri = videoDetails.url;
@@ -147,11 +161,12 @@ ipcMain.on("getTrackStreamInfo", async (ev, track) => {
       });
       break;
     } catch (error) {
+      console.log(`Error fetching stream for ${track.uri}:\n`, error.message);
       console.log(
-        `Error fetching stream for ${track.uri}:\n`,
-        error.message
+        `Attempting to fetch new stream url. [${
+          tries + 1
+        }/${MAX_URI_TRIES} Attempts]`
       );
-      console.log(`Attempting to fetch new stream url. [${tries + 1}/${MAX_URI_TRIES} Attempts]`)
       tries++;
     }
   }
@@ -200,7 +215,7 @@ ipcMain.on("createPlaylists", (ev, data) => {
 });
 
 ipcMain.on("getAlbumTracks", (e, album) => {
-  e.reply(getAlbumTracks(album).sort((a, b) => a.position - b.position));
+  e.reply(getAlbumTracks(album));
 });
 
 ipcMain.on("updateDiscordPresence", (ev, track) => {
@@ -212,7 +227,7 @@ ipcMain.on("updateDiscordPresence", (ev, track) => {
     details: track.title,
     startTimestamp: Date.now(),
     largeImageKey: album.cover,
-    instance: true,
+    instance: false,
   });
   ev.reply();
 });
@@ -227,9 +242,6 @@ ipcMain.on("getLibraryPath", (ev) => {
 });
 
 ipcMain.on("importSpotifyTracks", async (ev, uris) => {
-  const data = (
-    await SpotifyApi.get<ISpotifyTracksResponse>(`tracks?ids=${uris.join(",")}`)
-  ).data;
   const newTracks: KeyValuePair<
     string,
     {
@@ -239,64 +251,75 @@ ipcMain.on("importSpotifyTracks", async (ev, uris) => {
     }
   > = {};
 
-  data.tracks.forEach((track) => {
-    if (newTracks[track.id]) return;
+  const batches = batchArray(uris, 40);
 
-    const allTrackArtists: KeyValuePair<string, IArtistRaw> = {};
+  for (let i = 0; i < batches.length; i++) {
+    const batch = batches[i];
+    const data = (
+      await SpotifyApi.get<ISpotifyTracksResponse>(
+        `tracks?ids=${batch.join(",")}`
+      )
+    ).data;
 
-    const newAlbum: IAlbumRaw<string[]> = {
-      id: makeSpotifyId(track.id),
-      title: track.name,
-      cover: track.album.images[0].url,
-      released: parseInt(track.album.release_date.split("-")[0]),
-      artists: track.album.artists
+    data.tracks.forEach((track) => {
+      if (newTracks[track.id]) return;
+
+      const allTrackArtists: KeyValuePair<string, IArtistRaw> = {};
+
+      const newAlbum: IAlbumRaw<string[]> = {
+        id: makeSpotifyId(track.id),
+        title: track.name,
+        cover: track.album.images[0].url,
+        released: parseInt(track.album.release_date.split("-")[0]),
+        artists: track.album.artists
+          .filter((a) => a.type === "artist")
+          .map((a) => {
+            const newArtist: IArtistRaw = {
+              id: makeSpotifyId(a.id),
+              name: a.name,
+            };
+            if (!allTrackArtists[a.id]) {
+              allTrackArtists[a.id] = newArtist;
+            }
+
+            return newArtist.id;
+          }),
+
+        genre: "",
+      };
+
+      const trackArtists = track.artists
         .filter((a) => a.type === "artist")
         .map((a) => {
           const newArtist: IArtistRaw = {
             id: makeSpotifyId(a.id),
             name: a.name,
           };
+
           if (!allTrackArtists[a.id]) {
             allTrackArtists[a.id] = newArtist;
           }
 
           return newArtist.id;
-        }),
+        });
 
-      genre: "",
-    };
+      const newTrack: ITrackRaw = {
+        id: makeSpotifyId(track.id),
+        title: track.name,
+        album: newAlbum.id,
+        uri: "",
+        artists: trackArtists,
+        duration: 0,
+        position: track.track_number,
+      };
 
-    const trackArtists = track.artists
-      .filter((a) => a.type === "artist")
-      .map((a) => {
-        const newArtist: IArtistRaw = {
-          id: makeSpotifyId(a.id),
-          name: a.name,
-        };
-
-        if (!allTrackArtists[a.id]) {
-          allTrackArtists[a.id] = newArtist;
-        }
-
-        return newArtist.id;
-      });
-
-    const newTrack: ITrackRaw = {
-      id: makeSpotifyId(track.id),
-      title: track.name,
-      album: newAlbum.id,
-      uri: "",
-      artists: trackArtists,
-      duration: 0,
-      position: track.track_number,
-    };
-
-    newTracks[track.id] = {
-      track: newTrack,
-      artists: allTrackArtists,
-      album: newAlbum,
-    };
-  });
+      newTracks[track.id] = {
+        track: newTrack,
+        artists: allTrackArtists,
+        album: newAlbum,
+      };
+    });
+  }
 
   const result: ITrack[] = Object.values(newTracks).map((data) => {
     // Must happen in this order to keep foreign key constraints
@@ -310,9 +333,6 @@ ipcMain.on("importSpotifyTracks", async (ev, uris) => {
 });
 
 ipcMain.on("importSpotifyAlbums", async (ev, uris) => {
-  const data = (
-    await SpotifyApi.get<ISpotifyAlbumsResponse>(`albums?ids=${uris.join(",")}`)
-  ).data;
   const newAlbums: KeyValuePair<
     string,
     {
@@ -322,66 +342,78 @@ ipcMain.on("importSpotifyAlbums", async (ev, uris) => {
     }
   > = {};
 
-  data.albums.forEach((album) => {
-    if (newAlbums[album.id]) return;
+  const batches = batchArray(uris, 20);
 
-    const allAlbumArtists: KeyValuePair<string, IArtistRaw> = {};
+  for (let i = 0; i < batches.length; i++) {
+    const batch = batches[i];
 
-    const newAlbum: IAlbumRaw = {
-      id: makeSpotifyId(album.id),
-      title: album.name,
-      cover: album.images[0].url,
-      released: parseInt(album.release_date.split("-")[0]),
-      artists: album.artists
-        .filter((a) => a.type === "artist")
-        .map((a) => {
-          const newArtist: IArtistRaw = {
-            id: makeSpotifyId(a.id),
-            name: a.name,
-          };
-          if (!allAlbumArtists[a.id]) {
-            allAlbumArtists[a.id] = newArtist;
-          }
+    const data = (
+      await SpotifyApi.get<ISpotifyAlbumsResponse>(
+        `albums?ids=${batch.join(",")}`
+      )
+    ).data;
 
-          return newArtist.id;
-        }),
+    data.albums.forEach((album) => {
+      if (newAlbums[album.id]) return;
 
-      genre: album.genres.join("|"),
-    };
+      const allAlbumArtists: KeyValuePair<string, IArtistRaw> = {};
 
-    newAlbums[album.id] = {
-      album: newAlbum,
-      artists: allAlbumArtists,
-      tracks: album.tracks.items.map((currentTrack) => {
-        const trackArtists = currentTrack.artists
+      const newAlbum: IAlbumRaw = {
+        id: makeSpotifyId(album.id),
+        title: album.name,
+        cover: album.images[0].url,
+        released: parseInt(album.release_date.split("-")[0]),
+        artists: album.artists
           .filter((a) => a.type === "artist")
           .map((a) => {
             const newArtist: IArtistRaw = {
               id: makeSpotifyId(a.id),
               name: a.name,
             };
-
             if (!allAlbumArtists[a.id]) {
               allAlbumArtists[a.id] = newArtist;
             }
 
             return newArtist.id;
-          });
+          }),
 
-        const newTrack: ITrackRaw = {
-          id: makeSpotifyId(currentTrack.id),
-          title: currentTrack.name,
-          album: newAlbum.id,
-          uri: "",
-          artists: trackArtists,
-          duration: 0,
-          position: currentTrack.track_number,
-        };
+        genre: album.genres.join("|"),
+      };
 
-        return newTrack;
-      }),
-    };
-  });
+      newAlbums[album.id] = {
+        album: newAlbum,
+        artists: allAlbumArtists,
+        tracks: album.tracks.items.map((currentTrack) => {
+          const trackArtists = currentTrack.artists
+            .filter((a) => a.type === "artist")
+            .map((a) => {
+              const newArtist: IArtistRaw = {
+                id: makeSpotifyId(a.id),
+                name: a.name,
+              };
+
+              if (!allAlbumArtists[a.id]) {
+                allAlbumArtists[a.id] = newArtist;
+              }
+
+              return newArtist.id;
+            });
+
+          const newTrack: ITrackRaw = {
+            id: makeSpotifyId(currentTrack.id),
+            title: currentTrack.name,
+            album: newAlbum.id,
+            uri: "",
+            artists: trackArtists,
+            duration: 0,
+            position: currentTrack.track_number,
+          };
+
+          return newTrack;
+        }),
+      };
+    });
+  }
 
   const result: IAlbum[] = Object.values(newAlbums).map((data) => {
     // Must happen in this order to keep foreign key constraints
@@ -409,4 +441,8 @@ ipcMain.on("getTracks", (ev, ids) => {
 
 ipcMain.on("getArtists", async (ev, ids) => {
   ev.reply(getArtists(ids || []));
+});
+
+ipcMain.on("getPlatform", (ev) => {
+  ev.replySync(platform());
 });

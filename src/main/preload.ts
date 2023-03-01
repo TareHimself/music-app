@@ -60,4 +60,7 @@ ipcRenderer.exposeApi<IBridgeEvents>("bridge", {
   getArtists: (ids) => {
     return ipcRenderer.asyncEventCall("getArtists", ids);
   },
+  getPlatform: () => {
+    return ipcRenderer.sendSync("getPlatform");
+  },
 });

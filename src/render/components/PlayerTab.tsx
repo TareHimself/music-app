@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { BsPauseFill, BsPlayFill } from "react-icons/bs";
 import {
   TbArrowsShuffle,
@@ -6,7 +6,8 @@ import {
   TbPlayerSkipForward,
   TbRepeatOff,
 } from "react-icons/tb";
-import { IPlayTrackEventData, IQueueTrackEventData, ITrack } from "../../types";
+import { HiOutlineQueueList } from "react-icons/hi2";
+import { IPlayTrackEventData, IQueueTrackEventData } from "../../types";
 import { useAppDispatch, useAppSelector } from "../redux/hooks";
 import {
   addQueuedTracks,
@@ -15,9 +16,11 @@ import {
   replaceQueuedTracks,
   replaceRecentTracks,
 } from "../redux/slices/player";
-import { StreamManager } from "../stream-manager";
 import { toTimeString } from "../utils";
 import ControllableSlider from "./ControllableSlider";
+import { useNavigate } from "react-router-dom";
+import { StreamManager } from "../global";
+import AppConstants from "../../data";
 
 // eslint-disable-next-line @typescript-eslint/ban-types
 export type PlayerTabProps = {};
@@ -29,26 +32,24 @@ export type PlayerTabState = {
 };
 
 export default function PlayerTab() {
-  const player = useRef(
-    (() => {
-      const au = new Audio();
-      au.volume = 0.2;
-      return au;
-    })()
-  ).current;
+  const player = StreamManager.player;
 
   const [albums, artists] = useAppSelector((s) => [
     s.app.data.albums,
     s.app.data.artists,
   ]);
 
-  const [currentTrack, recentTracks, queuedTracks] = useAppSelector((s) => [
-    s.player.data.currentTrack,
-    s.player.data.recentTracks,
-    s.player.data.queuedTracks,
-  ]);
+  const [currentTrackId, allTracks, recentTracks, queuedTracks] =
+    useAppSelector((s) => [
+      s.player.data.currentTrack,
+      s.app.data.tracks,
+      s.player.data.recentTracks,
+      s.player.data.queuedTracks,
+    ]);
 
   const dispatch = useAppDispatch();
+
+  const navigate = useNavigate();
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [_, setSeekProgress] = useState<number | null>(null);
@@ -59,6 +60,10 @@ export default function PlayerTab() {
   }>({ progress: 0, length: 0 });
 
   const [isPaused, setIsPaused] = useState<boolean>(true);
+
+  const navigateToCurrentAlbum = useCallback(() => {
+    navigate(`/album/${allTracks[currentTrackId].album}`);
+  }, [allTracks, currentTrackId, navigate]);
 
   const onPlayerTimeUpdate = useCallback(() => {
     setTrackTiming({
@@ -98,51 +103,64 @@ export default function PlayerTab() {
     player.play();
   }, [player]);
 
+  // Just loads and plays a track
   const loadAndPlayTrack = useCallback(
-    async (track: ITrack) => {
-      const streamInfo = await StreamManager.getStreamInfo(track);
+    async (trackId: string) => {
+      const streamInfo = await StreamManager.getStreamInfo(allTracks[trackId]);
       player.src = streamInfo.uri;
       player.play();
-      dispatch(setCurrentTrack(track));
-      window.bridge.updateDiscordPresence(track);
-      if (queuedTracks[0]) {
-        StreamManager.getStreamInfo(queuedTracks[0]);
-      }
+      dispatch(setCurrentTrack(trackId));
+      window.bridge.updateDiscordPresence(allTracks[trackId]);
     },
-    [player, dispatch, queuedTracks]
+    [allTracks, player, dispatch]
   );
 
+  // handles switching to the next track and pre-loading the one after that
   const onNextClicked = useCallback(async () => {
     if (queuedTracks.length > 0) {
-      if (currentTrack) {
-        dispatch(addRecentTracks([currentTrack]));
+      if (currentTrackId) {
+        dispatch(addRecentTracks([currentTrackId]));
       }
       const newQueued = [...queuedTracks];
-      await loadAndPlayTrack(newQueued.shift());
+      const pendingTrack = newQueued.shift();
       dispatch(replaceQueuedTracks(newQueued));
-    } else if (currentTrack) {
+      await loadAndPlayTrack(pendingTrack);
+
+      // Preload Stream URI
+      if (newQueued[0]) {
+        StreamManager.getStreamInfo(allTracks[newQueued[0]]);
+      }
+    } else if (currentTrackId) {
       player.currentTime = player.duration;
       player.pause();
     }
-  }, [player, currentTrack, queuedTracks, loadAndPlayTrack, dispatch]);
+  }, [
+    queuedTracks,
+    currentTrackId,
+    dispatch,
+    loadAndPlayTrack,
+    allTracks,
+    player,
+  ]);
 
+  // handles switching to the previous track
   const onPreviousClicked = useCallback(async () => {
     if (recentTracks.length > 0) {
-      if (currentTrack) {
-        dispatch(replaceQueuedTracks([currentTrack, ...queuedTracks]));
+      if (currentTrackId) {
+        dispatch(replaceQueuedTracks([currentTrackId, ...queuedTracks]));
       }
 
       const newRecent = [...recentTracks];
-
-      await loadAndPlayTrack(newRecent.shift());
-
+      const pendingTrack = newRecent.shift();
       dispatch(replaceRecentTracks(newRecent));
+      await loadAndPlayTrack(pendingTrack);
+
       return;
     }
 
     player.currentTime = 0;
   }, [
-    currentTrack,
+    currentTrackId,
     dispatch,
     loadAndPlayTrack,
     player,
@@ -151,11 +169,12 @@ export default function PlayerTab() {
   ]);
 
   // eslint-disable-next-line @typescript-eslint/no-empty-function
-  const onToggleShuffleState = useCallback(() => { }, []);
+  const onToggleShuffleState = useCallback(() => {}, []);
 
   // eslint-disable-next-line @typescript-eslint/no-empty-function
-  const onToggleRepeatState = useCallback(() => { }, []);
+  const onToggleRepeatState = useCallback(() => {}, []);
 
+  // handles the end of the current track
   const onCurrentTrackOver = useCallback(async () => {
     if (queuedTracks.length > 0) {
       await onNextClicked();
@@ -180,30 +199,45 @@ export default function PlayerTab() {
     [loadAndPlayTrack]
   );
 
+  // handles external queue adds
   const onAddQueuedTrack = useCallback(
     async (e: Event) => {
       const actualEvent = e as CustomEvent<IQueueTrackEventData>;
-      if (!currentTrack || actualEvent.detail.replaceQueue) {
-        await loadAndPlayTrack(actualEvent.detail.tracks.shift());
-      }
+
+      const toPlay =
+        !currentTrackId || actualEvent.detail.replaceQueue
+          ? actualEvent.detail.tracks.shift()
+          : null;
 
       if (actualEvent.detail.replaceQueue) {
         dispatch(replaceQueuedTracks(actualEvent.detail.tracks));
       } else {
         dispatch(addQueuedTracks(actualEvent.detail.tracks));
       }
+
+      if (toPlay) {
+        await loadAndPlayTrack(toPlay);
+      }
+
+      // Preload Stream URI
+      if (queuedTracks.length === 0 && actualEvent.detail.tracks.length > 1) {
+        StreamManager.getStreamInfo(allTracks[actualEvent.detail.tracks[0]]);
+      }
     },
-    [currentTrack, dispatch, loadAndPlayTrack]
+    [allTracks, currentTrackId, dispatch, loadAndPlayTrack, queuedTracks.length]
   );
 
+  // pauses the current track
   const pauseTrack = useCallback(() => {
     player.pause();
   }, [player]);
 
+  // handle when the current track is paused
   const onPlayerPause = useCallback(() => {
     setIsPaused(true);
   }, [setIsPaused]);
 
+  // handle when the current track is played
   const onPlayerPlay = useCallback(() => {
     setIsPaused(false);
   }, [setIsPaused]);
@@ -252,16 +286,17 @@ export default function PlayerTab() {
           justifyContent: "flex-start",
         }}
       >
-        {currentTrack && (
+        {currentTrackId && (
           <>
             <img
-              src={albums[currentTrack.album].cover}
+              src={albums[allTracks[currentTrackId].album].cover}
               className="player-cover"
+              onClick={navigateToCurrentAlbum}
             ></img>
             <span className="player-title">
-              <h3>{currentTrack.title}</h3>
+              <h3>{allTracks[currentTrackId].title}</h3>
               <p>
-                {currentTrack.artists
+                {allTracks[currentTrackId].artists
                   .map((a) => artists[a]?.name || `unk=${a}`)
                   .join(" , ")}
               </p>
@@ -348,6 +383,15 @@ export default function PlayerTab() {
           justifyContent: "flex-end",
         }}
       >
+        <HiOutlineQueueList
+          className="icon"
+          style={{
+            width: 20,
+            height: 20,
+            margin: "0px 10px",
+          }}
+          onClick={() => navigate(AppConstants.NAV_ID_QUEUE)}
+        />
         <ControllableSlider
           style={{
             maxWidth: "100px",

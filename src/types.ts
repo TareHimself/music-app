@@ -3,6 +3,7 @@
 
 import React from "react";
 
+export type Vector2 = { x: number; y: number };
 export interface GenericSliceData<T> {
   status: "loading" | "loaded";
   data: T;
@@ -121,12 +122,24 @@ export type TrackStreamInfo = { uri: string; duration: number; from: string };
 export type Awaitable<T> = T | Promise<T>;
 
 export type IQueueTrackEventData = {
-  tracks: ITrack[];
+  tracks: string[];
   replaceQueue: boolean;
 };
 export type IPlayTrackEventData = {
-  track: ITrack;
+  track: string;
 };
+
+export interface IContextMenuOption {
+  id: string;
+  name: string;
+}
+
+export type ICreateContextMenuEventData = {
+  event: React.MouseEvent;
+  options: IContextMenuOption[];
+  callback: (selectedOption: string) => Awaitable<void>;
+};
+
 export interface IBridgeEvents {
   getPreloadPath: () => string;
   windowMinimize: () => void;
@@ -147,6 +160,7 @@ export interface IBridgeEvents {
   importSpotifyTracks: (uris: string[]) => Promise<ITrack[]>;
   importSpotifyAlbums: (uris: string[]) => Promise<IAlbum[]>;
   importSpotifyPlaylists: (uris: string[]) => Promise<IPlaylist[]>;
+  getPlatform: () => NodeJS.Platform;
 }
 
 export type BridgeEventReturn<T extends keyof IBridgeEvents> = Awaited<

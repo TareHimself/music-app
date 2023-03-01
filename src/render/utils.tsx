@@ -1,5 +1,9 @@
 import AppConstants from "../data";
-import { INotificationInfo, KeyValuePair } from "../types";
+import {
+  ICreateContextMenuEventData,
+  INotificationInfo,
+  KeyValuePair,
+} from "../types";
 import ColorThief from "colorthief";
 
 export const imageColor = new ColorThief();
@@ -40,6 +44,14 @@ export function addNotification(noti: string) {
         id: performance.now(),
         content: noti,
       },
+    })
+  );
+}
+
+export function generateContextMenu(data: ICreateContextMenuEventData) {
+  document.dispatchEvent(
+    new CustomEvent<ICreateContextMenuEventData>("make-context-menu", {
+      detail: data,
     })
   );
 }

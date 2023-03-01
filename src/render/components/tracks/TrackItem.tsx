@@ -1,17 +1,22 @@
 import { useCallback } from "react";
-import { IPlaylistTrack, ITrack } from "../../../types";
-import { useAppSelector } from "../../redux/hooks";
-import { toTimeString } from "../../utils";
+import { IPlaylistTrack } from "../../../types";
+import { useAppDispatch, useAppSelector } from "../../redux/hooks";
+import { loadTracksForAlbum } from "../../redux/slices/app";
+import { generateContextMenu, toTimeString } from "../../utils";
 
-export default function TrackItem(props: {
-  trackId?: string;
-  playlistInfo?: IPlaylistTrack;
-}) {
-  const trackId = props.trackId || props.playlistInfo.track;
+export type TrackItemProps =
+  | { type: "playlist"; playlistInfo: IPlaylistTrack }
+  | { type: "queue"; trackId: string }
+  | { type: "album"; trackId: string };
+export default function TrackItem(props: TrackItemProps) {
+  const currentTrack = useAppSelector((s) => s.player.data.currentTrack);
+
+  const trackId =
+    props.type === "playlist" ? props.playlistInfo.track : props.trackId;
 
   const trackData = useAppSelector((s) => s.app.data.tracks[trackId]);
 
-  const allTrackData = useAppSelector((s) => s.app.data.tracks);
+  const dispatch = useAppDispatch();
 
   const albumData = useAppSelector(
     (s) => s.app.data.albums[trackData?.album || ""]
@@ -19,21 +24,50 @@ export default function TrackItem(props: {
 
   const allArtists = useAppSelector((s) => s.app.data.artists);
 
-  const { position, title, artists, duration } = trackData || {};
+  const { title, artists, duration } = trackData || {};
 
   const tryPlayTrack = useCallback(async () => {
+    await dispatch(loadTracksForAlbum({ albumId: trackData.album }));
     window.utils.queueTracks({
-      tracks: albumData.tracks
-        .reduce((all, tId) => {
-          if (allTrackData[tId].position >= trackData.position) {
-            all.push(allTrackData[tId]);
-          }
-          return all;
-        }, [] as ITrack[])
-        .sort((a, b) => a.position - b.position),
+      tracks: albumData.tracks.slice(albumData.tracks.indexOf(trackId)),
       replaceQueue: true,
     });
-  }, [trackData, albumData, allTrackData]);
+  }, [albumData?.tracks, dispatch, trackData?.album, trackId]);
+
+  const onContextMenuItemSelected = useCallback(
+    async (selection: string) => {
+      if (!trackData) return;
+
+      switch (selection) {
+        case "add":
+          window.utils.queueTracks({
+            tracks: [trackData.id],
+            replaceQueue: false,
+          });
+          break;
+
+        default:
+          break;
+      }
+    },
+    [trackData]
+  );
+
+  const makeContextMenu = useCallback(
+    (e: React.MouseEvent) => {
+      generateContextMenu({
+        event: e,
+        options: [
+          {
+            id: "add",
+            name: "Add Track Queue",
+          },
+        ],
+        callback: onContextMenuItemSelected,
+      });
+    },
+    [onContextMenuItemSelected]
+  );
 
   if (!trackData) {
     return (
@@ -47,9 +81,15 @@ export default function TrackItem(props: {
   }
 
   return (
-    <div className="track-item" onClick={tryPlayTrack}>
+    <div
+      className={
+        currentTrack === trackData?.id ? "track-item active" : "track-item"
+      }
+      onClick={tryPlayTrack}
+      onContextMenu={makeContextMenu}
+    >
+      <span className="track-icon" />
       <span className="track-title">
-        <h3 data-info="pos">{position}</h3>
         <span data--info="text">
           <h2>{title}</h2>
           <p>
@@ -60,7 +100,6 @@ export default function TrackItem(props: {
           </p>
         </span>
       </span>
-
       <span>
         <h3>{duration === 0 ? "-:--" : toTimeString(duration)}</h3>
       </span>

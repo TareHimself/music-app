@@ -1,8 +1,12 @@
 import { ITrack, TrackStreamInfo } from "../types";
-
 const EXPIRE_AT_REGEX = /expire=([0-9]+)/;
 class StreamManagerClass {
   cache: Map<string, TrackStreamInfo> = new Map();
+  player: HTMLAudioElement = new Audio();
+
+  constructor() {
+    this.player.volume = 0.1;
+  }
 
   async getStreamInfo(track: ITrack, forceNew = false) {
     if (!forceNew && this.cache.has(track.id)) {

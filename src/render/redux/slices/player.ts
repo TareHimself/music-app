@@ -1,15 +1,10 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import {
-  ERepeatState,
-  EShuffleState,
-  GenericSliceData,
-  ITrack,
-} from "../../../types";
+import { ERepeatState, EShuffleState, GenericSliceData } from "../../../types";
 
 export type AppSliceState = GenericSliceData<{
-  currentTrack: ITrack | null;
-  queuedTracks: ITrack[];
-  recentTracks: ITrack[];
+  currentTrack: string | null;
+  queuedTracks: string[];
+  recentTracks: string[];
   volume: number;
   repeatState: ERepeatState;
   shuffleState: EShuffleState;
@@ -32,19 +27,19 @@ export const PlayerSlice = createSlice({
   // `createSlice` will infer the state type from the `initialState` argument
   initialState,
   reducers: {
-    setCurrentTrack: (state, action: PayloadAction<ITrack | null>) => {
+    setCurrentTrack: (state, action: PayloadAction<string | null>) => {
       state.data.currentTrack = action.payload;
     },
-    addRecentTracks: (state, action: PayloadAction<ITrack[]>) => {
+    addRecentTracks: (state, action: PayloadAction<string[]>) => {
       state.data.recentTracks = [...action.payload, ...state.data.recentTracks];
     },
-    addQueuedTracks: (state, action: PayloadAction<ITrack[]>) => {
+    addQueuedTracks: (state, action: PayloadAction<string[]>) => {
       state.data.queuedTracks = [...state.data.queuedTracks, ...action.payload];
     },
-    replaceRecentTracks: (state, action: PayloadAction<ITrack[]>) => {
+    replaceRecentTracks: (state, action: PayloadAction<string[]>) => {
       state.data.recentTracks = action.payload;
     },
-    replaceQueuedTracks: (state, action: PayloadAction<ITrack[]>) => {
+    replaceQueuedTracks: (state, action: PayloadAction<string[]>) => {
       state.data.queuedTracks = action.payload;
     },
   },

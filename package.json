@@ -49,6 +49,7 @@
   },
   "dependencies": {
     "@reduxjs/toolkit": "^1.9.3",
+    "@types/node": "^18.14.2",
     "axios": "^1.3.4",
     "better-sqlite3": "^8.1.0",
     "colorthief": "^2.3.2",
