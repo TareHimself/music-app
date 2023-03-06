@@ -1,23 +1,9 @@
 import { app, BrowserWindow } from "electron";
-import * as play from "play-dl";
-import {
-  IAlbumRaw,
-  IPlaylistRaw,
-  ITrackRaw,
-  IArtistRaw,
-  ISpotifyAlbumsResponse,
-  KeyValuePair,
-  IAlbum,
-  ISpotifyTracksResponse,
-  ITrack,
-} from "../types";
+
+import { IPlaylistRaw } from "../types";
 import { v4 as uuidv4 } from "uuid";
 import {
-  tCreatePlaylists,
   getPlaylists,
-  tCreateAlbums,
-  tCreateTracks,
-  tCreateArtists,
   getAlbums,
   getAlbumTracks,
   getArtists,
@@ -26,13 +12,23 @@ import {
 import { ipcMain } from "../ipc";
 import DiscordRichPrecenceClient from "discord-rich-presence";
 import { getLibraryPath } from "./utils";
-import { SpotifyApi } from "../api";
 import { platform } from "os";
-import axios from "axios";
-import { batchArray } from "../global-utils";
+import YoutubeSource from "./sources/youtube";
+import { SourceManager } from "./sources/source";
+import { SourceImporterManager } from "./importers/importer";
+import SpotifyImporter from "./importers/spotify";
 
 declare const MAIN_WINDOW_WEBPACK_ENTRY: string;
 declare const MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY: string;
+
+const mediaSources = new SourceManager();
+const mediaImporters = new SourceImporterManager();
+mediaImporters
+  .useSource(new SpotifyImporter())
+  .then(() => console.log("Spotify importer loaded"));
+mediaSources
+  .useSource(new YoutubeSource())
+  .then(() => console.log("Youtube Souce Loaded"));
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (require("electron-squirrel-startup")) {
@@ -90,10 +86,6 @@ function makeLocalId() {
   return `local:${uuidv4().toString().replaceAll("-", "")}`;
 }
 
-function makeSpotifyId(id: string) {
-  return `spotify:${id}`;
-}
-
 // In this file you can include the rest of your app's specific main process
 // code. You can also put them in separate files and import them here.
 
@@ -101,79 +93,8 @@ ipcMain.on("getPreloadPath", (e) => {
   e.replySync(MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY);
 });
 
-async function uriToStream(uri: string): Promise<string> {
-  const urlInfo = await play.video_info(uri);
-  const possibleFormat = urlInfo.format.filter(
-    (a) => a.audioQuality === "AUDIO_QUALITY_MEDIUM"
-  )[0];
-  return possibleFormat.url;
-}
-const MAX_URI_TRIES = 10;
-
-const AVOID_STREAM_TERMS = [
-  "official video",
-  "music video",
-  "official music video",
-];
-
 ipcMain.on("getTrackStreamInfo", async (ev, track) => {
-  if (track.uri.length <= 0) {
-    const album = getAlbums([track.album])[0];
-    const artist = getArtists(track.artists).reduce(
-      (all, current) => `${all} ${current.name}`,
-      ""
-    );
-    const searchTerm = `${album.title} - ${track.title} - ${artist} - Audio`;
-    console.log(`Searching using [${searchTerm}] since no uri was given.`);
-    const videoDetails = (
-      await play.search(searchTerm, {
-        source: {
-          youtube: "video",
-        },
-        limit: 4, // 4 results so we have options
-      })
-    ).find((a) => {
-      return AVOID_STREAM_TERMS.every((b) => {
-        const test = a.title?.toLowerCase() || "";
-        return !test.includes(b);
-      });
-    });
-
-    track.uri = videoDetails.url;
-
-    console.log(`Found [${track.uri}] using [${searchTerm}]`);
-  }
-
-  let tries = 0;
-  while (tries < MAX_URI_TRIES) {
-    try {
-      const urlInfo = await play.video_info(track.uri);
-      const possibleFormat = urlInfo.format.filter(
-        (a) => a.audioQuality === "AUDIO_QUALITY_MEDIUM"
-      )[0];
-
-      await axios.head(possibleFormat.url);
-
-      ev.reply({
-        uri: possibleFormat.url,
-        duration: parseInt(possibleFormat.approxDurationMs || "0", 10),
-        from: track.uri,
-      });
-      break;
-    } catch (error) {
-      console.log(`Error fetching stream for ${track.uri}:\n`, error.message);
-      console.log(
-        `Attempting to fetch new stream url. [${
-          tries + 1
-        }/${MAX_URI_TRIES} Attempts]`
-      );
-      tries++;
-    }
-  }
-});
-
-ipcMain.on("toStreamUrl", async (ev, uri) => {
-  ev.reply(await uriToStream(uri));
+  ev.reply(await mediaSources.parse(track));
 });
 
 ipcMain.on("windowMaximize", () => {
@@ -209,7 +130,7 @@ ipcMain.on("createPlaylists", (ev, data) => {
     id: a.id || makeLocalId(),
   }));
 
-  tCreatePlaylists.deferred(newData);
+  //tCreatePlaylists.deferred(newData);
 
   ev.reply(newData.map((a) => ({ ...a, tracks: [] })));
 });
@@ -241,200 +162,6 @@ ipcMain.on("getLibraryPath", (ev) => {
   ev.reply(getLibraryPath());
 });
 
-ipcMain.on("importSpotifyTracks", async (ev, uris) => {
-  const newTracks: KeyValuePair<
-    string,
-    {
-      track: ITrackRaw;
-      album: IAlbumRaw;
-      artists: KeyValuePair<string, IArtistRaw>;
-    }
-  > = {};
-
-  const batches = batchArray(uris, 40);
-
-  for (let i = 0; i < batches.length; i++) {
-    const batch = batches[i];
-    const data = (
-      await SpotifyApi.get<ISpotifyTracksResponse>(
-        `tracks?ids=${batch.join(",")}`
-      )
-    ).data;
-
-    data.tracks.forEach((track) => {
-      if (newTracks[track.id]) return;
-
-      const allTrackArtists: KeyValuePair<string, IArtistRaw> = {};
-
-      const newAlbum: IAlbumRaw<string[]> = {
-        id: makeSpotifyId(track.id),
-        title: track.name,
-        cover: track.album.images[0].url,
-        released: parseInt(track.album.release_date.split("-")[0]),
-        artists: track.album.artists
-          .filter((a) => a.type === "artist")
-          .map((a) => {
-            const newArtist: IArtistRaw = {
-              id: makeSpotifyId(a.id),
-              name: a.name,
-            };
-            if (!allTrackArtists[a.id]) {
-              allTrackArtists[a.id] = newArtist;
-            }
-
-            return newArtist.id;
-          }),
-
-        genre: "",
-      };
-
-      const trackArtists = track.artists
-        .filter((a) => a.type === "artist")
-        .map((a) => {
-          const newArtist: IArtistRaw = {
-            id: makeSpotifyId(a.id),
-            name: a.name,
-          };
-
-          if (!allTrackArtists[a.id]) {
-            allTrackArtists[a.id] = newArtist;
-          }
-
-          return newArtist.id;
-        });
-
-      const newTrack: ITrackRaw = {
-        id: makeSpotifyId(track.id),
-        title: track.name,
-        album: newAlbum.id,
-        uri: "",
-        artists: trackArtists,
-        duration: 0,
-        position: track.track_number,
-      };
-
-      newTracks[track.id] = {
-        track: newTrack,
-        artists: allTrackArtists,
-        album: newAlbum,
-      };
-    });
-  }
-
-  const result: ITrack[] = Object.values(newTracks).map((data) => {
-    // Must happen in this order to keep foreign key constraints
-    tCreateArtists(Object.values(data.artists));
-    tCreateAlbums([data.album]);
-    tCreateTracks([data.track]);
-    return data.track;
-  });
-
-  ev.reply(result);
-});
-
-ipcMain.on("importSpotifyAlbums", async (ev, uris) => {
-  const newAlbums: KeyValuePair<
-    string,
-    {
-      album: IAlbumRaw;
-      tracks: ITrackRaw[];
-      artists: KeyValuePair<string, IArtistRaw>;
-    }
-  > = {};
-
-  const batches = batchArray(uris, 20);
-
-  for (let i = 0; i < batches.length; i++) {
-    const batch = batches[i];
-
-    const data = (
-      await SpotifyApi.get<ISpotifyAlbumsResponse>(
-        `albums?ids=${batch.join(",")}`
-      )
-    ).data;
-
-    data.albums.forEach((album) => {
-      if (newAlbums[album.id]) return;
-
-      const allAlbumArtists: KeyValuePair<string, IArtistRaw> = {};
-
-      const newAlbum: IAlbumRaw = {
-        id: makeSpotifyId(album.id),
-        title: album.name,
-        cover: album.images[0].url,
-        released: parseInt(album.release_date.split("-")[0]),
-        artists: album.artists
-          .filter((a) => a.type === "artist")
-          .map((a) => {
-            const newArtist: IArtistRaw = {
-              id: makeSpotifyId(a.id),
-              name: a.name,
-            };
-            if (!allAlbumArtists[a.id]) {
-              allAlbumArtists[a.id] = newArtist;
-            }
-
-            return newArtist.id;
-          }),
-
-        genre: album.genres.join("|"),
-      };
-
-      newAlbums[album.id] = {
-        album: newAlbum,
-        artists: allAlbumArtists,
-        tracks: album.tracks.items.map((currentTrack) => {
-          const trackArtists = currentTrack.artists
-            .filter((a) => a.type === "artist")
-            .map((a) => {
-              const newArtist: IArtistRaw = {
-                id: makeSpotifyId(a.id),
-                name: a.name,
-              };
-
-              if (!allAlbumArtists[a.id]) {
-                allAlbumArtists[a.id] = newArtist;
-              }
-
-              return newArtist.id;
-            });
-
-          const newTrack: ITrackRaw = {
-            id: makeSpotifyId(currentTrack.id),
-            title: currentTrack.name,
-            album: newAlbum.id,
-            uri: "",
-            artists: trackArtists,
-            duration: 0,
-            position: currentTrack.track_number,
-          };
-
-          return newTrack;
-        }),
-      };
-    });
-  }
-
-  const result: IAlbum[] = Object.values(newAlbums).map((data) => {
-    // Must happen in this order to keep foreign key constraints
-    tCreateArtists(Object.values(data.artists));
-    tCreateAlbums([data.album]);
-    tCreateTracks(data.tracks);
-    return {
-      ...data.album,
-      tracks: data.tracks
-        .sort((a, b) => a.position - b.position)
-        .map((t) => t.id),
-    };
-  });
-
-  ev.reply(result);
-});
-
-ipcMain.on("importSpotifyPlaylists", async (ev) => {
-  ev.reply([]);
-});
-
 ipcMain.on("getTracks", (ev, ids) => {
   ev.reply(getTracks(ids || []));
 });
@@ -445,4 +172,8 @@ ipcMain.on("getArtists", async (ev, ids) => {
 
 ipcMain.on("getPlatform", (ev) => {
   ev.replySync(platform());
+});
+
+ipcMain.on("importItems", async (ev, uri) => {
+  ev.reply(await mediaImporters.parse(uri));
 });

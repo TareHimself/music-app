@@ -12,6 +12,9 @@ export interface IActiveContextMenu {
   callback: ICreateContextMenuEventData["callback"];
 }
 
+const CONTEXT_MENU_WIDTH = 150;
+const CONTEXT_MENU_SCREEN_PADDING = 50;
+
 export default function ContextMenus() {
   const [contextMenu, setContextMenu] = useState<IActiveContextMenu | null>(
     null
@@ -29,8 +32,22 @@ export default function ContextMenus() {
 
   const onCreateNewContextMenu = useCallback(async (e: Event) => {
     const eventData = (e as CustomEvent<ICreateContextMenuEventData>).detail;
+    const predictedMenuHeight = eventData.options.length * 45;
+    const offsetX =
+      window.innerWidth - eventData.event.clientX <
+      CONTEXT_MENU_WIDTH + CONTEXT_MENU_SCREEN_PADDING
+        ? CONTEXT_MENU_WIDTH * -1
+        : 0;
+    const offsetY =
+      window.innerHeight - eventData.event.clientY < predictedMenuHeight
+        ? predictedMenuHeight * -1
+        : 0;
+
     const newMenu: IActiveContextMenu = {
-      position: { x: eventData.event.clientX, y: eventData.event.clientY },
+      position: {
+        x: eventData.event.clientX + offsetX,
+        y: eventData.event.clientY + offsetY,
+      },
       options: eventData.options,
       callback: eventData.callback,
     };
@@ -41,7 +58,7 @@ export default function ContextMenus() {
     (e: MouseEvent) => {
       if (contextMenu && e.target instanceof Element) {
         if (!document.querySelector(".context-menu").contains(e.target)) {
-          console.log("Close the menu cus we clicked outside it");
+          setContextMenu(null);
         }
       }
     },
@@ -66,7 +83,11 @@ export default function ContextMenus() {
     <div id="context-menus">
       <div
         className="context-menu"
-        style={{ top: contextMenu.position.y, left: contextMenu.position.x }}
+        style={{
+          top: contextMenu.position.y,
+          left: contextMenu.position.x,
+          width: `${CONTEXT_MENU_WIDTH}px`,
+        }}
       >
         {contextMenu.options.map((a) => (
           <ContextMenuItem

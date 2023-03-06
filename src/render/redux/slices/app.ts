@@ -17,6 +17,7 @@ export type AppSliceState = GenericSliceData<{
   albums: KeyValuePair<string, IAlbum>;
   playlists: KeyValuePair<string, IPlaylist>;
   artists: KeyValuePair<string, IArtist>;
+  googleDriveApiKey: string;
 }>;
 
 const initialState: AppSliceState = {
@@ -27,6 +28,7 @@ const initialState: AppSliceState = {
     albums: {},
     playlists: {},
     artists: {},
+    googleDriveApiKey: "",
   },
 };
 
@@ -175,6 +177,23 @@ const createPlaylist = createAsyncThunk(
   }
 );
 
+const importIntoLibrary = createAsyncThunk(
+  "app/import-items",
+  async ({ items }: { items: string[] }) => {
+    try {
+      await ensureBridge();
+
+      const newData = await window.bridge.importItems(items);
+
+      return newData;
+    } catch (e: unknown) {
+      // eslint-disable-next-line no-console
+      console.error(e);
+      return null;
+    }
+  }
+);
+
 export const AppSlice = createSlice({
   name: "app",
   // `createSlice` will infer the state type from the `initialState` argument
@@ -213,9 +232,28 @@ export const AppSlice = createSlice({
       if (action.payload)
         state.data.playlists[action.payload.id] = action.payload;
     });
+    builder.addCase(importIntoLibrary.fulfilled, (state, action) => {
+      if (action.payload) {
+        state.data.albums = { ...state.data.albums, ...action.payload.albums };
+        state.data.artists = {
+          ...state.data.artists,
+          ...action.payload.artists,
+        };
+        state.data.playlists = {
+          ...state.data.playlists,
+          ...action.payload.playlists,
+        };
+      }
+    });
   },
 });
 
 export const { setScreenId } = AppSlice.actions;
-export { initApp, loadTracks, loadTracksForAlbum, createPlaylist };
+export {
+  initApp,
+  loadTracks,
+  loadTracksForAlbum,
+  createPlaylist,
+  importIntoLibrary,
+};
 export default AppSlice.reducer;

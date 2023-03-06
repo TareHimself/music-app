@@ -1,4 +1,4 @@
-import { ITrack, TrackStreamInfo } from "../types";
+import { ITrackResource, TrackStreamInfo } from "../types";
 const EXPIRE_AT_REGEX = /expire=([0-9]+)/;
 class StreamManagerClass {
   cache: Map<string, TrackStreamInfo> = new Map();
@@ -8,7 +8,7 @@ class StreamManagerClass {
     this.player.volume = 0.1;
   }
 
-  async getStreamInfo(track: ITrack, forceNew = false) {
+  async getStreamInfo(track: ITrackResource, forceNew = false) {
     if (!forceNew && this.cache.has(track.id)) {
       return this.cache.get(track.id);
     }

@@ -1,5 +1,7 @@
 import { useCallback } from "react";
 import { IPlaylistTrack } from "../../../types";
+import { GiSoundWaves } from "react-icons/gi";
+import { FaPlay } from "react-icons/fa";
 import { useAppDispatch, useAppSelector } from "../../redux/hooks";
 import { loadTracksForAlbum } from "../../redux/slices/app";
 import { generateContextMenu, toTimeString } from "../../utils";
@@ -8,7 +10,9 @@ export type TrackItemProps =
   | { type: "playlist"; playlistInfo: IPlaylistTrack }
   | { type: "queue"; trackId: string }
   | { type: "album"; trackId: string };
-export default function TrackItem(props: TrackItemProps) {
+export default function TrackItem(
+  props: TrackItemProps & { activeOverride?: boolean }
+) {
   const currentTrack = useAppSelector((s) => s.player.data.currentTrack);
 
   const trackId =
@@ -53,8 +57,30 @@ export default function TrackItem(props: TrackItemProps) {
     [trackData]
   );
 
+  const onRemoveTrackFromQueue = useCallback(
+    async (selection: string) => {
+      if (!trackData) return;
+
+      console.log("This will work soon:", selection);
+    },
+    [trackData]
+  );
+
   const makeContextMenu = useCallback(
     (e: React.MouseEvent) => {
+      if (props.type === "queue") {
+        generateContextMenu({
+          event: e,
+          options: [
+            {
+              id: "remove",
+              name: "Remove Track",
+            },
+          ],
+          callback: onRemoveTrackFromQueue,
+        });
+        return;
+      }
       generateContextMenu({
         event: e,
         options: [
@@ -66,7 +92,7 @@ export default function TrackItem(props: TrackItemProps) {
         callback: onContextMenuItemSelected,
       });
     },
-    [onContextMenuItemSelected]
+    [onContextMenuItemSelected, onRemoveTrackFromQueue, props.type]
   );
 
   if (!trackData) {
@@ -80,15 +106,20 @@ export default function TrackItem(props: TrackItemProps) {
     );
   }
 
+  const isActive =
+    props.activeOverride === undefined
+      ? currentTrack === trackData?.id
+      : props.activeOverride;
+
   return (
     <div
-      className={
-        currentTrack === trackData?.id ? "track-item active" : "track-item"
-      }
+      className={isActive ? "track-item active" : "track-item"}
       onClick={tryPlayTrack}
       onContextMenu={makeContextMenu}
     >
-      <span className="track-icon" />
+      <span className="track-icon">
+        {isActive ? <GiSoundWaves /> : <FaPlay />}
+      </span>
       <span className="track-title">
         <span data--info="text">
           <h2>{title}</h2>

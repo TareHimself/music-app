@@ -210,6 +210,10 @@ p {
   cursor: pointer;
 }
 
+#player-tab .icon.active {
+  color: var(--icon-fg-hover);
+}
+
 #player-tab .icon:hover {
   transform: scale(1.1);
 }
@@ -488,6 +492,7 @@ p {
 
 .track-item {
   display: flex;
+  position: relative;
   width: 100%;
   height: var(--track-item-height);
   border-radius: 20px;
@@ -514,6 +519,15 @@ p {
   left: calc(var(--track-item-height) / 2);
   top: calc(var(--track-item-height) / 2);
   transform: translate(-50%, -50%);
+}
+
+.track-icon svg {
+  color: var(--icon-fg);
+}
+
+.track-item.active .track-icon svg {
+  color: var(--active-track-color);
+  font-size: 35px;
 }
 
 .track-title h2 {
@@ -578,8 +592,8 @@ p {
   cursor: pointer;
 }
 
-.album-item .placeholder {
-  cursor: none;
+.album-item.placeholder {
+  cursor: default;
 }
 
 .album-item-image-wrapper {
@@ -625,6 +639,17 @@ p {
   text-overflow: ellipsis;
   text-align: center;
 }
+
+.row-input {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.row-input-title {}
+
+.row-input-confirm {}
 
 @media only screen and (max-width: 1580px) {
   .item-grid {

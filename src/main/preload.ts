@@ -48,14 +48,8 @@ ipcRenderer.exposeApi<IBridgeEvents>("bridge", {
   getLibraryPath: () => {
     return ipcRenderer.asyncEventCall("getLibraryPath");
   },
-  importSpotifyTracks: (uris) => {
-    return ipcRenderer.asyncEventCall("importSpotifyTracks", uris);
-  },
-  importSpotifyAlbums: (uris) => {
-    return ipcRenderer.asyncEventCall("importSpotifyAlbums", uris);
-  },
-  importSpotifyPlaylists: (uris) => {
-    return ipcRenderer.asyncEventCall("importSpotifyPlaylists", uris);
+  importItems: (uris) => {
+    return ipcRenderer.asyncEventCall("importItems", uris);
   },
   getArtists: (ids) => {
     return ipcRenderer.asyncEventCall("getArtists", ids);

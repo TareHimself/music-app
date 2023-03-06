@@ -5,14 +5,7 @@ import {
   BsSoundwave,
 } from "react-icons/bs";
 import { MdOutlineLibraryAdd } from "react-icons/md";
-import {
-  RiAddCircleFill,
-  RiAddCircleLine,
-  RiSearch2Fill,
-  RiSearch2Line,
-  RiSettings4Fill,
-  RiSettings4Line,
-} from "react-icons/ri";
+import { RiSettings4Fill, RiSettings4Line } from "react-icons/ri";
 import AppConstants from "../../data";
 import { useAppDispatch, useAppSelector } from "../redux/hooks";
 import { createPlaylist } from "../redux/slices/app";
@@ -58,27 +51,11 @@ export default function NavPanel() {
     <div id="nav-panel">
       <div className="nav-items">
         <NavItem
-          navId={AppConstants.NAV_ID_SEARCH}
-          display="Search"
-          activeId={selectedItem}
-          ActiveElement={RiSearch2Fill}
-          InactiveElement={RiSearch2Line}
-          onSelected={onItemSelected}
-        />
-        <NavItem
           navId={AppConstants.NAV_ID_LIBRARY}
           display="Library"
           activeId={selectedItem}
           ActiveElement={BsFileEarmarkMusicFill}
           InactiveElement={BsFileEarmarkMusic}
-          onSelected={onItemSelected}
-        />
-        <NavItem
-          navId={AppConstants.NAV_ID_IMPORT}
-          display="Import"
-          activeId={selectedItem}
-          ActiveElement={RiAddCircleFill}
-          InactiveElement={RiAddCircleLine}
           onSelected={onItemSelected}
         />
         <NavItem

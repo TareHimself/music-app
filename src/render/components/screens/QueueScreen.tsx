@@ -13,11 +13,20 @@ export default function QueueScreen() {
     return <div className="screen"></div>;
   }
 
+  console.log(queuedTracks, currentTrack);
+
   return (
     <ScreenWithImage cover={album?.cover}>
       <div className="track-items">
-        {[currentTrack, ...queuedTracks].map((a) => {
-          return <TrackItem trackId={a} key={a} type={"queue"} />;
+        {[currentTrack, ...queuedTracks].map((a, idx) => {
+          return (
+            <TrackItem
+              trackId={a}
+              key={idx}
+              type={"queue"}
+              activeOverride={idx === 0}
+            />
+          );
         })}
       </div>
     </ScreenWithImage>

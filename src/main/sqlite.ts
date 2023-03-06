@@ -155,14 +155,14 @@ const GetTrackArtistsStatement = db.prepare<{ track: string }>(
 // const tInsertAlbums = db.transaction((albums: ILocalAlbum[]) => {});
 
 export const tCreatePlaylists: Database.Transaction<
-  (playlists: IPlaylistRaw[]) => void
+  (playlists: IPlaylist[]) => void
 > = db.transaction((playlists) => {
   for (let i = 0; i < playlists.length; i++) {
     InsertNewPlaylistStatement.run(playlists[i]);
   }
 });
 
-export const tCreateAlbums: Database.Transaction<(data: IAlbumRaw[]) => void> =
+export const tCreateAlbums: Database.Transaction<(data: IAlbum[]) => void> =
   db.transaction((data) => {
     for (let i = 0; i < data.length; i++) {
       InsertNewAlbumStatement.run(data[i]);
@@ -172,7 +172,7 @@ export const tCreateAlbums: Database.Transaction<(data: IAlbumRaw[]) => void> =
     }
   });
 
-export const tCreateTracks: Database.Transaction<(data: ITrackRaw[]) => void> =
+export const tCreateTracks: Database.Transaction<(data: ITrack[]) => void> =
   db.transaction((data) => {
     for (let i = 0; i < data.length; i++) {
       InsertNewTrackStatement.run(data[i]);
@@ -182,13 +182,13 @@ export const tCreateTracks: Database.Transaction<(data: ITrackRaw[]) => void> =
     }
   });
 
-export const tCreateArtists: Database.Transaction<
-  (data: IArtistRaw[]) => void
-> = db.transaction((data) => {
-  for (let i = 0; i < data.length; i++) {
-    InsertNewArtistStatement.run(data[i]);
-  }
-});
+export const tCreateArtists: Database.Transaction<(data: IArtist[]) => void> =
+  db.transaction((data) => {
+    for (let i = 0; i < data.length; i++) {
+      console.log("Inserting track", data[i]);
+      InsertNewArtistStatement.run(data[i]);
+    }
+  });
 
 export const tUpdatePlaylistsMeta: Database.Transaction<
   (updates: IPlaylistRawMetaUpdate[]) => void

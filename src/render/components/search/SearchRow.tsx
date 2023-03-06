@@ -1,6 +1,6 @@
 import { IAlbum } from "../../../types";
-import AlbumItem from "./AlbumItem";
-export default function AlbumRow({
+import SearchItem from "./SearchItem";
+export default function SearchRow({
   rows,
   expectedRowCount,
 }: {
@@ -12,13 +12,13 @@ export default function AlbumRow({
   const fakeElements = [];
 
   for (let i = 0; i < fakeRowsNeeded; i++) {
-    fakeElements.push(<AlbumItem key={`placeholder-${i}`} />);
+    fakeElements.push(<SearchItem key={`placeholder-${i}`} />);
   }
 
   return (
     <div className="library-content-row">
       {rows.map((row) => (
-        <AlbumItem key={row.id} data={row} />
+        <SearchItem key={row.id} data={row} />
       ))}
       {fakeElements}
     </div>

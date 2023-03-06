@@ -119,6 +119,14 @@ export type ControllableSliderProps = {
 
 export type TrackStreamInfo = { uri: string; duration: number; from: string };
 
+export interface ITrackResource {
+  id: string;
+  title: string;
+  album: string;
+  uri: string;
+  artists: string[];
+}
+
 export type Awaitable<T> = T | Promise<T>;
 
 export type IQueueTrackEventData = {
@@ -145,7 +153,7 @@ export interface IBridgeEvents {
   windowMinimize: () => void;
   windowMaximize: () => void;
   windowClose: () => void;
-  getTrackStreamInfo: (track: ITrack) => Promise<TrackStreamInfo>;
+  getTrackStreamInfo: (track: ITrackResource) => Promise<TrackStreamInfo>;
   toStreamUrl: (uri: string) => Promise<string>;
   searchForStream: (search: string) => Promise<string>;
   getPlaylists: () => Promise<IPlaylist[]>;
@@ -157,9 +165,11 @@ export interface IBridgeEvents {
   updateDiscordPresence: (data: ITrack) => Promise<void>;
   clearDiscordPresence: () => Promise<void>;
   getLibraryPath: () => Promise<string>;
-  importSpotifyTracks: (uris: string[]) => Promise<ITrack[]>;
-  importSpotifyAlbums: (uris: string[]) => Promise<IAlbum[]>;
-  importSpotifyPlaylists: (uris: string[]) => Promise<IPlaylist[]>;
+  importItems: (uris: string[]) => Promise<{
+    albums: KeyValuePair<string, IAlbum>;
+    artists: KeyValuePair<string, IArtist>;
+    playlists: KeyValuePair<string, IPlaylist>;
+  }>;
   getPlatform: () => NodeJS.Platform;
 }
 
@@ -223,6 +233,27 @@ export interface ISpotifyAlbumsResponse {
 
 export interface ISpotifyTracksResponse {
   tracks: (ISpotifyTrack & { album: ISpotifyAlbum })[];
+}
+
+export interface ISearchSection<T> {
+  href: string;
+  limit: number;
+  next: string;
+  offset: number;
+  previous: string;
+  total: number;
+  items: T[];
+}
+
+export interface IResourceImport {
+  albums: KeyValuePair<string, IAlbum>;
+  artists: KeyValuePair<string, IArtist>;
+  playlists: KeyValuePair<string, IPlaylist>;
+}
+
+export interface ISpotifySearchResponse {
+  tracks: ISearchSection<ISpotifyTrack & { album: ISpotifyAlbum }>;
+  albums: ISearchSection<ISpotifyAlbumNoTracks>;
 }
 
 export type KeyValuePair<K extends string | number | symbol, D> = {

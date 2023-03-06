@@ -61,6 +61,7 @@
     "react-icons": "^4.7.1",
     "react-redux": "^8.0.5",
     "react-router-dom": "^6.8.1",
-    "uuid": "^9.0.0"
+    "uuid": "^9.0.0",
+    "ytmusic-api": "^4.1.0"
   }
 }
