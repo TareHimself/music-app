@@ -24,8 +24,9 @@ export class SourceManager {
   constructor() {}
 
   async useSource(source: MusiczMediaSource) {
-    this.sources.set(source.id, source);
+    console.log("Loading source", source.id);
     await source.load();
+    this.sources.set(source.id, source);
   }
 
   async parse(resource: ITrackResource): Promise<TrackStreamInfo | null> {

@@ -161,8 +161,14 @@ export default function PlayerTab() {
         uri: allTracks[trackId].uri,
         artists: allTracks[trackId].artists.map((a) => artists[a].name),
       });
-      player.src = streamInfo.uri;
-      player.play();
+      if (streamInfo) {
+        player.src = streamInfo.uri;
+        player.play();
+      } else {
+        console.log("No sources found for the track");
+        return;
+      }
+
       dispatch(setCurrentTrack(trackId));
       window.bridge.updateDiscordPresence(allTracks[trackId]);
     },

@@ -217,10 +217,8 @@ export default class SpotifyImporter extends SourceImporter {
       }
     }
 
-    await Promise.all([
-      this.importAlbums(cache, albumsToImport),
-      this.importTracks(cache, tracksToImport),
-    ]);
+    await this.importAlbums(cache, albumsToImport);
+    await this.importTracks(cache, tracksToImport);
     //https://open.spotify.com/album/5p0RmmR4QuGvGLqc8Ow4ba?si=ebeac79a7d76484d,https://open.spotify.com/album/6KT8x5oqZJl9CcnM66hddo?si=c2dc102670df4888,https://open.spotify.com/album/7Hc9zEVvu3wOJXI5YVhXe2?si=e92371eab47b4912,https://open.spotify.com/album/2rBHhp9tNShxTb529Hi5AS?si=f4e3f71d63984a9e,https://open.spotify.com/album/6t5D6LEgHxqUVOxJItkzfb?si=eed322fbddeb4158,https://open.spotify.com/album/3ciEcHv8axaPC5YHTJ72Bg?si=0b9587a50ed44629
 
     // must happen in this order to avoid foreign key contraints

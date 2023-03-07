@@ -14,6 +14,11 @@ class StreamManagerClass {
     }
 
     const streamInfo = await window.bridge.getTrackStreamInfo(track);
+
+    if (!streamInfo) {
+      return null;
+    }
+
     const expire_in =
       parseInt(streamInfo.uri.match(EXPIRE_AT_REGEX)[1]) * 1000 -
       Date.now() -
@@ -21,7 +26,7 @@ class StreamManagerClass {
     this.cache.set(track.id, streamInfo);
 
     setTimeout(
-      (cache: typeof this.cache) => {
+      (cache: Map<string, TrackStreamInfo>) => {
         cache.delete(track.id);
       },
       expire_in,

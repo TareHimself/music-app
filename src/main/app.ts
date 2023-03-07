@@ -25,10 +25,12 @@ const mediaSources = new SourceManager();
 const mediaImporters = new SourceImporterManager();
 mediaImporters
   .useSource(new SpotifyImporter())
-  .then(() => console.log("Spotify importer loaded"));
+  .then(() => console.log("Spotify importer loaded"))
+  .catch(console.log);
 mediaSources
   .useSource(new YoutubeSource())
-  .then(() => console.log("Youtube Souce Loaded"));
+  .then(() => console.log("Youtube Souce Loaded"))
+  .catch(console.log);
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (require("electron-squirrel-startup")) {

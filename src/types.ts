@@ -153,7 +153,9 @@ export interface IBridgeEvents {
   windowMinimize: () => void;
   windowMaximize: () => void;
   windowClose: () => void;
-  getTrackStreamInfo: (track: ITrackResource) => Promise<TrackStreamInfo>;
+  getTrackStreamInfo: (
+    track: ITrackResource
+  ) => Promise<TrackStreamInfo | null>;
   toStreamUrl: (uri: string) => Promise<string>;
   searchForStream: (search: string) => Promise<string>;
   getPlaylists: () => Promise<IPlaylist[]>;
