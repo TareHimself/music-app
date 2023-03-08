@@ -58,10 +58,12 @@
     "play-dl": "^1.9.6",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
+    "react-hot-toast": "^2.4.0",
     "react-icons": "^4.7.1",
     "react-redux": "^8.0.5",
     "react-router-dom": "^6.8.1",
     "uuid": "^9.0.0",
+    "ytdl-core": "^4.11.2",
     "ytmusic-api": "^4.1.0"
   }
 }

@@ -1,10 +1,10 @@
 import { useCallback } from "react";
 import { IPlaylistTrack } from "../../../types";
-import { GiSoundWaves } from "react-icons/gi";
-import { FaPlay } from "react-icons/fa";
 import { useAppDispatch, useAppSelector } from "../../redux/hooks";
-import { loadTracksForAlbum } from "../../redux/slices/app";
+import { loadTracksForAlbum } from "../../redux/slices/library";
 import { generateContextMenu, toTimeString } from "../../utils";
+import { HiPause, HiPlay } from "react-icons/hi2";
+import { StreamManager } from "../../global";
 
 export type TrackItemProps =
   | { type: "playlist"; playlistInfo: IPlaylistTrack }
@@ -13,30 +13,52 @@ export type TrackItemProps =
 export default function TrackItem(
   props: TrackItemProps & { activeOverride?: boolean }
 ) {
-  const currentTrack = useAppSelector((s) => s.player.data.currentTrack);
-
   const trackId =
     props.type === "playlist" ? props.playlistInfo.track : props.trackId;
 
-  const trackData = useAppSelector((s) => s.app.data.tracks[trackId]);
+  const [trackData, currentTrack, isPaused] = useAppSelector((s) => [
+    s.library.data.tracks[trackId],
+    s.player.data.currentTrack,
+    s.player.data.isPaused,
+  ]);
 
   const dispatch = useAppDispatch();
 
   const albumData = useAppSelector(
-    (s) => s.app.data.albums[trackData?.album || ""]
+    (s) => s.library.data.albums[trackData?.album || ""]
   );
 
-  const allArtists = useAppSelector((s) => s.app.data.artists);
+  const allArtists = useAppSelector((s) => s.library.data.artists || {});
 
-  const { title, artists, duration } = trackData || {};
+  const { title, artists, duration } = trackData || {
+    title: "",
+    artists: [],
+    duration: 0,
+  };
+
+  const isActiveTrack =
+    props.activeOverride === undefined
+      ? currentTrack === trackData?.id
+      : props.activeOverride;
 
   const tryPlayTrack = useCallback(async () => {
+    if (!trackData?.album || !albumData) return;
+
+    if (isActiveTrack) {
+      if (isPaused) {
+        StreamManager.player.play();
+      } else {
+        StreamManager.player.pause();
+      }
+      return;
+    }
+
     await dispatch(loadTracksForAlbum({ albumId: trackData.album }));
     window.utils.queueTracks({
       tracks: albumData.tracks.slice(albumData.tracks.indexOf(trackId)),
       replaceQueue: true,
     });
-  }, [albumData?.tracks, dispatch, trackData?.album, trackId]);
+  }, [albumData, dispatch, isActiveTrack, isPaused, trackData?.album, trackId]);
 
   const onContextMenuItemSelected = useCallback(
     async (selection: string) => {
@@ -106,26 +128,24 @@ export default function TrackItem(
     );
   }
 
-  const isActive =
-    props.activeOverride === undefined
-      ? currentTrack === trackData?.id
-      : props.activeOverride;
-
   return (
     <div
-      className={isActive ? "track-item active" : "track-item"}
-      onClick={tryPlayTrack}
+      className={isActiveTrack ? "track-item active" : "track-item"}
       onContextMenu={makeContextMenu}
     >
       <span className="track-icon">
-        {isActive ? <GiSoundWaves /> : <FaPlay />}
+        {isActiveTrack && !isPaused ? (
+          <HiPause onClick={tryPlayTrack} />
+        ) : (
+          <HiPlay onClick={tryPlayTrack} />
+        )}
       </span>
       <span className="track-title">
         <span data--info="text">
           <h2>{title}</h2>
           <p>
             {artists
-              .map((a) => allArtists[a].name)
+              .map((a) => allArtists[a]?.name || "")
               .join(" , ")
               .trim()}
           </p>

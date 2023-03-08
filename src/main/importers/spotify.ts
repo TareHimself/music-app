@@ -33,6 +33,8 @@ export default class SpotifyImporter extends SourceImporter {
 
     for (let i = 0; i < batches.length; i++) {
       const batch = batches[i];
+      if (!batch) continue;
+
       const data = (
         await SpotifyApi.get<ISpotifyTracksResponse>(
           `tracks?ids=${batch.join(",")}`
@@ -49,8 +51,10 @@ export default class SpotifyImporter extends SourceImporter {
           cache.albums[albumId] = {
             id: this.toSourceId(track.id),
             title: track.name,
-            cover: track.album.images[0].url,
-            released: parseInt(track.album.release_date.split("-")[0]),
+            cover: track.album.images[0]?.url || "",
+            released: parseInt(
+              track.album.release_date.split("-")[0] || "2000"
+            ),
             tracks: [trackId],
             artists: track.album.artists
               .filter((a) => a.type === "artist")
@@ -70,9 +74,10 @@ export default class SpotifyImporter extends SourceImporter {
             genre: "",
           };
         } else {
-          cache.albums[albumId].tracks.push(trackId);
-          cache.albums[albumId].tracks.sort(
-            (a, b) => cache.tracks[a].position - cache.tracks[b].position
+          cache.albums[albumId]?.tracks.push(trackId);
+          cache.albums[albumId]?.tracks.sort(
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+            (a, b) => cache.tracks[a]!.position - cache.tracks[b]!.position
           );
         }
 
@@ -111,7 +116,7 @@ export default class SpotifyImporter extends SourceImporter {
 
     for (let i = 0; i < batches.length; i++) {
       const batch = batches[i];
-
+      if (!batch) return;
       const data = (
         await SpotifyApi.get<ISpotifyAlbumsResponse>(
           `albums?ids=${batch.join(",")}`
@@ -125,8 +130,8 @@ export default class SpotifyImporter extends SourceImporter {
         const newAlbum: IAlbum = {
           id: albumId,
           title: album.name,
-          cover: album.images[0].url,
-          released: parseInt(album.release_date.split("-")[0]),
+          cover: album.images[0]?.url || "",
+          released: parseInt(album.release_date.split("-")[0] || "2000"),
           artists: album.artists
             .filter((a) => a.type === "artist")
             .map((a) => {
@@ -187,9 +192,9 @@ export default class SpotifyImporter extends SourceImporter {
 
   async parse(items: string[]) {
     const remaining = [...items];
-    const albumsToImport = [];
-    const tracksToImport = [];
-    const playlistsToImport = [];
+    const albumsToImport: string[] = [];
+    const tracksToImport: string[] = [];
+    const playlistsToImport: string[] = [];
 
     const cache: ISpotifyImportCache = {
       tracks: {},
@@ -200,10 +205,13 @@ export default class SpotifyImporter extends SourceImporter {
 
     for (let i = 0; i < items.length; i++) {
       const currentItem = items[i];
+      if (!currentItem) continue;
       const match = currentItem.match(SPOTIFY_URI_REGEX);
       if (match) {
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const [_, category, spotify_id] = match;
+        if (!spotify_id) continue;
+
         if (category === "album") {
           albumsToImport.push(spotify_id);
           remaining.splice(remaining.indexOf(currentItem, 1));

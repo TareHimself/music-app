@@ -4,7 +4,7 @@ export function batchArray<T>(items: T[], batchSize: number): T[][] {
       batches.push([]);
     }
 
-    batches[batches.length - 1].push(item);
+    batches[batches.length - 1]?.push(item);
     return batches;
   }, []);
 }

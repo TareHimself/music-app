@@ -57,7 +57,7 @@ export default function ContextMenus() {
   const onDocumentClicked = useCallback(
     (e: MouseEvent) => {
       if (contextMenu && e.target instanceof Element) {
-        if (!document.querySelector(".context-menu").contains(e.target)) {
+        if (!document.querySelector(".context-menu")?.contains(e.target)) {
           setContextMenu(null);
         }
       }

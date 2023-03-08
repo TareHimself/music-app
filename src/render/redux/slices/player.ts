@@ -8,6 +8,7 @@ export type AppSliceState = GenericSliceData<{
   volume: number;
   repeatState: ERepeatState;
   shuffleState: EShuffleState;
+  isPaused: boolean;
 }>;
 
 const initialState: AppSliceState = {
@@ -19,6 +20,7 @@ const initialState: AppSliceState = {
     volume: 0.1,
     repeatState: ERepeatState.OFF,
     shuffleState: EShuffleState.OFF,
+    isPaused: true,
   },
 };
 
@@ -61,6 +63,9 @@ export const PlayerSlice = createSlice({
     setRepeatState: (state, action: PayloadAction<ERepeatState>) => {
       state.data.repeatState = action.payload;
     },
+    setIsPaused: (state, action: PayloadAction<boolean>) => {
+      state.data.isPaused = action.payload;
+    },
   },
 });
 
@@ -72,5 +77,6 @@ export const {
   replaceRecentTracks,
   setRepeatState,
   setShuffleState,
+  setIsPaused,
 } = PlayerSlice.actions;
 export default PlayerSlice.reducer;

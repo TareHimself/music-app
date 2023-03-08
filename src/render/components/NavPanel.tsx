@@ -8,7 +8,7 @@ import { MdOutlineLibraryAdd } from "react-icons/md";
 import { RiSettings4Fill, RiSettings4Line } from "react-icons/ri";
 import AppConstants from "../../data";
 import { useAppDispatch, useAppSelector } from "../redux/hooks";
-import { createPlaylist } from "../redux/slices/app";
+import { createPlaylist } from "../redux/slices/library";
 import { useNavigate, useLocation } from "react-router-dom";
 import NavItem from "./NavItem";
 
@@ -19,7 +19,7 @@ export default function NavPanel() {
   const selectedItem = location.pathname;
 
   const playlistData = useAppSelector((s) =>
-    Object.values(s.app.data.playlists)
+    Object.values(s.library.data.playlists)
   );
 
   const dispatch = useAppDispatch();

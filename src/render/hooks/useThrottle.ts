@@ -1,5 +1,12 @@
 import { useCallback, useRef } from "react";
 
+/**
+ * Throttles a value change
+ * @param delay time in milliseconds before we update the value after no new updates
+ * @param onCommited
+ * @param initial
+ * @returns
+ */
 export default function useThrottle<T>(
   delay: number,
   onCommited: (value: T) => void,

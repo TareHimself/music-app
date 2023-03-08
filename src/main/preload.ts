@@ -23,7 +23,7 @@ ipcRenderer.exposeApi<IBridgeEvents>("bridge", {
   getPlaylists: () => {
     return ipcRenderer.asyncEventCall("getPlaylists");
   },
-  getAlbums: (albums: string[]) => {
+  getAlbums: (albums) => {
     return ipcRenderer.asyncEventCall("getAlbums", albums);
   },
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

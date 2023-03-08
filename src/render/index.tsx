@@ -8,22 +8,26 @@ import PlayerTab from "./components/PlayerTab";
 import TopFrame from "./components/TopFrame";
 import "./css/base.css";
 import { useAppDispatch } from "./redux/hooks";
-import { initApp } from "./redux/slices/app";
+import { initLibrary } from "./redux/slices/library";
 import { store } from "./redux/store";
 import { MemoryRouter } from "react-router-dom";
 import ContextMenus from "./components/ContextMenus";
+import { toast, Toaster } from "react-hot-toast";
 
 export function RootApp() {
   const dispatch = useAppDispatch();
 
   useEffect(() => {
     console.log("Loading App inital Data");
-    dispatch(initApp());
+    dispatch(initLibrary()).then(() => {
+      toast.success("Library loaded");
+    });
   }, [dispatch]);
 
   return (
     <>
       {window.bridge?.getPlatform() === "win32" && <TopFrame />}
+
       <ContextMenus />
       <App />
       <PlayerTab />
@@ -55,6 +59,21 @@ if (container) {
   root.render(
     <MemoryRouter>
       <Provider store={store}>
+        <Toaster
+          position="bottom-center"
+          reverseOrder={true}
+          containerStyle={{
+            bottom: 100,
+          }}
+          toastOptions={{
+            style: {
+              borderRadius: "10px",
+              background: "#333",
+              color: "#fff",
+            },
+          }}
+        />
+
         <RootApp />
       </Provider>
     </MemoryRouter>

@@ -110,16 +110,27 @@ export const ipcRenderer = new IpcRendererWrapper();
 class IpcMainEventWrapper<T extends keyof IBridgeEvents> {
   channel: T;
   ref: IpcMainEvent;
+  created: number = Date.now();
   constructor(channel: T, ref: IpcMainEvent) {
     this.channel = channel;
     this.ref = ref;
   }
 
   reply(data: BridgeEventReturn<T>) {
+    console.log(
+      `Sending reply on channel [${this.channel}] Took ${
+        (Date.now() - this.created) / 1000
+      } seconds`
+    );
     this.ref.reply(this.channel, data);
   }
 
   replySync(data: BridgeEventReturn<T>) {
+    console.log(
+      `Sending reply on channel [${this.channel}] Took ${
+        (Date.now() - this.created) / 1000
+      } seconds`
+    );
     this.ref.returnValue = data;
   }
 }
@@ -143,7 +154,10 @@ class IpcMainWrapper {
 
     this._callbacks.get(event)?.set(callback, midWay);
 
-    electronIpcMain.on(event, midWay);
+    electronIpcMain.on(
+      event,
+      midWay as (event: Electron.IpcMainEvent, ...args: any[]) => void
+    );
 
     return this;
   }
@@ -158,7 +172,10 @@ class IpcMainWrapper {
     const midWay = (e: IpcMainEvent, ...args: BridgeEventParams<T>) =>
       callback(new IpcMainEventWrapper<T>(event, e), ...args);
 
-    electronIpcMain.once(event, midWay);
+    electronIpcMain.once(
+      event,
+      midWay as (event: Electron.IpcMainEvent, ...args: any[]) => void
+    );
 
     return this;
   }

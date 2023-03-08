@@ -24,7 +24,6 @@ export class SourceManager {
   constructor() {}
 
   async useSource(source: MusiczMediaSource) {
-    console.log("Loading source", source.id);
     await source.load();
     this.sources.set(source.id, source);
   }
@@ -33,8 +32,11 @@ export class SourceManager {
     const sourceItems = Array.from(this.sources.values());
 
     for (let i = 0; i < sourceItems.length; i++) {
-      if (sourceItems[i].canParse(resource)) {
-        const result = await sourceItems[i].parse(resource);
+      const item = sourceItems[i];
+      if (!item) continue;
+
+      if (item.canParse(resource)) {
+        const result = await item.parse(resource);
         if (!result) {
           continue;
         }

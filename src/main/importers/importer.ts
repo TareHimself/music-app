@@ -39,9 +39,13 @@ export class SourceImporterManager {
     const sourceItems = Array.from(this.importers.values());
     let itemsNotImported = resources;
     for (let i = 0; i < sourceItems.length; i++) {
-      const { remaining, albums, artists, playlists } = await sourceItems[
-        i
-      ].parse(itemsNotImported);
+      const currentItem = sourceItems[i];
+
+      if (!currentItem) continue;
+
+      const { remaining, albums, artists, playlists } = await currentItem.parse(
+        itemsNotImported
+      );
 
       result.albums = { ...result.albums, ...albums };
       result.artists = { ...result.artists, ...artists };

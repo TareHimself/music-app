@@ -23,7 +23,7 @@ export type AppSliceState = GenericSliceData<{
 const initialState: AppSliceState = {
   status: "loading",
   data: {
-    screenId: AppConstants.MAIN_NAV_IDS[1],
+    screenId: AppConstants.MAIN_NAV_IDS[1] || "",
     tracks: {},
     albums: {},
     playlists: {},
@@ -32,7 +32,7 @@ const initialState: AppSliceState = {
   },
 };
 
-const initApp = createAsyncThunk("app/load", async () => {
+const initLibrary = createAsyncThunk("library/load", async () => {
   try {
     await ensureBridge();
     const playlists = await window.bridge.getPlaylists();
@@ -76,22 +76,22 @@ const loadTracks = createAsyncThunk<
   { trackIds: string[] },
   {
     state: {
-      app: GenericSliceData<{ artists: KeyValuePair<string, IArtist> }>;
+      library: GenericSliceData<{ artists: KeyValuePair<string, IArtist> }>;
     };
   }
->("app/load-tracks", async ({ trackIds }, thunk) => {
+>("library/load-tracks", async ({ trackIds }, thunk) => {
   try {
     await ensureBridge();
 
     await ensureBridge();
 
-    const existingArtists = thunk.getState().app.data.artists;
+    const existingArtists = thunk.getState().library.data.artists;
 
     const tracks = await window.bridge.getTracks(trackIds);
 
     const artistsNeeded = Array.from(
       new Set(
-        tracks.reduce((t, c) => {
+        tracks.reduce<string[]>((t, c) => {
           const missingArtists = c.artists.filter(
             (c) => existingArtists[c] === undefined
           );
@@ -118,20 +118,20 @@ const loadTracksForAlbum = createAsyncThunk<
   { albumId: string },
   {
     state: {
-      app: GenericSliceData<{ artists: KeyValuePair<string, IArtist> }>;
+      library: GenericSliceData<{ artists: KeyValuePair<string, IArtist> }>;
     };
   }
->("app/load-album-tracks", async ({ albumId }, thunk) => {
+>("library/load-album-tracks", async ({ albumId }, thunk) => {
   try {
     await ensureBridge();
 
-    const existingArtists = thunk.getState().app.data.artists;
+    const existingArtists = thunk.getState().library.data.artists;
 
     const tracks = await window.bridge.getAlbumTracks(albumId);
 
     const artistsNeeded = Array.from(
       new Set(
-        tracks.reduce((t, c) => {
+        tracks.reduce<string[]>((t, c) => {
           const missingArtists = c.artists.filter(
             (c) => existingArtists[c] === undefined
           );
@@ -154,7 +154,7 @@ const loadTracksForAlbum = createAsyncThunk<
 });
 
 const createPlaylist = createAsyncThunk(
-  "app/create-playlist",
+  "library/create-playlist",
   async ({ title, position }: { title: string; position: number }) => {
     try {
       await ensureBridge();
@@ -178,13 +178,18 @@ const createPlaylist = createAsyncThunk(
 );
 
 const importIntoLibrary = createAsyncThunk(
-  "app/import-items",
+  "library/import-items",
   async ({ items }: { items: string[] }) => {
     try {
       await ensureBridge();
 
       const newData = await window.bridge.importItems(items);
 
+      console.log(
+        `Immported ${Object.keys(newData.playlists).length} Playlists, ${
+          Object.keys(newData.albums).length
+        } Albums and ${Object.keys(newData.artists).length} Artists`
+      );
       return newData;
     } catch (e: unknown) {
       // eslint-disable-next-line no-console
@@ -194,8 +199,8 @@ const importIntoLibrary = createAsyncThunk(
   }
 );
 
-export const AppSlice = createSlice({
-  name: "app",
+export const LibarySlice = createSlice({
+  name: "library",
   // `createSlice` will infer the state type from the `initialState` argument
   initialState,
   reducers: {
@@ -205,7 +210,7 @@ export const AppSlice = createSlice({
   },
   // eslint-disable-next-line @typescript-eslint/no-empty-function
   extraReducers: (builder) => {
-    builder.addCase(initApp.fulfilled, (state, action) => {
+    builder.addCase(initLibrary.fulfilled, (state, action) => {
       state.data.playlists = action.payload[0];
       state.data.artists = action.payload[1];
       state.data.albums = action.payload[2];
@@ -248,12 +253,12 @@ export const AppSlice = createSlice({
   },
 });
 
-export const { setScreenId } = AppSlice.actions;
+export const { setScreenId } = LibarySlice.actions;
 export {
-  initApp,
+  initLibrary as initLibrary,
   loadTracks,
   loadTracksForAlbum,
   createPlaylist,
   importIntoLibrary,
 };
-export default AppSlice.reducer;
+export default LibarySlice.reducer;

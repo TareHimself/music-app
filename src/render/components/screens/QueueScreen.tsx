@@ -6,17 +6,17 @@ export default function QueueScreen() {
   const [queuedTracks, currentTrack, album] = useAppSelector((s) => [
     s.player.data.queuedTracks,
     s.player.data.currentTrack,
-    s.app.data.albums[s.app.data.tracks[s.player.data.currentTrack]?.album],
+    s.library.data.albums[
+      s.library.data.tracks[s.player.data.currentTrack || ""]?.album || ""
+    ],
   ]);
 
   if (!currentTrack) {
     return <div className="screen"></div>;
   }
 
-  console.log(queuedTracks, currentTrack);
-
   return (
-    <ScreenWithImage cover={album?.cover}>
+    <ScreenWithImage cover={album?.cover || ""}>
       <div className="track-items">
         {[currentTrack, ...queuedTracks].map((a, idx) => {
           return (

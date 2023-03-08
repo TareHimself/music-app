@@ -158,16 +158,19 @@ export const tCreatePlaylists: Database.Transaction<
   (playlists: IPlaylist[]) => void
 > = db.transaction((playlists) => {
   for (let i = 0; i < playlists.length; i++) {
-    InsertNewPlaylistStatement.run(playlists[i]);
+    const current = playlists[i];
+    if (current) InsertNewPlaylistStatement.run(current);
   }
 });
 
 export const tCreateAlbums: Database.Transaction<(data: IAlbum[]) => void> =
   db.transaction((data) => {
     for (let i = 0; i < data.length; i++) {
-      InsertNewAlbumStatement.run(data[i]);
-      data[i].artists.forEach((a) => {
-        InsertNewAlbumArtistLinkStatement.run({ artist: a, album: data[i].id });
+      const current = data[i];
+      if (!current) continue;
+      InsertNewAlbumStatement.run(current);
+      current.artists.forEach((a) => {
+        InsertNewAlbumArtistLinkStatement.run({ artist: a, album: current.id });
       });
     }
   });
@@ -175,9 +178,11 @@ export const tCreateAlbums: Database.Transaction<(data: IAlbum[]) => void> =
 export const tCreateTracks: Database.Transaction<(data: ITrack[]) => void> =
   db.transaction((data) => {
     for (let i = 0; i < data.length; i++) {
-      InsertNewTrackStatement.run(data[i]);
-      data[i].artists.forEach((a) => {
-        InsertNewTrackArtistLinkStatement.run({ artist: a, track: data[i].id });
+      const current = data[i];
+      if (!current) continue;
+      InsertNewTrackStatement.run(current);
+      current.artists.forEach((a) => {
+        InsertNewTrackArtistLinkStatement.run({ artist: a, track: current.id });
       });
     }
   });
@@ -185,8 +190,9 @@ export const tCreateTracks: Database.Transaction<(data: ITrack[]) => void> =
 export const tCreateArtists: Database.Transaction<(data: IArtist[]) => void> =
   db.transaction((data) => {
     for (let i = 0; i < data.length; i++) {
-      console.log("Inserting track", data[i]);
-      InsertNewArtistStatement.run(data[i]);
+      const current = data[i];
+      if (!current) continue;
+      InsertNewArtistStatement.run(current);
     }
   });
 
@@ -194,9 +200,11 @@ export const tUpdatePlaylistsMeta: Database.Transaction<
   (updates: IPlaylistRawMetaUpdate[]) => void
 > = db.transaction((updates: IPlaylistRawMetaUpdate[]) => {
   for (let i = 0; i < updates.length; i++) {
+    const current = updates[i];
+    if (!current) continue;
     db.prepare<IPlaylistRawMetaUpdate>(
-      `UPDATE playlists ${objectToSetStatement(updates[i])} WHERE id=@id`
-    ).run(updates[i]);
+      `UPDATE playlists ${objectToSetStatement(current)} WHERE id=@id`
+    ).run(current);
   }
 });
 

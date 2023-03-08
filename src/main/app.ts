@@ -141,17 +141,17 @@ ipcMain.on("getAlbumTracks", (e, album) => {
   e.reply(getAlbumTracks(album));
 });
 
-ipcMain.on("updateDiscordPresence", (ev, track) => {
-  const album = getAlbums([track.album])[0];
-  const artist = getArtists(album.artists)[0];
+ipcMain.on("updateDiscordPresence", (ev) => {
+  // const album = getAlbums([track.album])[0];
+  // const artist = getArtists(album.artists)[0];
 
-  PRESENCE_CLIENT.updatePresence({
-    state: `by ${artist.name}`,
-    details: track.title,
-    startTimestamp: Date.now(),
-    largeImageKey: album.cover,
-    instance: false,
-  });
+  // PRESENCE_CLIENT.updatePresence({
+  //   state: `by ${artist.name}`,
+  //   details: track.title,
+  //   startTimestamp: Date.now(),
+  //   largeImageKey: album.cover,
+  //   instance: false,
+  // });
   ev.reply();
 });
 

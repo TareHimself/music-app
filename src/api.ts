@@ -18,6 +18,7 @@ SpotifyApi.interceptors.response.use(undefined, async (error) => {
     );
 
     const config: AxiosRequestConfig = error.config;
+    if (!config.headers) config.headers = {};
     config.headers[
       "Authorization"
     ] = `Bearer ${tokenResponse.data.accessToken}`;

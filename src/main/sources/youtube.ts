@@ -1,8 +1,9 @@
-import { ITrackResource } from "../../types";
+import { ITrackResource, TrackStreamInfo } from "../../types";
 import MusiczMediaSource from "./source";
 import YTMusic from "ytmusic-api";
 import * as play from "play-dl";
 import axios from "axios";
+import { getInfo } from "ytdl-core";
 
 const MAX_URI_TRIES = 10;
 
@@ -21,42 +22,57 @@ export default class YoutubeSource extends MusiczMediaSource {
     return track.uri.length === 0;
   }
 
-  override async parse(track: ITrackResource) {
+  override async parse(track: ITrackResource): Promise<TrackStreamInfo | null> {
     if (!track.uri) {
+      console.time("video search");
       const artist = track.artists.reduce(
         (all, current) => `${all} ${current}`,
-        ""
+        "by"
       );
-      const searchTerm = `${track.album} - ${track.title} - ${artist} - Audio`;
+      const searchTerm = `${track.album} - ${track.title} ${artist} - Explicit`;
+
+      console.log(searchTerm);
 
       const results = await this.ytMusicApi.searchSongs(searchTerm);
 
-      track.uri = `https://youtube.com/watch?v=${results[0].videoId}`;
+      track.uri = `https://youtube.com/watch?v=${results[0]?.videoId || ""}`;
+      console.timeEnd("video search");
     }
 
     let tries = 0;
+    console.time("stream fetch");
     while (tries < MAX_URI_TRIES) {
       try {
-        const urlInfo = await play.video_info(track.uri);
+        console.time("Literal stream fetch");
+        const urlInfo = await getInfo(track.uri);
+        console.timeEnd("Literal stream fetch");
 
-        const possibleFormat = urlInfo.format.filter(
-          (a) => a.audioQuality === "AUDIO_QUALITY_MEDIUM"
+        console.time("stream verification");
+        const possibleFormat = urlInfo.formats.filter(
+          (a) => a.hasAudio && a.audioQuality === "AUDIO_QUALITY_MEDIUM"
         )[0];
 
-        await axios.head(possibleFormat.url);
+        if (!possibleFormat?.url) {
+          throw new Error("Try again my guy");
+        }
 
+        await axios.head(possibleFormat.url);
+        console.timeEnd("stream verification");
+        console.timeEnd("stream fetch");
         return {
           uri: possibleFormat.url,
           duration: parseInt(possibleFormat.approxDurationMs || "0", 10),
           from: track.uri,
         };
-      } catch (error) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      } catch (error: any) {
         console.log(`Error fetching stream for ${track.uri}:\n`, error.message);
         console.log(
           `Attempting to fetch new stream url. [${
             tries + 1
           }/${MAX_URI_TRIES} Attempts]`
         );
+        console.timeEnd("stream verification");
         tries++;
       }
     }

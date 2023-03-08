@@ -259,7 +259,7 @@ export interface ISpotifySearchResponse {
 }
 
 export type KeyValuePair<K extends string | number | symbol, D> = {
-  [key in K]: D | undefined;
+  [key in K]: D;
 };
 
 export const enum ERepeatState {
