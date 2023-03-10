@@ -606,7 +606,32 @@ p {
   max-width: var(--item-width);
   min-width: var(--item-width);
   flex-direction: column;
+  position: relative;
+
+}
+
+.album-item-image-wrapper svg {
+  position: absolute;
+  bottom: -100px;
+  right: 20px;
+  color: var(--icon-fg);
+  width: 35px;
+  height: 35px;
+  z-index: 1;
+  background-color: #3f3f3fa7;
+  padding: 7px;
+  border-radius: 10px;
+  transition: all 0.2s ease-in-out;
   cursor: pointer;
+}
+
+.album-item-image-wrapper:hover svg {
+  bottom: 20px;
+}
+
+.album-item-image-wrapper svg:hover {
+  color: var(--icon-fg-hover);
+  transform: scale(1.1);
 }
 
 .album-item.placeholder {
@@ -618,6 +643,8 @@ p {
   aspect-ratio: 1;
   border-radius: 10%;
   overflow: hidden;
+  position: relative;
+
 }
 
 .album-item img {
@@ -626,8 +653,12 @@ p {
   transition: all 0.2s ease-in-out;
 }
 
-.album-item:hover img {
+.album-item-image-wrapper:hover img {
   transform: scale(1.1);
+}
+
+.album-item img:hover {
+  cursor: pointer;
 }
 
 .album-item span {

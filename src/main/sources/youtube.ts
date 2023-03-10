@@ -1,14 +1,17 @@
 import { ITrackResource, TrackStreamInfo } from "../../types";
 import MusiczMediaSource from "./source";
 import YTMusic from "ytmusic-api";
-import * as play from "play-dl";
 import axios from "axios";
 import { getInfo } from "ytdl-core";
+import { startStopProfile } from "../../global-utils";
 
 const MAX_URI_TRIES = 10;
 
 export default class YoutubeSource extends MusiczMediaSource {
   ytMusicApi: YTMusic = new YTMusic();
+  cachedSearches: Map<string, string> = new Map();
+  static YOUTUBE_URI_REGEX =
+    /https:\/\/[a-z]+.youtube.[a-z]+\/watch\?v=[a-zA-Z1-9]+/;
 
   override get id() {
     return "youtube";
@@ -19,35 +22,45 @@ export default class YoutubeSource extends MusiczMediaSource {
   }
 
   override canParse(track: ITrackResource) {
-    return track.uri.length === 0;
+    return (
+      track.uri.length === 0 ||
+      track.uri.match(YoutubeSource.YOUTUBE_URI_REGEX) !== null
+    );
   }
 
   override async parse(track: ITrackResource): Promise<TrackStreamInfo | null> {
-    if (!track.uri) {
-      console.time("video search");
-      const artist = track.artists.reduce(
-        (all, current) => `${all} ${current}`,
-        "by"
-      );
-      const searchTerm = `${track.album} - ${track.title} ${artist} - Explicit`;
+    if (track.uri.length === 0) {
+      console.log(track.uri);
+      startStopProfile("video uri search");
+      if (this.cachedSearches.get(track.id)) {
+        track.uri = this.cachedSearches.get(track.id) || "";
+      } else {
+        const artist = track.artists.reduce(
+          (all, current) => `${all} ${current}`,
+          "by"
+        );
+        const searchTerm = `${track.album} - ${track.title} ${artist}`;
 
-      console.log(searchTerm);
+        console.log(searchTerm);
 
-      const results = await this.ytMusicApi.searchSongs(searchTerm);
+        const results = await this.ytMusicApi.searchSongs(searchTerm);
 
-      track.uri = `https://youtube.com/watch?v=${results[0]?.videoId || ""}`;
-      console.timeEnd("video search");
+        track.uri = `https://youtube.com/watch?v=${results[0]?.videoId || ""}`;
+        this.cachedSearches.set(track.id, track.uri);
+      }
+
+      startStopProfile("video uri search");
     }
 
     let tries = 0;
-    console.time("stream fetch");
+    startStopProfile("uri stream fetch");
     while (tries < MAX_URI_TRIES) {
       try {
-        console.time("Literal stream fetch");
+        startStopProfile("uri stream info");
         const urlInfo = await getInfo(track.uri);
-        console.timeEnd("Literal stream fetch");
+        startStopProfile("uri stream info");
 
-        console.time("stream verification");
+        startStopProfile("uri stream verification");
         const possibleFormat = urlInfo.formats.filter(
           (a) => a.hasAudio && a.audioQuality === "AUDIO_QUALITY_MEDIUM"
         )[0];
@@ -57,8 +70,8 @@ export default class YoutubeSource extends MusiczMediaSource {
         }
 
         await axios.head(possibleFormat.url);
-        console.timeEnd("stream verification");
-        console.timeEnd("stream fetch");
+        startStopProfile("uri stream verification");
+        startStopProfile("uri stream fetch");
         return {
           uri: possibleFormat.url,
           duration: parseInt(possibleFormat.approxDurationMs || "0", 10),
@@ -72,7 +85,7 @@ export default class YoutubeSource extends MusiczMediaSource {
             tries + 1
           }/${MAX_URI_TRIES} Attempts]`
         );
-        console.timeEnd("stream verification");
+        startStopProfile("uri stream verification");
         tries++;
       }
     }

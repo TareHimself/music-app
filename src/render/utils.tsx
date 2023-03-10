@@ -63,7 +63,9 @@ export function getAudioPlayer() {
 }
 
 export function toTimeString(timeNumber: number) {
-  return `${pad(Math.floor(timeNumber / 60))}:${pad(timeNumber % 60)}`;
+  return `${pad(Math.floor(timeNumber / 1000 / 60))}:${pad(
+    (timeNumber / 1000) % 60
+  )}`;
 }
 
 export async function wait(timeout: number) {

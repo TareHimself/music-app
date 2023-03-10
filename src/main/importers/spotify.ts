@@ -15,6 +15,8 @@ import { tCreateAlbums, tCreateArtists, tCreateTracks } from "../sqlite";
 import SourceImporter from "./importer";
 
 const SPOTIFY_URI_REGEX = /open.spotify.com\/([a-z]+)\/([a-zA-Z0-9]+)/;
+const SPOTIFY_URI_REGEX_2 =
+  /(?:spotify-)?(track|album|playlist)-([a-zA-Z0-9]+)/;
 
 export interface ISpotifyImportCache {
   tracks: KeyValuePair<string, ITrack>;
@@ -42,34 +44,39 @@ export default class SpotifyImporter extends SourceImporter {
       ).data;
 
       data.tracks.forEach((track) => {
-        const trackId = this.toSourceId(track.id);
+        if (!track) return;
+        const trackId = this.toSourceId(`track-${track.id}`);
         if (cache.tracks[trackId]) return;
 
-        const albumId = this.toSourceId(track.album.id);
+        const albumId = this.toSourceId(`album-${track.album.id}`);
 
         if (!cache.albums[albumId]) {
           cache.albums[albumId] = {
-            id: this.toSourceId(track.id),
-            title: track.name,
+            id: albumId,
+            title: track.album.name,
             cover: track.album.images[0]?.url || "",
             released: parseInt(
               track.album.release_date.split("-")[0] || "2000"
             ),
             tracks: [trackId],
-            artists: track.album.artists
-              .filter((a) => a.type === "artist")
-              .map((a) => {
-                const newArtist: IArtistRaw = {
-                  id: this.toSourceId(a.id),
-                  name: a.name,
-                };
+            artists: Array.from(
+              new Set(
+                track.album.artists
+                  .filter((a) => a.type === "artist")
+                  .map((a) => {
+                    const newArtist: IArtistRaw = {
+                      id: this.toSourceId(`artist-${a.id}`),
+                      name: a.name,
+                    };
 
-                if (!cache.artists[newArtist.id]) {
-                  cache.artists[newArtist.id] = newArtist;
-                }
+                    if (!cache.artists[newArtist.id]) {
+                      cache.artists[newArtist.id] = newArtist;
+                    }
 
-                return newArtist.id;
-              }),
+                    return newArtist.id;
+                  })
+              )
+            ),
 
             genre: "",
           };
@@ -81,20 +88,24 @@ export default class SpotifyImporter extends SourceImporter {
           );
         }
 
-        const trackArtists = track.artists
-          .filter((artist) => artist.type === "artist")
-          .map((artist) => {
-            const newArtist: IArtistRaw = {
-              id: this.toSourceId(artist.id),
-              name: artist.name,
-            };
+        const trackArtists = Array.from(
+          new Set(
+            track.artists
+              .filter((artist) => artist.type === "artist")
+              .map((artist) => {
+                const newArtist: IArtistRaw = {
+                  id: this.toSourceId(`artist-${artist.id}`),
+                  name: artist.name,
+                };
 
-            if (!cache.artists[newArtist.id]) {
-              cache.artists[newArtist.id] = newArtist;
-            }
+                if (!cache.artists[newArtist.id]) {
+                  cache.artists[newArtist.id] = newArtist;
+                }
 
-            return newArtist.id;
-          });
+                return newArtist.id;
+              })
+          )
+        );
 
         const newTrack: ITrackRaw = {
           id: trackId,
@@ -124,7 +135,8 @@ export default class SpotifyImporter extends SourceImporter {
       ).data;
 
       data.albums.forEach((album) => {
-        const albumId = this.toSourceId(album.id);
+        if (!album) return;
+        const albumId = this.toSourceId(`album-${album.id}`);
         if (cache.albums[albumId]) return;
 
         const newAlbum: IAlbum = {
@@ -132,45 +144,53 @@ export default class SpotifyImporter extends SourceImporter {
           title: album.name,
           cover: album.images[0]?.url || "",
           released: parseInt(album.release_date.split("-")[0] || "2000"),
-          artists: album.artists
-            .filter((a) => a.type === "artist")
-            .map((a) => {
-              const newArtist: IArtistRaw = {
-                id: this.toSourceId(a.id),
-                name: a.name,
-              };
-              if (!cache.artists[newArtist.id]) {
-                cache.artists[newArtist.id] = newArtist;
-              }
+          artists: Array.from(
+            new Set(
+              album.artists
+                .filter((a) => a.type === "artist")
+                .map((a) => {
+                  const newArtist: IArtistRaw = {
+                    id: this.toSourceId(`artist-${a.id}`),
+                    name: a.name,
+                  };
+                  if (!cache.artists[newArtist.id]) {
+                    cache.artists[newArtist.id] = newArtist;
+                  }
 
-              return newArtist.id;
-            }),
+                  return newArtist.id;
+                })
+            )
+          ),
 
           genre: album.genres.join("|"),
 
           tracks: album.tracks.items
             .sort((a, b) => a.track_number - b.track_number)
             .map((track) => {
-              const trackId = this.toSourceId(track.id);
+              const trackId = this.toSourceId(`track-${track.id}`);
               const newTrack: ITrackRaw = {
                 id: trackId,
                 title: track.name,
                 album: albumId,
                 uri: "",
-                artists: track.artists
-                  .filter((a) => a.type === "artist")
-                  .map((a) => {
-                    const newArtist: IArtistRaw = {
-                      id: this.toSourceId(a.id),
-                      name: a.name,
-                    };
+                artists: Array.from(
+                  new Set(
+                    track.artists
+                      .filter((a) => a.type === "artist")
+                      .map((a) => {
+                        const newArtist: IArtistRaw = {
+                          id: this.toSourceId(`artist-${a.id}`),
+                          name: a.name,
+                        };
 
-                    if (!cache.artists[newArtist.id]) {
-                      cache.artists[newArtist.id] = newArtist;
-                    }
+                        if (!cache.artists[newArtist.id]) {
+                          cache.artists[newArtist.id] = newArtist;
+                        }
 
-                    return newArtist.id;
-                  }),
+                        return newArtist.id;
+                      })
+                  )
+                ),
                 duration: 0,
                 position: track.track_number,
               };
@@ -206,7 +226,9 @@ export default class SpotifyImporter extends SourceImporter {
     for (let i = 0; i < items.length; i++) {
       const currentItem = items[i];
       if (!currentItem) continue;
-      const match = currentItem.match(SPOTIFY_URI_REGEX);
+      const match =
+        currentItem.match(SPOTIFY_URI_REGEX) ||
+        currentItem.match(SPOTIFY_URI_REGEX_2);
       if (match) {
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const [_, category, spotify_id] = match;
@@ -229,7 +251,6 @@ export default class SpotifyImporter extends SourceImporter {
     await this.importTracks(cache, tracksToImport);
     //https://open.spotify.com/album/5p0RmmR4QuGvGLqc8Ow4ba?si=ebeac79a7d76484d,https://open.spotify.com/album/6KT8x5oqZJl9CcnM66hddo?si=c2dc102670df4888,https://open.spotify.com/album/7Hc9zEVvu3wOJXI5YVhXe2?si=e92371eab47b4912,https://open.spotify.com/album/2rBHhp9tNShxTb529Hi5AS?si=f4e3f71d63984a9e,https://open.spotify.com/album/6t5D6LEgHxqUVOxJItkzfb?si=eed322fbddeb4158,https://open.spotify.com/album/3ciEcHv8axaPC5YHTJ72Bg?si=0b9587a50ed44629
 
-    // must happen in this order to avoid foreign key contraints
     tCreateArtists(Object.values(cache.artists));
     tCreateAlbums(Object.values(cache.albums));
     tCreateTracks(Object.values(cache.tracks));

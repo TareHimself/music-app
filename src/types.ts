@@ -107,6 +107,10 @@ export interface ITrack extends ITrackNew {
   id: ITrackRaw["id"];
 }
 
+export interface ITrackUpdate extends Partial<ITrack> {
+  id: ITrackRaw["id"];
+}
+
 export type ControllableSliderProps = {
   min: number;
   max: number;
@@ -173,6 +177,7 @@ export interface IBridgeEvents {
     playlists: KeyValuePair<string, IPlaylist>;
   }>;
   getPlatform: () => NodeJS.Platform;
+  updateTrack: (update: ITrackUpdate) => Promise<void>;
 }
 
 export type BridgeEventReturn<T extends keyof IBridgeEvents> = Awaited<

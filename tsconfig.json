@@ -17,10 +17,15 @@
     "pretty": true,
     "jsx": "react-jsx",
     "paths": {
-      "*": ["./node_modules/*"]
+      "*": [
+        "./node_modules/*"
+      ]
     },
     "noUncheckedIndexedAccess": true,
-    "strict": true
+    "strict": true,
+    "exactOptionalPropertyTypes": true,
   },
-  "include": ["src/**/*"]
+  "include": [
+    "src/**/*"
+  ]
 }

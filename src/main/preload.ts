@@ -15,46 +15,49 @@ ipcRenderer.exposeApi<IBridgeEvents>("bridge", {
     ipcRenderer.send("windowMinimize");
   },
   toStreamUrl: (uri: string) => {
-    return ipcRenderer.asyncEventCall("toStreamUrl", uri);
+    return ipcRenderer.sendAsync("toStreamUrl", uri);
   },
   searchForStream: (search: string) => {
-    return ipcRenderer.asyncEventCall("searchForStream", search);
+    return ipcRenderer.sendAsync("searchForStream", search);
   },
   getPlaylists: () => {
-    return ipcRenderer.asyncEventCall("getPlaylists");
+    return ipcRenderer.sendAsync("getPlaylists");
   },
   getAlbums: (albums) => {
-    return ipcRenderer.asyncEventCall("getAlbums", albums);
+    return ipcRenderer.sendAsync("getAlbums", albums);
   },
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   getTracks: (trackIds): Promise<ITrack[]> => {
-    return ipcRenderer.asyncEventCall("getTracks", trackIds);
+    return ipcRenderer.sendAsync("getTracks", trackIds);
   },
   createPlaylists(data) {
-    return ipcRenderer.asyncEventCall("createPlaylists", data);
+    return ipcRenderer.sendAsync("createPlaylists", data);
   },
   getTrackStreamInfo: (track) => {
-    return ipcRenderer.asyncEventCall("getTrackStreamInfo", track);
+    return ipcRenderer.sendAsync("getTrackStreamInfo", track);
   },
   getAlbumTracks: (album) => {
-    return ipcRenderer.asyncEventCall("getAlbumTracks", album);
+    return ipcRenderer.sendAsync("getAlbumTracks", album);
   },
   updateDiscordPresence: (data) => {
-    return ipcRenderer.asyncEventCall("updateDiscordPresence", data);
+    return ipcRenderer.sendAsync("updateDiscordPresence", data);
   },
   clearDiscordPresence: () => {
-    return ipcRenderer.asyncEventCall("clearDiscordPresence");
+    return ipcRenderer.sendAsync("clearDiscordPresence");
   },
   getLibraryPath: () => {
-    return ipcRenderer.asyncEventCall("getLibraryPath");
+    return ipcRenderer.sendAsync("getLibraryPath");
   },
   importItems: (uris) => {
-    return ipcRenderer.asyncEventCall("importItems", uris);
+    return ipcRenderer.sendAsync("importItems", uris);
   },
   getArtists: (ids) => {
-    return ipcRenderer.asyncEventCall("getArtists", ids);
+    return ipcRenderer.sendAsync("getArtists", ids);
   },
   getPlatform: () => {
     return ipcRenderer.sendSync("getPlatform");
+  },
+  updateTrack: (update) => {
+    return ipcRenderer.sendAsync("updateTrack", update);
   },
 });

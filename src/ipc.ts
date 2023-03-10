@@ -10,6 +10,7 @@ import {
   ipcRenderer as electronIpcRenderer,
   IpcRendererEvent,
 } from "electron";
+import { startStopProfile } from "./global-utils";
 import {
   Awaitable,
   BridgeEventParams,
@@ -92,7 +93,7 @@ class IpcRendererWrapper {
     contextBridge.exposeInMainWorld(name, api);
   }
 
-  asyncEventCall<T extends keyof IBridgeEvents>(
+  sendAsync<T extends keyof IBridgeEvents>(
     event: T,
     ...args: BridgeEventParams<T>
   ) {
@@ -114,23 +115,16 @@ class IpcMainEventWrapper<T extends keyof IBridgeEvents> {
   constructor(channel: T, ref: IpcMainEvent) {
     this.channel = channel;
     this.ref = ref;
+    startStopProfile(`${this.channel}-${this.ref.frameId}`, this.channel);
   }
 
   reply(data: BridgeEventReturn<T>) {
-    console.log(
-      `Sending reply on channel [${this.channel}] Took ${
-        (Date.now() - this.created) / 1000
-      } seconds`
-    );
+    startStopProfile(`${this.channel}-${this.ref.frameId}`);
     this.ref.reply(this.channel, data);
   }
 
   replySync(data: BridgeEventReturn<T>) {
-    console.log(
-      `Sending reply on channel [${this.channel}] Took ${
-        (Date.now() - this.created) / 1000
-      } seconds`
-    );
+    startStopProfile(`${this.channel}-${this.ref.frameId}`);
     this.ref.returnValue = data;
   }
 }

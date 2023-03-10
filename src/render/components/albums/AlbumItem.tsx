@@ -4,6 +4,7 @@ import { useAppDispatch, useAppSelector } from "../../redux/hooks";
 import { loadTracksForAlbum } from "../../redux/slices/library";
 import { useNavigate } from "react-router-dom";
 import { generateContextMenu } from "../../utils";
+import { HiPlay } from "react-icons/hi2";
 export default function AlbumItem({ data }: { data?: IAlbum }) {
   const dispatch = useAppDispatch();
 
@@ -55,18 +56,29 @@ export default function AlbumItem({ data }: { data?: IAlbum }) {
     [onContextMenuItemSelected]
   );
 
+  const addAlbumToQueue = useCallback(async () => {
+    if (data) {
+      await dispatch(loadTracksForAlbum({ albumId: data.id }));
+      window.utils.queueTracks({
+        tracks: [...data.tracks],
+        replaceQueue: true,
+      });
+    }
+  }, [data, dispatch]);
+
   if (!data || !artists.length) {
     return <div className="album-item placeholder"></div>;
   }
 
   return (
-    <div
-      className="album-item"
-      onClick={selectAlbum}
-      onContextMenu={makeContextMenu}
-    >
+    <div className="album-item">
       <div className="album-item-image-wrapper">
-        <img src={data.cover} />
+        <HiPlay onClick={addAlbumToQueue} />
+        <img
+          src={data.cover}
+          onClick={selectAlbum}
+          onContextMenu={makeContextMenu}
+        />
       </div>
       <span>
         <h2>{data.title}</h2>

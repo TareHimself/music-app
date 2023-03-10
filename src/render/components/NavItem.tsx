@@ -7,9 +7,9 @@ function GetNavIcon({
 }: {
   isActive: boolean;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  ActiveElement?: (...args: any) => JSX.Element;
+  ActiveElement: ((...args: any) => JSX.Element) | undefined;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  InactiveElement?: (...args: any) => JSX.Element;
+  InactiveElement: ((...args: any) => JSX.Element) | undefined;
 }) {
   if (!ActiveElement || !InactiveElement) {
     const ElementGiven = ActiveElement || InactiveElement;
@@ -51,8 +51,8 @@ export default function NavItem({
     >
       <GetNavIcon
         isActive={navId === activeItem}
-        ActiveElement={ActiveElement}
-        InactiveElement={InactiveElement}
+        ActiveElement={ActiveElement || undefined}
+        InactiveElement={InactiveElement || undefined}
       />
       <h3>{display}</h3>
     </span>

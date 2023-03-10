@@ -1,4 +1,5 @@
 import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
+import toast from "react-hot-toast";
 import AppConstants from "../../../data";
 import {
   GenericSliceData,
@@ -7,6 +8,7 @@ import {
   IArtistRaw,
   IPlaylist,
   ITrack,
+  ITrackUpdate,
   KeyValuePair,
 } from "../../../types";
 import { arrayToIndex, ensureBridge } from "../../utils";
@@ -34,32 +36,50 @@ const initialState: AppSliceState = {
 
 const initLibrary = createAsyncThunk("library/load", async () => {
   try {
-    await ensureBridge();
-    const playlists = await window.bridge.getPlaylists();
-    const albums = await window.bridge.getAlbums();
-    const artistsToLoad: string[] = [];
-    const playlistsIndex = arrayToIndex(playlists, (a) => a);
-    const albumsIndex = arrayToIndex(albums, (a) => {
-      artistsToLoad.push(...a.artists);
-      return a;
-    });
+    const result = await toast.promise(
+      new Promise<
+        [
+          KeyValuePair<string, IPlaylist>,
+          KeyValuePair<string, IArtist>,
+          KeyValuePair<string, IAlbum>
+        ]
+      >((res, rej) => {
+        try {
+          ensureBridge().then(async () => {
+            const playlists = await window.bridge.getPlaylists();
+            const albums = await window.bridge.getAlbums();
+            const artistsToLoad: string[] = [];
+            const playlistsIndex = arrayToIndex(playlists, (a) => a);
+            const albumsIndex = arrayToIndex(albums, (a) => {
+              artistsToLoad.push(...a.artists);
+              return a;
+            });
 
-    const artistsIndex = arrayToIndex<IArtistRaw, IArtist>(
-      await window.bridge.getArtists(artistsToLoad),
-      (a) => a
+            const artistsIndex = arrayToIndex<IArtistRaw, IArtist>(
+              await window.bridge.getArtists(artistsToLoad),
+              (a) => a
+            );
+
+            console.log(
+              `Loaded ${playlists.length} Playlists, ${
+                albums.length
+              } Albums and ${Object.keys(artistsIndex).length} Artists`
+            );
+
+            res([playlistsIndex, artistsIndex, albumsIndex]);
+          });
+        } catch (error) {
+          rej(error);
+        }
+      }),
+      {
+        loading: "Loading Library",
+        success: "Library Loaded",
+        error: "Error Loading Library",
+      }
     );
 
-    console.log(
-      `Loaded ${playlists.length} Playlists, ${albums.length} Albums and ${
-        Object.keys(artistsIndex).length
-      } Artists`
-    );
-
-    return [playlistsIndex, artistsIndex, albumsIndex] as [
-      KeyValuePair<string, IPlaylist>,
-      KeyValuePair<string, IArtist>,
-      KeyValuePair<string, IAlbum>
-    ];
+    return result;
   } catch (e: unknown) {
     // eslint-disable-next-line no-console
     console.error(e);
@@ -81,8 +101,6 @@ const loadTracks = createAsyncThunk<
   }
 >("library/load-tracks", async ({ trackIds }, thunk) => {
   try {
-    await ensureBridge();
-
     await ensureBridge();
 
     const existingArtists = thunk.getState().library.data.artists;
@@ -181,16 +199,50 @@ const importIntoLibrary = createAsyncThunk(
   "library/import-items",
   async ({ items }: { items: string[] }) => {
     try {
-      await ensureBridge();
+      const result = await toast.promise(
+        new Promise<Awaited<ReturnType<typeof window.bridge.importItems>>>(
+          (res, rej) => {
+            try {
+              ensureBridge().then(async () => {
+                const newData = await window.bridge.importItems(items);
 
-      const newData = await window.bridge.importItems(items);
+                console.log(
+                  `Immported ${
+                    Object.keys(newData.playlists).length
+                  } Playlists, ${
+                    Object.keys(newData.albums).length
+                  } Albums and ${Object.keys(newData.artists).length} Artists`
+                );
 
-      console.log(
-        `Immported ${Object.keys(newData.playlists).length} Playlists, ${
-          Object.keys(newData.albums).length
-        } Albums and ${Object.keys(newData.artists).length} Artists`
+                res(newData);
+              });
+            } catch (error) {
+              rej(error);
+            }
+          }
+        ),
+        {
+          loading: "Importing",
+          success: "Import Complete",
+          error: "Import Error",
+        }
       );
-      return newData;
+
+      return result;
+    } catch (e: unknown) {
+      // eslint-disable-next-line no-console
+      console.error(e);
+      return null;
+    }
+  }
+);
+
+const updateTrack = createAsyncThunk(
+  "library/update-track",
+  async ({ update }: { update: ITrackUpdate }) => {
+    try {
+      await window.bridge.updateTrack(update);
+      return update;
     } catch (e: unknown) {
       // eslint-disable-next-line no-console
       console.error(e);
@@ -206,6 +258,15 @@ export const LibarySlice = createSlice({
   reducers: {
     setScreenId: (state, action: PayloadAction<string>) => {
       state.data.screenId = action.payload;
+    },
+    updateTrackSync: (state, action: PayloadAction<ITrackUpdate>) => {
+      if (state.data.tracks[action.payload.id]) {
+        state.data.tracks[action.payload.id] = {
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+          ...state.data.tracks[action.payload.id]!,
+          ...action.payload,
+        };
+      }
     },
   },
   // eslint-disable-next-line @typescript-eslint/no-empty-function
@@ -250,6 +311,15 @@ export const LibarySlice = createSlice({
         };
       }
     });
+    builder.addCase(updateTrack.fulfilled, (state, action) => {
+      if (action.payload && state.data.tracks[action.payload.id]) {
+        state.data.tracks[action.payload.id] = {
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+          ...state.data.tracks[action.payload.id]!,
+          ...action.payload,
+        };
+      }
+    });
   },
 });
 
@@ -260,5 +330,6 @@ export {
   loadTracksForAlbum,
   createPlaylist,
   importIntoLibrary,
+  updateTrack,
 };
 export default LibarySlice.reducer;

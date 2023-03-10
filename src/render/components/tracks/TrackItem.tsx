@@ -5,6 +5,7 @@ import { loadTracksForAlbum } from "../../redux/slices/library";
 import { generateContextMenu, toTimeString } from "../../utils";
 import { HiPause, HiPlay } from "react-icons/hi2";
 import { StreamManager } from "../../global";
+import { addRecentTracks } from "../../redux/slices/player";
 
 export type TrackItemProps =
   | { type: "playlist"; playlistInfo: IPlaylistTrack }
@@ -54,8 +55,18 @@ export default function TrackItem(
     }
 
     await dispatch(loadTracksForAlbum({ albumId: trackData.album }));
+    const thisIndex = albumData.tracks.indexOf(trackId);
+
+    // add the albums tracks to recent to account for
+    if (thisIndex !== 0) {
+      const newRecent = [...albumData.tracks.slice(0, thisIndex)];
+      newRecent.reverse();
+
+      dispatch(addRecentTracks(newRecent));
+    }
+
     window.utils.queueTracks({
-      tracks: albumData.tracks.slice(albumData.tracks.indexOf(trackId)),
+      tracks: albumData.tracks.slice(thisIndex),
       replaceQueue: true,
     });
   }, [albumData, dispatch, isActiveTrack, isPaused, trackData?.album, trackId]);

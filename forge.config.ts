@@ -8,14 +8,25 @@ import { WebpackPlugin } from "@electron-forge/plugin-webpack";
 import { mainConfig } from "./webpack.main.config";
 import { rendererConfig } from "./webpack.renderer.config";
 
+const ICON_DIR = "./assets/icon";
 const config: ForgeConfig = {
-  packagerConfig: {},
+  packagerConfig: {
+    icon: ICON_DIR,
+  },
   rebuildConfig: {},
   makers: [
     new MakerSquirrel({}),
     new MakerZIP({}, ["darwin"]),
-    new MakerRpm({}),
-    new MakerDeb({}),
+    new MakerRpm({
+      options: {
+        icon: ICON_DIR,
+      },
+    }),
+    new MakerDeb({
+      options: {
+        icon: ICON_DIR,
+      },
+    }),
   ],
   plugins: [
     new WebpackPlugin({

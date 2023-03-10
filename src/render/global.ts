@@ -1,3 +1,4 @@
+import { toast } from "react-hot-toast";
 import { ITrackResource, TrackStreamInfo } from "../types";
 const EXPIRE_AT_REGEX = /expire=([0-9]+)/;
 class StreamManagerClass {
@@ -17,6 +18,7 @@ class StreamManagerClass {
     const streamInfo = await window.bridge.getTrackStreamInfo(track);
 
     if (!streamInfo) {
+      toast.error("Failed To Fetch Stream");
       return null;
     }
 

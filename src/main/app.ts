@@ -8,6 +8,7 @@ import {
   getAlbumTracks,
   getArtists,
   getTracks,
+  tUpdateTracks,
 } from "./sqlite";
 import { ipcMain } from "../ipc";
 import DiscordRichPrecenceClient from "discord-rich-presence";
@@ -17,20 +18,37 @@ import YoutubeSource from "./sources/youtube";
 import { SourceManager } from "./sources/source";
 import { SourceImporterManager } from "./importers/importer";
 import SpotifyImporter from "./importers/spotify";
+import { startStopProfile } from "../global-utils";
 
 declare const MAIN_WINDOW_WEBPACK_ENTRY: string;
 declare const MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY: string;
 
 const mediaSources = new SourceManager();
 const mediaImporters = new SourceImporterManager();
+startStopProfile("Spotify Importer Load");
 mediaImporters
   .useSource(new SpotifyImporter())
-  .then(() => console.log("Spotify importer loaded"))
-  .catch(console.log);
+  .then(() => startStopProfile("Spotify Importer Load"))
+  .catch((e) => {
+    console.log("Failed to load spotify importer", e);
+    startStopProfile("Spotify Importer Load");
+  });
+startStopProfile("Youtube Source Load");
+const ytSource = new YoutubeSource();
 mediaSources
-  .useSource(new YoutubeSource())
-  .then(() => console.log("Youtube Souce Loaded"))
-  .catch(console.log);
+  .useSource(ytSource)
+  .then(() => startStopProfile("Youtube Source Load"))
+  .catch((e) => {
+    console.log("Failed to load youtube sourcer", e);
+    startStopProfile("Youtube Source Load");
+    mediaSources
+      .useSource(ytSource)
+      .then(() => startStopProfile("Youtube Source Load"))
+      .catch((e) => {
+        console.log("Failed to load youtube sourcer", e);
+        startStopProfile("Youtube Source Load");
+      });
+  });
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (require("electron-squirrel-startup")) {
@@ -44,6 +62,7 @@ const PRESENCE_CLIENT = DiscordRichPrecenceClient("1079194728953815191");
 const createWindow = (): void => {
   // Create the browser window.
   mainWindow = new BrowserWindow({
+    icon: "./assets/icon",
     height: 600,
     width: 800,
     webPreferences: {
@@ -178,4 +197,9 @@ ipcMain.on("getPlatform", (ev) => {
 
 ipcMain.on("importItems", async (ev, uri) => {
   ev.reply(await mediaImporters.parse(uri));
+});
+
+ipcMain.on("updateTrack", (ev, track) => {
+  tUpdateTracks([track]);
+  ev.reply();
 });

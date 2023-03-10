@@ -32,6 +32,7 @@ import { useNavigate } from "react-router-dom";
 import { StreamManager } from "../global";
 import AppConstants from "../../data";
 import { IconBaseProps } from "react-icons";
+import { updateTrack } from "../redux/slices/library";
 
 // eslint-disable-next-line @typescript-eslint/ban-types
 export type PlayerTabProps = {};
@@ -176,9 +177,24 @@ export default function PlayerTab() {
         uri: track.uri,
         artists: track.artists.map((a) => artists[a]?.name || ""),
       });
+
+      console.log("Gotten stream Info", streamInfo);
+
       if (streamInfo) {
         player.src = streamInfo.uri;
         player.play();
+
+        if (streamInfo.duration !== track.duration) {
+          dispatch(
+            updateTrack({
+              update: {
+                id: track.id,
+                duration: streamInfo.duration,
+                uri: streamInfo.from,
+              },
+            })
+          );
+        }
       } else {
         console.log("No sources found for the track");
         return;
@@ -239,13 +255,27 @@ export default function PlayerTab() {
         const album = albums[track.album];
         if (!album) return;
 
-        StreamManager.getStreamInfo({
+        const streamInfo = await StreamManager.getStreamInfo({
           id: track.id,
           title: track.title,
           album: album.title,
           uri: track.uri,
           artists: track.artists.map((a) => artists[a]?.name || ""),
         });
+
+        if (streamInfo) {
+          if (streamInfo.duration !== track.duration) {
+            dispatch(
+              updateTrack({
+                update: {
+                  id: track.id,
+                  duration: streamInfo.duration,
+                  uri: streamInfo.from,
+                },
+              })
+            );
+          }
+        }
       }
     } else {
       dispatch(setCurrentTrack(null));
@@ -361,13 +391,27 @@ export default function PlayerTab() {
           const album = albums[track.album];
           if (!album) return;
 
-          StreamManager.getStreamInfo({
+          const streamInfo = await StreamManager.getStreamInfo({
             id: track.id,
             title: track.title,
             album: album.title,
             uri: track.uri,
             artists: track.artists.map((a) => artists[a]?.name || ""),
           });
+
+          if (streamInfo) {
+            if (streamInfo.duration !== track.duration) {
+              dispatch(
+                updateTrack({
+                  update: {
+                    id: track.id,
+                    duration: streamInfo.duration,
+                    uri: streamInfo.from,
+                  },
+                })
+              );
+            }
+          }
         }
       }
     },
@@ -528,7 +572,7 @@ export default function PlayerTab() {
             }}
           >
             <p className="player-bar-time">
-              {toTimeString(trackTiming.progress)}
+              {toTimeString(trackTiming.progress * 1000)}
             </p>
             <ControllableSlider
               min={0}
@@ -537,7 +581,7 @@ export default function PlayerTab() {
               onUserUpdate={onSeekSliderChanged}
             />
             <p className="player-bar-time">
-              {toTimeString(trackTiming.length || 0)}
+              {toTimeString((trackTiming.length || 0) * 1000)}
             </p>
           </span>
         </span>

@@ -8,7 +8,7 @@ export default abstract class SourceImporter {
   }
 
   toSourceId(id: string) {
-    return `${this.id}:${id}`;
+    return `${this.id}-${id}`;
   }
 
   async load(): Promise<void> {}

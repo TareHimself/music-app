@@ -77,7 +77,7 @@ export default function LibraryScreen() {
           <BiSearchAlt />
           <input
             type={"text"}
-            placeholder="Looking for something ?"
+            placeholder="Looking for something?"
             onChange={(c) => updateSearch(c.currentTarget.value.toLowerCase())}
           />
         </div>

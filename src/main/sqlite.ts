@@ -11,6 +11,7 @@ import {
   IPlaylistTrack,
   ITrack,
   ITrackRaw,
+  ITrackUpdate,
 } from "../types";
 import { getDatabasePath } from "./utils";
 
@@ -39,7 +40,8 @@ const TABLE_STATEMENTS = [
   `
     CREATE TABLE IF NOT EXISTS album_artist(
         album REFERENCES albums(id),
-        artist REFERENCES artists(id)
+        artist REFERENCES artists(id),
+        UNIQUE(album, artist)
     )`,
   `
     CREATE TABLE IF NOT EXISTS tracks(
@@ -54,7 +56,8 @@ const TABLE_STATEMENTS = [
   `
     CREATE TABLE IF NOT EXISTS track_artist(
         track REFERENCES tracks(id),
-        artist REFERENCES artists(id)
+        artist REFERENCES artists(id),
+        UNIQUE(track, artist)
     )`,
   `
     CREATE TABLE IF NOT EXISTS playlists(
@@ -66,11 +69,10 @@ const TABLE_STATEMENTS = [
     `,
   `
     CREATE TABLE IF NOT EXISTS playlist_tracks(
-        playlist TEXT NOT NULL,
-        track TEXT NOT NULL,
+        playlist REFERENCES playlists(id),
+        track REFERENCES tracks(id),
         added INTEGER NOT NULL,
-        FOREIGN KEY (playlist) REFERENCES playlists (id),
-        FOREIGN KEY (track) REFERENCES tracks (id)
+        UNIQUE(track, playlist)
     )`,
 ];
 
@@ -85,10 +87,15 @@ db.transaction((statements: string[]) => {
   });
 }).immediate(TABLE_STATEMENTS);
 
-function objectToSetStatement(obj: object) {
-  const keys = Object.keys(obj);
-  return keys.reduce((t, c) => {
-    return `${t} ${c}=@${c}`;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function objectToSetStatement(obj: any) {
+  const objTemp = { ...obj };
+
+  if (objTemp["id"]) delete objTemp["id"];
+
+  const keys = Object.keys(objTemp);
+  return keys.reduce((t, c, idx, arr) => {
+    return `${t} ${c} = @${c}${idx === arr.length - 1 ? "" : ","}`;
   }, "SET");
 }
 
@@ -204,6 +211,18 @@ export const tUpdatePlaylistsMeta: Database.Transaction<
     if (!current) continue;
     db.prepare<IPlaylistRawMetaUpdate>(
       `UPDATE playlists ${objectToSetStatement(current)} WHERE id=@id`
+    ).run(current);
+  }
+});
+
+export const tUpdateTracks: Database.Transaction<
+  (updates: ITrackUpdate[]) => void
+> = db.transaction((updates: ITrackUpdate[]) => {
+  for (let i = 0; i < updates.length; i++) {
+    const current = updates[i];
+    if (!current) continue;
+    db.prepare<ITrackUpdate>(
+      `UPDATE tracks ${objectToSetStatement(current)} WHERE id=@id`
     ).run(current);
   }
 });

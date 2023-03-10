@@ -7,7 +7,10 @@ export const SpotifyApi = axios.create({
 });
 
 SpotifyApi.interceptors.response.use(undefined, async (error) => {
-  if (error.response.status >= 400 && error.response.status < 429) {
+  if (
+    !error.response ||
+    (error.response.status >= 400 && error.response.status < 429)
+  ) {
     const tokenResponse = await axios.get<{
       clientId: string;
       accessToken: string;
@@ -26,6 +29,5 @@ SpotifyApi.interceptors.response.use(undefined, async (error) => {
       config.headers["Authorization"];
     return axios(config);
   }
-
   return Promise.reject(error);
 });

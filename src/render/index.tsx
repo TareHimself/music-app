@@ -12,16 +12,14 @@ import { initLibrary } from "./redux/slices/library";
 import { store } from "./redux/store";
 import { MemoryRouter } from "react-router-dom";
 import ContextMenus from "./components/ContextMenus";
-import { toast, Toaster } from "react-hot-toast";
+import { Toaster } from "react-hot-toast";
 
 export function RootApp() {
   const dispatch = useAppDispatch();
 
   useEffect(() => {
     console.log("Loading App inital Data");
-    dispatch(initLibrary()).then(() => {
-      toast.success("Library loaded");
-    });
+    dispatch(initLibrary());
   }, [dispatch]);
 
   return (
