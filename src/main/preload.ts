@@ -60,4 +60,7 @@ ipcRenderer.exposeApi<IBridgeEvents>("bridge", {
   updateTrack: (update) => {
     return ipcRenderer.sendAsync("updateTrack", update);
   },
+  isDev: () => {
+    return ipcRenderer.sendSync("isDev");
+  },
 });

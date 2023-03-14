@@ -11,7 +11,7 @@ import {
 } from "./sqlite";
 import { ipcMain } from "../ipc";
 import DiscordRichPrecenceClient from "discord-rich-presence";
-import { getLibraryPath } from "./utils";
+import { getLibraryPath, isDev } from "./utils";
 import { platform } from "os";
 import YoutubeSource from "./sources/youtube";
 import { SourceManager } from "./sources/source";
@@ -22,7 +22,7 @@ import path from "path";
 
 declare const MAIN_WINDOW_WEBPACK_ENTRY: string;
 declare const MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY: string;
-
+console.log("DEFAULT APP");
 const mediaSources = new SourceManager();
 const mediaImporters = new SourceImporterManager();
 startStopProfile("Spotify Importer Load");
@@ -232,4 +232,8 @@ ipcMain.on("importItems", async (ev, uri) => {
 ipcMain.on("updateTrack", (ev, track) => {
   tUpdateTracks([track]);
   ev.reply();
+});
+
+ipcMain.on("isDev", (ev) => {
+  ev.replySync(isDev());
 });

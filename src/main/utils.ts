@@ -8,3 +8,7 @@ export function getDatabasePath() {
 export function getLibraryPath() {
   return path.join(app.getPath("music"), "musicz", "library");
 }
+
+export function isDev() {
+  return !app.isPackaged;
+}

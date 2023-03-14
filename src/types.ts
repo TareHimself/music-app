@@ -178,6 +178,7 @@ export interface IBridgeEvents {
   }>;
   getPlatform: () => NodeJS.Platform;
   updateTrack: (update: ITrackUpdate) => Promise<void>;
+  isDev: () => boolean;
 }
 
 export type BridgeEventReturn<T extends keyof IBridgeEvents> = Awaited<

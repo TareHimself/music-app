@@ -31,17 +31,21 @@ export class SourceManager {
   async parse(resource: ITrackResource): Promise<TrackStreamInfo | null> {
     const sourceItems = Array.from(this.sources.values());
 
-    for (let i = 0; i < sourceItems.length; i++) {
-      const item = sourceItems[i];
-      if (!item) continue;
+    try {
+      for (let i = 0; i < sourceItems.length; i++) {
+        const item = sourceItems[i];
+        if (!item) continue;
 
-      if (item.canParse(resource)) {
-        const result = await item.parse(resource);
-        if (!result) {
-          continue;
+        if (item.canParse(resource)) {
+          const result = await item.parse(resource);
+          if (!result) {
+            continue;
+          }
+          return result;
         }
-        return result;
       }
+    } catch (error) {
+      console.error(error);
     }
 
     return null;

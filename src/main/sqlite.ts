@@ -20,7 +20,7 @@ const DATABASE_DIR = getDatabasePath();
 export const SQLITE_ARRAY_SEPERATOR = ",";
 
 const db = Database(DATABASE_DIR);
-
+console.log("Using Database At:", DATABASE_DIR);
 const TABLE_STATEMENTS = [
   `
     CREATE TABLE IF NOT EXISTS artists(

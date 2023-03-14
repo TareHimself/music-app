@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { BsPauseFill, BsPlayFill } from "react-icons/bs";
 import {
   TbArrowsShuffle,
@@ -196,7 +196,7 @@ export default function PlayerTab() {
           );
         }
       } else {
-        console.log("No sources found for the track");
+        console.error("No sources found for the track");
         return;
       }
 
