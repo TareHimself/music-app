@@ -23,14 +23,8 @@ function GetNavIcon({
 
   return isActive ? <ActiveElement /> : <InactiveElement />;
 }
-export default function NavItem({
-  navId,
-  display,
-  activeId: activeItem,
-  ActiveElement,
-  InactiveElement,
-  onSelected,
-}: {
+
+export type NavItemProps = React.PropsWithoutRef<{
   navId: string;
   display: string;
   activeId: string;
@@ -39,9 +33,20 @@ export default function NavItem({
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   InactiveElement?: (...args: any) => JSX.Element;
   onSelected: (id: string) => void;
-}) {
+  onContextMenu?: React.MouseEventHandler<HTMLSpanElement>;
+}>;
+export default function NavItem({
+  navId,
+  display,
+  activeId: activeItem,
+  ActiveElement,
+  InactiveElement,
+  onSelected,
+  onContextMenu,
+}: NavItemProps) {
   return (
     <span
+      onContextMenu={onContextMenu}
       role="button"
       className="nav-item"
       data-active={`${navId === activeItem}`}

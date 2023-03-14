@@ -1,5 +1,4 @@
-import { app, BrowserWindow } from "electron";
-
+import { app, BrowserWindow, dialog, shell } from "electron";
 import { IPlaylistRaw } from "../types";
 import { v4 as uuidv4 } from "uuid";
 import {
@@ -19,6 +18,7 @@ import { SourceManager } from "./sources/source";
 import { SourceImporterManager } from "./importers/importer";
 import SpotifyImporter from "./importers/spotify";
 import { startStopProfile } from "../global-utils";
+import path from "path";
 
 declare const MAIN_WINDOW_WEBPACK_ENTRY: string;
 declare const MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY: string;
@@ -103,8 +103,38 @@ app.on("activate", () => {
   }
 });
 
-function makeLocalId() {
-  return `local:${uuidv4().toString().replaceAll("-", "")}`;
+async function onAppUrl(url: string) {
+  console.log("Recieved app url", url);
+}
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+app.on("second-instance", (_event, commandLine, _workingDirectory) => {
+  // Someone tried to run a second instance, we should focus our window.
+  if (mainWindow) {
+    if (mainWindow.isMinimized()) mainWindow.restore();
+    mainWindow.focus();
+  }
+  // the commandLine is array of strings in which last element is deep link url
+  // the url str ends with /
+  onAppUrl((commandLine.pop() || "").slice(0, -1));
+});
+
+app.on("open-url", (_event, url) => {
+  onAppUrl(url);
+});
+
+function makeLocalId(type: "playlist" | "album" | "track") {
+  return `local-${type}-${uuidv4().toString().replaceAll("-", "")}`;
+}
+
+if (process.defaultApp) {
+  if (process.argv.length >= 2) {
+    app.setAsDefaultProtocolClient("musicz", process.execPath, [
+      path.resolve(process.argv[1] || ""),
+    ]);
+  }
+} else {
+  app.setAsDefaultProtocolClient("musicz");
 }
 
 // In this file you can include the rest of your app's specific main process
@@ -148,7 +178,7 @@ ipcMain.on("getPlaylists", (ev) => {
 ipcMain.on("createPlaylists", (ev, data) => {
   const newData: IPlaylistRaw[] = data.map((a) => ({
     ...a,
-    id: a.id || makeLocalId(),
+    id: a.id || makeLocalId("playlist"),
   }));
 
   //tCreatePlaylists.deferred(newData);

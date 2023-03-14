@@ -8,9 +8,7 @@ export default function SettingItem(props: SettingItemProps) {
   return (
     <div className="row-input">
       <h3 className="row-input-title">{props.title}</h3>{" "}
-      <span style={{ display: "flex", flexDirection: "row" }}>
-        {props.children}
-      </span>
+      <span className="row-input-content">{props.children}</span>
     </div>
   );
 }

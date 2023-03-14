@@ -11,7 +11,7 @@ export default class YoutubeSource extends MusiczMediaSource {
   ytMusicApi: YTMusic = new YTMusic();
   cachedSearches: Map<string, string> = new Map();
   static YOUTUBE_URI_REGEX =
-    /https:\/\/[a-z]+.youtube.[a-z]+\/watch\?v=[a-zA-Z1-9]+/;
+    /https:\/\/(?:[a-z]+.)?youtube.[a-z]+\/watch\?v=.*/;
 
   override get id() {
     return "youtube";

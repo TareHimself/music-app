@@ -62,8 +62,16 @@ export default function LibraryScreen() {
 
   return (
     <div className="screen" id="library">
+      <div className="library-search">
+        <BiSearchAlt />
+        <input
+          type={"text"}
+          placeholder="Looking for something?"
+          onChange={(c) => updateSearch(c.currentTarget.value.toLowerCase())}
+        />
+      </div>
       <div
-        className="library-content"
+        className="library-content screen-content"
         style={
           {
             "--row-width": `${maxPerRow * (itemWidth + itemGap)}px`,
@@ -73,14 +81,6 @@ export default function LibraryScreen() {
           } as any
         }
       >
-        <div className="library-search">
-          <BiSearchAlt />
-          <input
-            type={"text"}
-            placeholder="Looking for something?"
-            onChange={(c) => updateSearch(c.currentTarget.value.toLowerCase())}
-          />
-        </div>
         {buildRows(albums, maxPerRow, currentSearch)}
       </div>
     </div>

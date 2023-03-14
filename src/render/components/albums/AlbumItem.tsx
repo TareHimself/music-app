@@ -49,6 +49,10 @@ export default function AlbumItem({ data }: { data?: IAlbum }) {
             id: "add",
             name: "Add Album Queue",
           },
+          {
+            id: "remove",
+            name: "Delete Album",
+          },
         ],
         callback: onContextMenuItemSelected,
       });

@@ -12,6 +12,12 @@ const ICON_DIR = "./assets/icon";
 const config: ForgeConfig = {
   packagerConfig: {
     icon: ICON_DIR,
+    protocols: [
+      {
+        name: "Musicz",
+        schemes: ["musicz"],
+      },
+    ],
   },
   rebuildConfig: {},
   makers: [
@@ -25,6 +31,7 @@ const config: ForgeConfig = {
     new MakerDeb({
       options: {
         icon: ICON_DIR,
+        mimeType: ["x-scheme-handler/musicz"],
       },
     }),
   ],
