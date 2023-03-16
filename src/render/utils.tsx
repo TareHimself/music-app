@@ -81,6 +81,7 @@ export async function ensureBridge(interval = 200) {
   }
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function arrayToIndex<T extends KeyValuePair<string, any>, K = T>(
   arr: T[],
   onItem: (item: T) => K,

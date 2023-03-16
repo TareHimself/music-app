@@ -333,6 +333,26 @@ p {
   gap: 10px;
 }
 
+.nav-main {
+  display: flex;
+  flex-direction: row;
+  width: 100%;
+  --nav-main-height: 30px;
+  height: var(--nav-main-height);
+  justify-content: space-around;
+}
+
+.nav-main svg {
+  color: var(--icon-fg);
+  height: var(--nav-main-height);
+  width: var(--nav-main-height);
+  transition: all 0.3s ease-in-out;
+}
+
+.nav-main svg:hover {
+  scale: 1.2;
+}
+
 .nav-items {
   display: flex;
   flex-direction: column;

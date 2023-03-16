@@ -44,8 +44,6 @@ export default function TrackItem(
     s.library.data.playlists,
   ]);
 
-  console.log(trackId, trackData);
-
   const dispatch = useAppDispatch();
 
   const albumData = useAppSelector(

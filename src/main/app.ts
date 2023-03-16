@@ -1,4 +1,4 @@
-import { app, BrowserWindow, dialog, shell } from "electron";
+import { app, BrowserWindow } from "electron";
 import { IPlaylistRaw } from "../types";
 import { v4 as uuidv4 } from "uuid";
 import {

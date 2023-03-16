@@ -29,7 +29,8 @@ export default function AudioVisualizer({
     const canvasCtx = canvas.getContext("2d");
     //canvasCtx.fillRect(0, 0, canvas.width, canvas.height);
     let bShouldKeepRendering = true;
-    const onRenderFrame = (timestamp: number) => {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const onRenderFrame = (_timestamp: number) => {
       if (!bShouldKeepRendering || !canvasCtx) return;
       window.requestAnimationFrame(onRenderFrame);
       canvasCtx.clearRect(
@@ -62,7 +63,7 @@ export default function AudioVisualizer({
       });
     };
 
-    const frameHandle = window.requestAnimationFrame(onRenderFrame);
+    window.requestAnimationFrame(onRenderFrame);
 
     return () => {
       bShouldKeepRendering = false;

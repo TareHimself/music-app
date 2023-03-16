@@ -16,7 +16,6 @@ export default function ScreenWithImage(props: ScreenWithImageProps) {
       const color = imageColor.getColor(ev.currentTarget);
       const container = document.querySelector<HTMLDivElement>(".screen");
       if (container) {
-        console.log();
         container.style.setProperty(
           "--prominent-color",
           `rgb(${color[0]},${color[1]},${color[2]})`

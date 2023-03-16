@@ -11,10 +11,13 @@ import { useAppDispatch, useAppSelector } from "../redux/hooks";
 import { createPlaylist } from "../redux/slices/library";
 import { useNavigate, useLocation } from "react-router-dom";
 import NavItem from "./NavItem";
+// import { IoChevronBack, IoChevronForward } from "react-icons/io5";
 
 export default function NavPanel() {
   const location = useLocation();
   const navigate = useNavigate();
+
+  console.log("State", window.history.state);
 
   const selectedItem = location.pathname;
 
@@ -50,6 +53,18 @@ export default function NavPanel() {
 
   return (
     <div id="nav-panel">
+      {/* <span className="nav-main">
+        <IoChevronBack
+          onClick={() => {
+            navigate(-1);
+          }}
+        />{" "}
+        <IoChevronForward
+          onClick={() => {
+            navigate(1);
+          }}
+        />
+      </span> */}
       <div className="nav-items">
         <NavItem
           navId={AppConstants.NAV_ID_LIBRARY}

@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { BsPauseFill, BsPlayFill } from "react-icons/bs";
 import {
   TbArrowsShuffle,
@@ -203,14 +203,6 @@ export default function PlayerTab() {
       dispatch(setCurrentTrack(trackId));
 
       navigator.mediaSession.metadata = new MediaMetadata({
-        title: track.title,
-        artist: track.artists
-          .map((a) => artists[a]?.name || `unk=${a}`)
-          .join(" , "),
-        album: album.title,
-        artwork: [{ src: album.cover, sizes: "512x512", type: "image/png" }],
-      });
-      console.log({
         title: track.title,
         artist: track.artists
           .map((a) => artists[a]?.name || `unk=${a}`)

@@ -82,9 +82,6 @@ const initLibrary = createAsyncThunk("library/load", async () => {
               ),
               (a) => a
             );
-
-            console.log("Tracks To Load", likedTracks);
-
             console.log(
               `Loaded ${playlists.length} Playlists, ${
                 albums.length
