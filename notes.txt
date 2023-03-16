@@ -1,0 +1,2 @@
+[Loading album art when they are stored locally]
+https://github.com/electron/electron/issues/23393#issuecomment-623759531
