@@ -32,12 +32,12 @@ export interface IPlaylistRaw extends IPlaylistNew {
 export interface IPlaylistTrackRaw {
   playlist: string;
   track: string;
-  added: number;
+  timestamp: number;
 }
 
 export interface IPlaylistTrack {
   track: IPlaylistTrackRaw["track"];
-  added: IPlaylistTrackRaw["added"];
+  timestamp: IPlaylistTrackRaw["timestamp"];
 }
 
 export interface IPlaylistRawMetaUpdate extends Partial<IPlaylistRaw> {
@@ -121,6 +121,11 @@ export type ControllableSliderProps = {
   step?: number;
 };
 
+export interface ILikedTrack {
+  track: string;
+  timestamp: number;
+}
+
 export type TrackStreamInfo = { uri: string; duration: number; from: string };
 
 export interface ITrackResource {
@@ -179,6 +184,9 @@ export interface IBridgeEvents {
   getPlatform: () => NodeJS.Platform;
   updateTrack: (update: ITrackUpdate) => Promise<void>;
   isDev: () => boolean;
+  getLikedTracks: () => Promise<ILikedTrack[]>;
+  addLikedTracks: (tracks: ILikedTrack[]) => Promise<void>;
+  removeLikedTracks: (tracks: string[]) => Promise<void>;
 }
 
 export type BridgeEventReturn<T extends keyof IBridgeEvents> = Awaited<

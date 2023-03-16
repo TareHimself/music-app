@@ -1,10 +1,12 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import Database from "better-sqlite3";
+import { batchArray } from "../global-utils";
 import {
   IAlbum,
   IAlbumRaw,
   IArtist,
   IArtistRaw,
+  ILikedTrack,
   IPlaylist,
   IPlaylistRaw,
   IPlaylistRawMetaUpdate,
@@ -71,8 +73,14 @@ const TABLE_STATEMENTS = [
     CREATE TABLE IF NOT EXISTS playlist_tracks(
         playlist REFERENCES playlists(id),
         track REFERENCES tracks(id),
-        added INTEGER NOT NULL,
+        timestamp INTEGER NOT NULL,
         UNIQUE(track, playlist)
+    )`,
+  `
+    CREATE TABLE IF NOT EXISTS liked_tracks(
+        track REFERENCES tracks(id),
+        timestamp INTEGER NOT NULL,
+        UNIQUE(track)
     )`,
 ];
 
@@ -130,7 +138,7 @@ const GetPlaylistsStatement = db.prepare(
 );
 
 const GetPlaylistsTracksStatement = db.prepare<{ id: string }>(
-  "SELECT track, added FROM playlist_tracks WHERE playlist=@id ORDER BY added DESC"
+  "SELECT track, timestamp FROM playlist_tracks WHERE playlist=@id ORDER BY timestamp DESC"
 );
 
 const GetArtistsStatement = db.prepare("SELECT * FROM artists");
@@ -153,6 +161,18 @@ const GetTracksStatement = db.prepare("SELECT * FROM tracks");
 
 const GetTrackArtistsStatement = db.prepare<{ track: string }>(
   "SELECT artist FROM track_artist WHERE track=@track"
+);
+
+const GetLikedTracksStatement = db.prepare(
+  "SELECT * FROM liked_tracks ORDER BY timestamp DESC"
+);
+
+const InsertLikedTrackStatement = db.prepare<ILikedTrack>(
+  "REPLACE INTO liked_tracks (track,timestamp) VALUES (@track,@timestamp)"
+);
+
+const RemoveLikedTrackStatement = db.prepare<{ track: string }>(
+  "DELETE FROM liked_tracks WHERE track=@track"
 );
 
 // const tInsertArtists = db.transaction((artists: ILocalArtist[]) => {});
@@ -224,6 +244,26 @@ export const tUpdateTracks: Database.Transaction<
     db.prepare<ITrackUpdate>(
       `UPDATE tracks ${objectToSetStatement(current)} WHERE id=@id`
     ).run(current);
+  }
+});
+
+export const tAddLikedTracks: Database.Transaction<
+  (track: ILikedTrack[]) => void
+> = db.transaction((tracks: ILikedTrack[]) => {
+  for (let i = 0; i < tracks.length; i++) {
+    const current = tracks[i];
+    if (!current) continue;
+    InsertLikedTrackStatement.run(current);
+  }
+});
+
+export const tRemovedLikedTracks: Database.Transaction<
+  (track: string[]) => void
+> = db.transaction((tracks: string[]) => {
+  for (let i = 0; i < tracks.length; i++) {
+    const current = tracks[i];
+    if (!current) continue;
+    RemoveLikedTrackStatement.run({ track: current });
   }
 });
 
@@ -304,13 +344,19 @@ export function getTracks(ids: string[] = []): ITrack[] {
   let tracks: ITrackRaw[] = [];
 
   if (ids.length) {
-    tracks = db
-      .prepare(
-        `SELECT * FROM tracks WHERE id IN (${ids
-          .map((a) => `'${a}'`)
-          .join(",")})`
-      )
-      .all();
+    tracks = batchArray(ids, 30).reduce<ITrack[]>((all, cur) => {
+      all.push(
+        ...db
+          .prepare(
+            `SELECT * FROM tracks WHERE id IN (${cur
+              .map((a) => `'${a}'`)
+              .join(",")})`
+          )
+          .all()
+      );
+
+      return all;
+    }, []);
   } else {
     tracks = GetTracksStatement.all();
   }
@@ -323,4 +369,8 @@ export function getTracks(ids: string[] = []): ITrack[] {
       ),
     };
   });
+}
+
+export function getLikedTracks(): ILikedTrack[] {
+  return GetLikedTracksStatement.all() as ILikedTrack[];
 }

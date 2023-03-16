@@ -8,10 +8,13 @@ import {
   getArtists,
   getTracks,
   tUpdateTracks,
+  getLikedTracks,
+  tAddLikedTracks,
+  tRemovedLikedTracks,
 } from "./sqlite";
 import { ipcMain } from "../ipc";
 import DiscordRichPrecenceClient from "discord-rich-presence";
-import { getLibraryPath, isDev } from "./utils";
+import { getLocalLibraryFilesPath, isDev } from "./utils";
 import { platform } from "os";
 import YoutubeSource from "./sources/youtube";
 import { SourceManager } from "./sources/source";
@@ -210,7 +213,7 @@ ipcMain.on("clearDiscordPresence", (ev) => {
 });
 
 ipcMain.on("getLibraryPath", (ev) => {
-  ev.reply(getLibraryPath());
+  ev.reply(getLocalLibraryFilesPath());
 });
 
 ipcMain.on("getTracks", (ev, ids) => {
@@ -236,4 +239,18 @@ ipcMain.on("updateTrack", (ev, track) => {
 
 ipcMain.on("isDev", (ev) => {
   ev.replySync(isDev());
+});
+
+ipcMain.on("getLikedTracks", (ev) => {
+  ev.reply(getLikedTracks());
+});
+
+ipcMain.on("addLikedTracks", (ev, tracks) => {
+  tAddLikedTracks(tracks);
+  ev.reply();
+});
+
+ipcMain.on("removeLikedTracks", (ev, tracks) => {
+  tRemovedLikedTracks(tracks);
+  ev.reply();
 });

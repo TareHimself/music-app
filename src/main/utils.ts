@@ -1,14 +1,18 @@
 import { app } from "electron";
 import path from "path";
 
-export function getDatabasePath() {
-  return path.join(app.getPath("music"), "musicz", "library.db");
-}
-
-export function getLibraryPath() {
-  return path.join(app.getPath("music"), "musicz", "library");
-}
-
 export function isDev() {
   return !app.isPackaged;
+}
+
+export function getLibraryDataPath() {
+  return path.join(app.getPath("music"), "musicz");
+}
+
+export function getLocalLibraryFilesPath() {
+  return path.join(getLibraryDataPath(), "library");
+}
+
+export function getDatabasePath() {
+  return path.join(getLibraryDataPath(), isDev() ? "dev-library" : "library");
 }

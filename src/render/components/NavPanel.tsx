@@ -18,9 +18,10 @@ export default function NavPanel() {
 
   const selectedItem = location.pathname;
 
-  const playlistData = useAppSelector((s) =>
-    Object.values(s.library.data.playlists)
-  );
+  const [playlistData, likedTracks] = useAppSelector((s) => [
+    Object.values(s.library.data.playlists),
+    Object.keys(s.library.data.likedTracks),
+  ]);
 
   const dispatch = useAppDispatch();
 
@@ -86,6 +87,14 @@ export default function NavPanel() {
       </div>
       <span className="nav-divider" />
       <div className="playlists">
+        {likedTracks.length > 0 && (
+          <NavItem
+            navId={`/playlist/liked`}
+            display={"Liked"}
+            activeId={selectedItem}
+            onSelected={() => navigate("/playlist/liked")}
+          />
+        )}
         {playlistData
           .sort((a, b) => a.position - b.position)
           .map((playlist) => (

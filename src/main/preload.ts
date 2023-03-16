@@ -1,7 +1,7 @@
 // See the Electron documentation for details on how to use preload scripts:
 // https://www.electronjs.org/docs/latest/tutorial/process-model#preload-scripts
 import { ipcRenderer } from "../ipc";
-import { IBridgeEvents, ITrack } from "../types";
+import { IBridgeEvents, ILikedTrack, ITrack } from "../types";
 
 ipcRenderer.exposeApi<IBridgeEvents>("bridge", {
   getPreloadPath: () => ipcRenderer.sendSync("getPreloadPath"),
@@ -62,5 +62,14 @@ ipcRenderer.exposeApi<IBridgeEvents>("bridge", {
   },
   isDev: () => {
     return ipcRenderer.sendSync("isDev");
+  },
+  getLikedTracks: () => {
+    return ipcRenderer.sendAsync("getLikedTracks");
+  },
+  addLikedTracks: (tracks) => {
+    return ipcRenderer.sendAsync("addLikedTracks", tracks);
+  },
+  removeLikedTracks: (tracks) => {
+    return ipcRenderer.sendAsync("removeLikedTracks", tracks);
   },
 });

@@ -6,6 +6,7 @@ import {
   IAlbum,
   IArtist,
   IArtistRaw,
+  ILikedTrack,
   IPlaylist,
   ITrack,
   ITrackUpdate,
@@ -19,6 +20,8 @@ export type AppSliceState = GenericSliceData<{
   albums: KeyValuePair<string, IAlbum>;
   playlists: KeyValuePair<string, IPlaylist>;
   artists: KeyValuePair<string, IArtist>;
+  likedTracks: ILikedTrack[];
+  likedTracksLookup: KeyValuePair<string, boolean>;
   googleDriveApiKey: string;
 }>;
 
@@ -31,6 +34,8 @@ const initialState: AppSliceState = {
     playlists: {},
     artists: {},
     googleDriveApiKey: "",
+    likedTracks: [],
+    likedTracksLookup: {},
   },
 };
 
@@ -41,24 +46,44 @@ const initLibrary = createAsyncThunk("library/load", async () => {
         [
           KeyValuePair<string, IPlaylist>,
           KeyValuePair<string, IArtist>,
-          KeyValuePair<string, IAlbum>
+          KeyValuePair<string, IAlbum>,
+          KeyValuePair<string, ITrack>,
+          ILikedTrack[]
         ]
       >((res, rej) => {
         try {
           ensureBridge().then(async () => {
             const playlists = await window.bridge.getPlaylists();
             const albums = await window.bridge.getAlbums();
+            const likedTracks = await window.bridge.getLikedTracks();
+
             const artistsToLoad: string[] = [];
+            const tracksToLoad: string[] = [];
+
             const playlistsIndex = arrayToIndex(playlists, (a) => a);
             const albumsIndex = arrayToIndex(albums, (a) => {
               artistsToLoad.push(...a.artists);
               return a;
             });
 
+            likedTracks.forEach((t) => tracksToLoad.push(t.track));
+
+            const tracksIndex = arrayToIndex<ITrack>(
+              await window.bridge.getTracks(tracksToLoad),
+              (a) => {
+                artistsToLoad.push(...a.artists);
+                return a;
+              }
+            );
+
             const artistsIndex = arrayToIndex<IArtistRaw, IArtist>(
-              await window.bridge.getArtists(artistsToLoad),
+              await window.bridge.getArtists(
+                Array.from(new Set(artistsToLoad))
+              ),
               (a) => a
             );
+
+            console.log("Tracks To Load", likedTracks);
 
             console.log(
               `Loaded ${playlists.length} Playlists, ${
@@ -66,7 +91,13 @@ const initLibrary = createAsyncThunk("library/load", async () => {
               } Albums and ${Object.keys(artistsIndex).length} Artists`
             );
 
-            res([playlistsIndex, artistsIndex, albumsIndex]);
+            res([
+              playlistsIndex,
+              artistsIndex,
+              albumsIndex,
+              tracksIndex,
+              likedTracks,
+            ]);
           });
         } catch (error) {
           rej(error);
@@ -83,10 +114,12 @@ const initLibrary = createAsyncThunk("library/load", async () => {
   } catch (e: unknown) {
     // eslint-disable-next-line no-console
     console.error(e);
-    return [{}, {}, {}] as [
+    return [{}, {}, {}, {}, []] as [
       KeyValuePair<string, IPlaylist>,
       KeyValuePair<string, IArtist>,
-      KeyValuePair<string, IAlbum>
+      KeyValuePair<string, IAlbum>,
+      KeyValuePair<string, ITrack>,
+      ILikedTrack[]
     ];
   }
 });
@@ -250,6 +283,38 @@ const updateTrack = createAsyncThunk(
   }
 );
 
+const likeTrack = createAsyncThunk(
+  "library/track-like-add",
+  async ({ track }: { track: string }) => {
+    try {
+      const newLiked: ILikedTrack = {
+        track: track,
+        timestamp: Math.round(Date.now() * 1000), // accurate to seconds
+      };
+      await window.bridge.addLikedTracks([newLiked]);
+      return newLiked;
+    } catch (e: unknown) {
+      // eslint-disable-next-line no-console
+      console.error(e);
+      return null;
+    }
+  }
+);
+
+const removeLikedTrack = createAsyncThunk(
+  "library/track-like-remove",
+  async ({ track }: { track: string }) => {
+    try {
+      await window.bridge.removeLikedTracks([track]);
+      return track;
+    } catch (e: unknown) {
+      // eslint-disable-next-line no-console
+      console.error(e);
+      return null;
+    }
+  }
+);
+
 export const LibarySlice = createSlice({
   name: "library",
   // `createSlice` will infer the state type from the `initialState` argument
@@ -274,6 +339,14 @@ export const LibarySlice = createSlice({
       state.data.playlists = action.payload[0];
       state.data.artists = action.payload[1];
       state.data.albums = action.payload[2];
+      state.data.tracks = action.payload[3];
+      state.data.likedTracks = action.payload[4];
+      state.data.likedTracksLookup = action.payload[4].reduce<
+        KeyValuePair<string, boolean>
+      >((hash, cur) => {
+        hash[cur.track] = true;
+        return hash;
+      }, {});
     });
     builder.addCase(loadTracks.fulfilled, (state, action) => {
       action.payload[0].forEach((a) => {
@@ -319,16 +392,33 @@ export const LibarySlice = createSlice({
         };
       }
     });
+    builder.addCase(likeTrack.fulfilled, (state, action) => {
+      if (action.payload) {
+        state.data.likedTracks.unshift(action.payload);
+        state.data.likedTracksLookup[action.payload.track] = true;
+      }
+    });
+    builder.addCase(removeLikedTrack.fulfilled, (state, action) => {
+      if (action.payload) {
+        state.data.likedTracks.splice(
+          state.data.likedTracks.findIndex((t) => t.track === action.payload),
+          1
+        );
+        delete state.data.likedTracksLookup[action.payload];
+      }
+    });
   },
 });
 
 export const { setScreenId } = LibarySlice.actions;
 export {
-  initLibrary as initLibrary,
+  initLibrary,
   loadTracks,
   loadTracksForAlbum,
   createPlaylist,
   importIntoLibrary,
   updateTrack,
+  likeTrack,
+  removeLikedTrack,
 };
 export default LibarySlice.reducer;

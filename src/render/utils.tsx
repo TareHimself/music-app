@@ -81,12 +81,13 @@ export async function ensureBridge(interval = 200) {
   }
 }
 
-export function arrayToIndex<T extends { id: string }, K = T>(
+export function arrayToIndex<T extends KeyValuePair<string, any>, K = T>(
   arr: T[],
-  onItem: (item: T) => K
+  onItem: (item: T) => K,
+  key: keyof T = "id"
 ) {
   return arr.reduce((t, a) => {
-    t[a.id] = onItem(a);
+    t[a[key]] = onItem(a);
     return t;
   }, {} as KeyValuePair<string, K>);
 }

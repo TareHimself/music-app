@@ -1,11 +1,16 @@
 import { useCallback } from "react";
 import { IContextMenuOption, IPlaylistTrack } from "../../../types";
 import { useAppDispatch, useAppSelector } from "../../redux/hooks";
-import { loadTracksForAlbum } from "../../redux/slices/library";
+import {
+  likeTrack,
+  loadTracksForAlbum,
+  removeLikedTrack,
+} from "../../redux/slices/library";
 import { generateContextMenu, toTimeString } from "../../utils";
 import { HiPause, HiPlay } from "react-icons/hi2";
 import { StreamManager } from "../../global";
 import { addRecentTracks } from "../../redux/slices/player";
+import { useLocation } from "react-router";
 
 export type TrackItemProps =
   | { type: "playlist"; playlistInfo: IPlaylistTrack }
@@ -17,11 +22,29 @@ export default function TrackItem(
   const trackId =
     props.type === "playlist" ? props.playlistInfo.track : props.trackId;
 
-  const [trackData, currentTrack, isPaused] = useAppSelector((s) => [
+  const location = useLocation().pathname.split("/");
+
+  const contextId = location[2];
+
+  const isLikedPlaylist = location[1] === "playlist" && contextId === "liked";
+
+  const [
+    trackData,
+    currentTrack,
+    isPaused,
+    likedTracks,
+    likedTracksLookup,
+    playlistsIndex,
+  ] = useAppSelector((s) => [
     s.library.data.tracks[trackId],
     s.player.data.currentTrack,
     s.player.data.isPaused,
+    s.library.data.likedTracks,
+    s.library.data.likedTracksLookup,
+    s.library.data.playlists,
   ]);
+
+  console.log(trackId, trackData);
 
   const dispatch = useAppDispatch();
 
@@ -42,6 +65,8 @@ export default function TrackItem(
       ? currentTrack === trackData?.id
       : props.activeOverride;
 
+  const isLiked = likedTracksLookup[trackData?.id || ""] !== undefined;
+
   const tryPlayTrack = useCallback(async () => {
     if (!trackData?.album || !albumData) return;
 
@@ -54,22 +79,80 @@ export default function TrackItem(
       return;
     }
 
-    await dispatch(loadTracksForAlbum({ albumId: trackData.album }));
-    const thisIndex = albumData.tracks.indexOf(trackId);
+    if (props.type === "album") {
+      // add the albums tracks to recent to account for
 
-    // add the albums tracks to recent to account for
-    if (thisIndex !== 0) {
-      const newRecent = [...albumData.tracks.slice(0, thisIndex)];
-      newRecent.reverse();
+      await dispatch(loadTracksForAlbum({ albumId: trackData.album }));
+      const thisIndex = albumData.tracks.indexOf(trackId);
 
-      dispatch(addRecentTracks(newRecent));
+      if (thisIndex !== 0) {
+        const newRecent = [...albumData.tracks.slice(0, thisIndex)];
+        newRecent.reverse();
+
+        dispatch(addRecentTracks(newRecent));
+      }
+
+      window.utils.queueTracks({
+        tracks: albumData.tracks.slice(thisIndex),
+        replaceQueue: true,
+      });
+    } else if (props.type === "playlist") {
+      if (isLikedPlaylist) {
+        const thisIndex = likedTracks.findIndex(
+          (a) => a.track === trackData.id
+        );
+
+        if (thisIndex !== 0) {
+          const newRecent = [
+            ...likedTracks.slice(0, thisIndex).map((a) => a.track),
+          ];
+          newRecent.reverse();
+
+          dispatch(addRecentTracks(newRecent));
+        }
+
+        window.utils.queueTracks({
+          tracks: likedTracks.slice(thisIndex).map((a) => a.track),
+          replaceQueue: true,
+        });
+      } else {
+        const currentPlaylist = playlistsIndex[contextId || ""];
+
+        if (currentPlaylist) {
+          const thisIndex = currentPlaylist.tracks.findIndex(
+            (a) => a.track === trackData.id
+          );
+
+          if (thisIndex !== 0) {
+            const newRecent = [
+              ...currentPlaylist.tracks.slice(0, thisIndex).map((a) => a.track),
+            ];
+            newRecent.reverse();
+
+            dispatch(addRecentTracks(newRecent));
+          }
+
+          window.utils.queueTracks({
+            tracks: currentPlaylist.tracks.slice(thisIndex).map((a) => a.track),
+            replaceQueue: true,
+          });
+        }
+      }
     }
-
-    window.utils.queueTracks({
-      tracks: albumData.tracks.slice(thisIndex),
-      replaceQueue: true,
-    });
-  }, [albumData, dispatch, isActiveTrack, isPaused, trackData?.album, trackId]);
+  }, [
+    albumData,
+    contextId,
+    dispatch,
+    isActiveTrack,
+    isLikedPlaylist,
+    isPaused,
+    likedTracks,
+    playlistsIndex,
+    props.type,
+    trackData?.album,
+    trackData?.id,
+    trackId,
+  ]);
 
   const onContextMenuItemSelected = useCallback(
     async (selection: string) => {
@@ -83,11 +166,19 @@ export default function TrackItem(
           });
           break;
 
+        case "like-add":
+          dispatch(likeTrack({ track: trackData.id }));
+          break;
+
+        case "like-remove":
+          dispatch(removeLikedTrack({ track: trackData.id }));
+          break;
+
         default:
           break;
       }
     },
-    [trackData]
+    [dispatch, trackData]
   );
 
   const onRemoveTrackFromQueue = useCallback(
@@ -104,10 +195,12 @@ export default function TrackItem(
       const extraOptions: IContextMenuOption[] = [];
 
       if (props.type === "playlist") {
-        extraOptions.push({
-          id: `playlist-remove`,
-          name: "Remove From Playlist",
-        });
+        if (!isLikedPlaylist) {
+          extraOptions.push({
+            id: `playlist-remove`,
+            name: "Remove From Playlist",
+          });
+        }
       } else {
         extraOptions.push({
           id: `playlist-add`,
@@ -132,6 +225,15 @@ export default function TrackItem(
       generateContextMenu({
         event: e,
         options: [
+          isLiked
+            ? {
+                id: "like-remove",
+                name: "Dislike",
+              }
+            : {
+                id: "like-add",
+                name: "Like",
+              },
           {
             id: "add",
             name: "Add Track Queue",
@@ -141,7 +243,13 @@ export default function TrackItem(
         callback: onContextMenuItemSelected,
       });
     },
-    [onContextMenuItemSelected, onRemoveTrackFromQueue, props.type]
+    [
+      isLiked,
+      isLikedPlaylist,
+      onContextMenuItemSelected,
+      onRemoveTrackFromQueue,
+      props.type,
+    ]
   );
 
   if (!trackData) {

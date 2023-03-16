@@ -1,10 +1,10 @@
 import { app } from "electron";
 import { existsSync, mkdirSync } from "fs";
-import { getLibraryPath } from "./utils";
+import { getLocalLibraryFilesPath } from "./utils";
 const gotTheLock = app.requestSingleInstanceLock();
 
 if (gotTheLock) {
-  const libraryPath = getLibraryPath();
+  const libraryPath = getLocalLibraryFilesPath();
 
   if (!existsSync(libraryPath)) {
     mkdirSync(libraryPath, {
