@@ -182,8 +182,7 @@ const createPlaylist = createAsyncThunk(
           {
             title: title,
             position: position,
-            cover:
-              "https://e-cdn-images.dzcdn.net/images/cover/e5575c7a8dbda3440911c64f1508f15c/264x264-000000-80-0-0.jpg",
+            cover: "",
           },
         ])
       )[0];

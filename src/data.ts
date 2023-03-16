@@ -9,4 +9,5 @@ export default class AppConstants {
     AppConstants.NAV_ID_SETTINGS,
     AppConstants.NAV_ID_VISUALIZER,
   ];
+  static DEFAULT_COVER_ART = "assets/default-cover.png";
 }
