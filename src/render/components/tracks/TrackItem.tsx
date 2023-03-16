@@ -1,5 +1,5 @@
 import { useCallback } from "react";
-import { IPlaylistTrack } from "../../../types";
+import { IContextMenuOption, IPlaylistTrack } from "../../../types";
 import { useAppDispatch, useAppSelector } from "../../redux/hooks";
 import { loadTracksForAlbum } from "../../redux/slices/library";
 import { generateContextMenu, toTimeString } from "../../utils";
@@ -101,6 +101,20 @@ export default function TrackItem(
 
   const makeContextMenu = useCallback(
     (e: React.MouseEvent) => {
+      const extraOptions: IContextMenuOption[] = [];
+
+      if (props.type === "playlist") {
+        extraOptions.push({
+          id: `playlist-remove`,
+          name: "Remove From Playlist",
+        });
+      } else {
+        extraOptions.push({
+          id: `playlist-add`,
+          name: "Add To Playlist",
+        });
+      }
+
       if (props.type === "queue") {
         generateContextMenu({
           event: e,
@@ -109,6 +123,7 @@ export default function TrackItem(
               id: "remove",
               name: "Remove Track",
             },
+            ...extraOptions,
           ],
           callback: onRemoveTrackFromQueue,
         });
@@ -121,6 +136,7 @@ export default function TrackItem(
             id: "add",
             name: "Add Track Queue",
           },
+          ...extraOptions,
         ],
         callback: onContextMenuItemSelected,
       });

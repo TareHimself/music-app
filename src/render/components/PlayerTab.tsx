@@ -210,6 +210,14 @@ export default function PlayerTab() {
         album: album.title,
         artwork: [{ src: album.cover, sizes: "512x512", type: "image/png" }],
       });
+      console.log({
+        title: track.title,
+        artist: track.artists
+          .map((a) => artists[a]?.name || `unk=${a}`)
+          .join(" , "),
+        album: album.title,
+        artwork: [{ src: album.cover, sizes: "512x512", type: "image/png" }],
+      });
       window.bridge.updateDiscordPresence(track);
     },
     [allTracks, albums, player, dispatch, artists]
