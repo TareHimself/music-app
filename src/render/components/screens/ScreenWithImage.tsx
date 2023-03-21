@@ -1,4 +1,5 @@
-import React, { PropsWithChildren, useCallback } from "react";
+import React, { PropsWithChildren, useCallback, useEffect, useId } from "react";
+import useAppNavigation from "../../hooks/useAppNavigation";
 import { imageColor } from "../../utils";
 
 export type ScreenWithImageProps = PropsWithChildren<{
@@ -6,6 +7,17 @@ export type ScreenWithImageProps = PropsWithChildren<{
   header?: React.ReactNode;
 }>;
 export default function ScreenWithImage(props: ScreenWithImageProps) {
+  const { getScroll, updateScroll } = useAppNavigation();
+
+  const scrollId = useId();
+
+  useEffect(() => {
+    console.log(document.getElementById(scrollId), getScroll());
+    document.getElementById(scrollId)?.scroll({
+      top: getScroll(),
+    });
+  }, [getScroll, scrollId]);
+
   const onImageLoaded = useCallback(
     (ev: React.SyntheticEvent<HTMLImageElement>) => {
       /* for brightest in pallet, not sure about using this though
@@ -36,7 +48,15 @@ export default function ScreenWithImage(props: ScreenWithImageProps) {
           <span>{props.header}</span>
         </div>
 
-        <div className="screen-content">{props.children}</div>
+        <div
+          id={scrollId}
+          onScroll={(e) => {
+            updateScroll(e.currentTarget.scrollTop);
+          }}
+          className="screen-content"
+        >
+          {props.children}
+        </div>
       </div>
     </div>
   );

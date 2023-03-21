@@ -32,7 +32,8 @@ import { useNavigate } from "react-router-dom";
 import { StreamManager } from "../global";
 import AppConstants from "../../data";
 import { IconBaseProps } from "react-icons";
-import { updateTrack } from "../redux/slices/library";
+import { loadTracksForAlbum, updateTrack } from "../redux/slices/library";
+import useAppNavigation from "../hooks/useAppNavigation";
 
 // eslint-disable-next-line @typescript-eslint/ban-types
 export type PlayerTabProps = {};
@@ -107,7 +108,7 @@ export default function PlayerTab() {
 
   const dispatch = useAppDispatch();
 
-  const navigate = useNavigate();
+  const { navigate } = useAppNavigation();
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [_, setSeekProgress] = useState<number | null>(null);
@@ -121,8 +122,9 @@ export default function PlayerTab() {
     if (!currentTrackId) return;
     const album = allTracks[currentTrackId]?.album;
     if (!album) return;
+    dispatch(loadTracksForAlbum({ albumId: album }));
     navigate(`/album/${album}`);
-  }, [allTracks, currentTrackId, navigate]);
+  }, [allTracks, currentTrackId, dispatch, navigate]);
 
   const onPlayerTimeUpdate = useCallback(() => {
     setTrackTiming({

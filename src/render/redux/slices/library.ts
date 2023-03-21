@@ -14,6 +14,7 @@ import {
 } from "../../../types";
 import { arrayToIndex, ensureBridge } from "../../utils";
 
+const ALBUM_TRACKS_LOADED: KeyValuePair<string, boolean> = {};
 export type AppSliceState = GenericSliceData<{
   screenId: string;
   tracks: KeyValuePair<string, ITrack>;
@@ -173,6 +174,10 @@ const loadTracksForAlbum = createAsyncThunk<
   try {
     await ensureBridge();
 
+    if (ALBUM_TRACKS_LOADED[albumId]) {
+      return [[], []];
+    }
+
     const existingArtists = thunk.getState().library.data.artists;
 
     const tracks = await window.bridge.getAlbumTracks(albumId);
@@ -192,7 +197,7 @@ const loadTracksForAlbum = createAsyncThunk<
     );
 
     const artistsGotten = await window.bridge.getArtists(artistsNeeded);
-
+    ALBUM_TRACKS_LOADED[albumId] = true;
     return [tracks, artistsGotten];
   } catch (e: unknown) {
     // eslint-disable-next-line no-console

@@ -2,10 +2,12 @@
 import { configureStore } from "@reduxjs/toolkit";
 import LibarySlice from "./slices/library";
 import PlayerSlice from "./slices/player";
+import NavigationSlice from "./slices/navigation";
 export const store = configureStore({
   reducer: {
     library: LibarySlice,
     player: PlayerSlice,
+    navigation: NavigationSlice,
   },
 });
 

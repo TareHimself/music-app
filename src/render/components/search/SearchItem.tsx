@@ -2,8 +2,8 @@ import { useCallback } from "react";
 import { IAlbum } from "../../../types";
 import { useAppDispatch, useAppSelector } from "../../redux/hooks";
 import { loadTracksForAlbum } from "../../redux/slices/library";
-import { useNavigate } from "react-router-dom";
 import { generateContextMenu } from "../../utils";
+import useAppNavigation from "../../hooks/useAppNavigation";
 export default function SearchItem({ data }: { data?: IAlbum }) {
   const dispatch = useAppDispatch();
 
@@ -11,7 +11,7 @@ export default function SearchItem({ data }: { data?: IAlbum }) {
     (data?.artists || []).map((a) => s.library.data.artists[a]?.name || a)
   );
 
-  const navigate = useNavigate();
+  const { navigate } = useAppNavigation();
   const selectAlbum = useCallback(() => {
     if (!data) return;
     dispatch(loadTracksForAlbum({ albumId: data.id }));

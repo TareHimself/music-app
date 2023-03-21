@@ -343,10 +343,14 @@ p {
 }
 
 .nav-main svg {
-  color: var(--icon-fg);
+  color: var(--icon-fg-inactive);
   height: var(--nav-main-height);
   width: var(--nav-main-height);
   transition: all 0.3s ease-in-out;
+}
+
+.nav-main .active {
+  color: var(--icon-fg)
 }
 
 .nav-main svg:hover {
@@ -617,6 +621,7 @@ p {
   flex-wrap: wrap;
   gap: var(--item-gap);
   justify-content: center;
+  align-content: flex-start;
 }
 
 .library-content-row {

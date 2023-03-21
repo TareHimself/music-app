@@ -12,7 +12,7 @@ ipcRenderer.exposeApi<IBridgeEvents>("bridge", {
     ipcRenderer.send("windowMaximize");
   },
   windowClose: () => {
-    ipcRenderer.send("windowMinimize");
+    ipcRenderer.send("windowClose");
   },
   toStreamUrl: (uri: string) => {
     return ipcRenderer.sendAsync("toStreamUrl", uri);

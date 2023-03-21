@@ -1,10 +1,12 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useId, useMemo, useState } from "react";
 import { IAlbum } from "../../../types";
 import useThrottle from "../../hooks/useThrottle";
 import useWindowDimensions from "../../hooks/useWindowDimensions";
 import { useAppSelector } from "../../redux/hooks";
 import AlbumRow from "../albums/AlbumRow";
 import { BiSearchAlt } from "react-icons/bi";
+import useAppNavigation from "../../hooks/useAppNavigation";
+
 const itemWidth = 200;
 const itemGap = 40;
 
@@ -17,6 +19,10 @@ export default function LibraryScreen() {
   const [currentSearch, setCurrentSearch] = useState("");
 
   const { width } = useWindowDimensions();
+
+  const { getScroll, updateScroll } = useAppNavigation();
+
+  const scrollId = useId();
 
   const maxPerRow = Math.floor((width - 210) / (itemWidth + itemGap)) || 1;
   const buildRows = useCallback(
@@ -48,18 +54,32 @@ export default function LibraryScreen() {
         final.push(
           <AlbumRow
             key={i}
-            rows={currentItems.slice(i * maxPerRow, i * maxPerRow + maxPerRow)}
+            index={i}
+            rowHeight={248}
+            rowGap={40}
+            items={currentItems.slice(i * maxPerRow, i * maxPerRow + maxPerRow)}
             expectedRowCount={maxPerRow}
+            scrollId={scrollId}
           />
         );
       }
       return final;
     },
-    [artists]
+    [artists, scrollId]
   );
 
   const updateSearch = useThrottle<string>(0.5 * 1000, setCurrentSearch, "");
 
+  useEffect(() => {
+    document.getElementById(scrollId)?.scroll({
+      top: getScroll(),
+    });
+  }, [getScroll, scrollId]);
+
+  const elements = useMemo(
+    () => buildRows(albums, maxPerRow, currentSearch),
+    [albums, buildRows, currentSearch, maxPerRow]
+  );
   return (
     <div className="screen" id="library">
       <div className="library-search">
@@ -71,6 +91,10 @@ export default function LibraryScreen() {
         />
       </div>
       <div
+        onScroll={(e) => {
+          updateScroll(e.currentTarget.scrollTop);
+        }}
+        id={scrollId}
         className="library-content screen-content"
         style={
           {
@@ -81,7 +105,7 @@ export default function LibraryScreen() {
           } as any
         }
       >
-        {buildRows(albums, maxPerRow, currentSearch)}
+        {elements}
       </div>
     </div>
   );

@@ -9,15 +9,20 @@ import { RiSettings4Fill, RiSettings4Line } from "react-icons/ri";
 import AppConstants from "../../data";
 import { useAppDispatch, useAppSelector } from "../redux/hooks";
 import { createPlaylist } from "../redux/slices/library";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 import NavItem from "./NavItem";
-// import { IoChevronBack, IoChevronForward } from "react-icons/io5";
+import useAppNavigation from "../hooks/useAppNavigation";
+import { IoChevronBack, IoChevronForward } from "react-icons/io5";
 
 export default function NavPanel() {
   const location = useLocation();
-  const navigate = useNavigate();
-
-  console.log("State", window.history.state);
+  const {
+    navigate,
+    backwardHistory,
+    forwardHistory,
+    navigateBackward,
+    navigateForward,
+  } = useAppNavigation();
 
   const selectedItem = location.pathname;
 
@@ -53,18 +58,20 @@ export default function NavPanel() {
 
   return (
     <div id="nav-panel">
-      {/* <span className="nav-main">
+      <span className="nav-main">
         <IoChevronBack
+          className={backwardHistory.length > 0 ? "active" : ""}
           onClick={() => {
-            navigate(-1);
-          }}
-        />{" "}
-        <IoChevronForward
-          onClick={() => {
-            navigate(1);
+            navigateBackward();
           }}
         />
-      </span> */}
+        <IoChevronForward
+          className={forwardHistory.length > 0 ? "active" : ""}
+          onClick={() => {
+            navigateForward();
+          }}
+        />
+      </span>
       <div className="nav-items">
         <NavItem
           navId={AppConstants.NAV_ID_LIBRARY}
@@ -74,14 +81,14 @@ export default function NavPanel() {
           InactiveElement={BsFileEarmarkMusic}
           onSelected={onItemSelected}
         />
-        <NavItem
+        {/* <NavItem
           navId={AppConstants.NAV_ID_VISUALIZER}
           display="Visualizer"
           activeId={selectedItem}
           ActiveElement={BsSoundwave}
           InactiveElement={BsSoundwave}
           onSelected={onItemSelected}
-        />
+        /> */}
         <NavItem
           navId={AppConstants.NAV_ID_SETTINGS}
           display="Settings"
