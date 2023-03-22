@@ -12,7 +12,6 @@ export default function ScreenWithImage(props: ScreenWithImageProps) {
   const scrollId = useId();
 
   useEffect(() => {
-    console.log(document.getElementById(scrollId), getScroll());
     document.getElementById(scrollId)?.scroll({
       top: getScroll(),
     });
