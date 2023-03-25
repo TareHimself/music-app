@@ -1,75 +1,84 @@
 // See the Electron documentation for details on how to use preload scripts:
 // https://www.electronjs.org/docs/latest/tutorial/process-model#preload-scripts
 import { ipcRenderer } from "../ipc";
-import { IBridgeEvents, ITrack } from "../types";
+import { IRendererToMainEvents, ITrack } from "../types";
 
-ipcRenderer.exposeApi<IBridgeEvents>("bridge", {
-  getPreloadPath: () => ipcRenderer.sendSync("getPreloadPath"),
+ipcRenderer.exposeApi<IRendererToMainEvents>("bridge", {
+  getPreloadPath: () => ipcRenderer.sendToMainSync("getPreloadPath"),
   windowMinimize: () => {
-    ipcRenderer.send("windowMinimize");
+    ipcRenderer.sendToMainSync("windowMinimize");
   },
   windowMaximize: () => {
-    ipcRenderer.send("windowMaximize");
+    ipcRenderer.sendToMainSync("windowMaximize");
   },
   windowClose: () => {
-    ipcRenderer.send("windowClose");
+    ipcRenderer.sendToMainSync("windowClose");
   },
   toStreamUrl: (uri: string) => {
-    return ipcRenderer.sendAsync("toStreamUrl", uri);
+    return ipcRenderer.sendToMainAsync("toStreamUrl", uri);
   },
   searchForStream: (search: string) => {
-    return ipcRenderer.sendAsync("searchForStream", search);
+    return ipcRenderer.sendToMainAsync("searchForStream", search);
   },
   getPlaylists: () => {
-    return ipcRenderer.sendAsync("getPlaylists");
+    return ipcRenderer.sendToMainAsync("getPlaylists");
   },
   getAlbums: (albums) => {
-    return ipcRenderer.sendAsync("getAlbums", albums);
+    return ipcRenderer.sendToMainAsync("getAlbums", albums);
   },
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   getTracks: (trackIds): Promise<ITrack[]> => {
-    return ipcRenderer.sendAsync("getTracks", trackIds);
+    return ipcRenderer.sendToMainAsync("getTracks", trackIds);
   },
   createPlaylists(data) {
-    return ipcRenderer.sendAsync("createPlaylists", data);
+    return ipcRenderer.sendToMainAsync("createPlaylists", data);
   },
   getTrackStreamInfo: (track) => {
-    return ipcRenderer.sendAsync("getTrackStreamInfo", track);
+    return ipcRenderer.sendToMainAsync("getTrackStreamInfo", track);
   },
   getAlbumTracks: (album) => {
-    return ipcRenderer.sendAsync("getAlbumTracks", album);
+    return ipcRenderer.sendToMainAsync("getAlbumTracks", album);
   },
   updateDiscordPresence: (data) => {
-    return ipcRenderer.sendAsync("updateDiscordPresence", data);
+    return ipcRenderer.sendToMainAsync("updateDiscordPresence", data);
   },
   clearDiscordPresence: () => {
-    return ipcRenderer.sendAsync("clearDiscordPresence");
+    return ipcRenderer.sendToMainAsync("clearDiscordPresence");
   },
   getLibraryPath: () => {
-    return ipcRenderer.sendAsync("getLibraryPath");
+    return ipcRenderer.sendToMainAsync("getLibraryPath");
   },
   importItems: (uris) => {
-    return ipcRenderer.sendAsync("importItems", uris);
+    return ipcRenderer.sendToMainAsync("importItems", uris);
   },
   getArtists: (ids) => {
-    return ipcRenderer.sendAsync("getArtists", ids);
+    return ipcRenderer.sendToMainAsync("getArtists", ids);
   },
   getPlatform: () => {
-    return ipcRenderer.sendSync("getPlatform");
+    return ipcRenderer.sendToMainSync("getPlatform");
   },
   updateTrack: (update) => {
-    return ipcRenderer.sendAsync("updateTrack", update);
+    return ipcRenderer.sendToMainAsync("updateTrack", update);
   },
   isDev: () => {
-    return ipcRenderer.sendSync("isDev");
+    return ipcRenderer.sendToMainSync("isDev");
   },
   getLikedTracks: () => {
-    return ipcRenderer.sendAsync("getLikedTracks");
+    return ipcRenderer.sendToMainAsync("getLikedTracks");
   },
   addLikedTracks: (tracks) => {
-    return ipcRenderer.sendAsync("addLikedTracks", tracks);
+    return ipcRenderer.sendToMainAsync("addLikedTracks", tracks);
   },
   removeLikedTracks: (tracks) => {
-    return ipcRenderer.sendAsync("removeLikedTracks", tracks);
+    return ipcRenderer.sendToMainAsync("removeLikedTracks", tracks);
+  },
+  onFromMain: (event, callback) => {
+    ipcRenderer.onFromMain(event, callback);
+  },
+  onceFromMain: (event, callback) => {
+    ipcRenderer.onceFromMain(event, callback);
+  },
+  offFromMain: (event, callback) => {
+    ipcRenderer.offFromMain(event, callback);
   },
 });

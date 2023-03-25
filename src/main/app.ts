@@ -1,5 +1,5 @@
 import { app, BrowserWindow } from "electron";
-import { IPlaylistRaw } from "../types";
+import { IPlaylist } from "../types";
 import { v4 as uuidv4 } from "uuid";
 import {
   getPlaylists,
@@ -11,6 +11,7 @@ import {
   getLikedTracks,
   tAddLikedTracks,
   tRemovedLikedTracks,
+  tCreatePlaylists,
 } from "./sqlite";
 import { ipcMain } from "../ipc";
 import DiscordRichPrecenceClient from "discord-rich-presence";
@@ -60,7 +61,26 @@ if (require("electron-squirrel-startup")) {
 
 let mainWindow: BrowserWindow | null = null;
 
-const PRESENCE_CLIENT = DiscordRichPrecenceClient("1079194728953815191");
+function connectRichPrecence() {
+  return new Promise<ReturnType<typeof DiscordRichPrecenceClient> | null>(
+    (res) => {
+      const rp = DiscordRichPrecenceClient("1079194728953815191");
+      rp.on("error", (e) => {
+        console.info("Failed to connect to discord client, Error:", e);
+        res(null);
+      });
+      rp.on("connected", () => {
+        res(rp);
+      });
+    }
+  );
+}
+
+let PRESENCE_CLIENT: ReturnType<typeof DiscordRichPrecenceClient> | null = null;
+
+connectRichPrecence().then((p) => {
+  PRESENCE_CLIENT = p;
+});
 
 const createWindow = (): void => {
   // Create the browser window.
@@ -79,8 +99,11 @@ const createWindow = (): void => {
   // and load the index.html of the app.
   mainWindow.loadURL(MAIN_WINDOW_WEBPACK_ENTRY);
 
-  // Open the DevTools.
-  mainWindow.webContents.openDevTools();
+  if (isDev()) {
+    // Open the DevTools.
+    console.log("Opening dev tools");
+    mainWindow.webContents.openDevTools();
+  }
 };
 
 app.commandLine.appendSwitch("js-flags", "--max-old-space-size=8192");
@@ -106,8 +129,19 @@ app.on("activate", () => {
   }
 });
 
+const APP_URL_REGEX = new RegExp(/musicz:\/\/([a-z0-9-]+)\/(.*)/, "i");
 async function onAppUrl(url: string) {
-  console.log("Recieved app url", url);
+  if (!mainWindow) return;
+
+  const match = url.match(APP_URL_REGEX);
+  if (match) {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const [_, type, payload] = match;
+    if (type === "import") {
+      ipcMain.sendToRenderer(mainWindow, "onImport", payload || "");
+    }
+    console.log("Recieved app url", type, payload);
+  }
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -143,15 +177,15 @@ if (process.defaultApp) {
 // In this file you can include the rest of your app's specific main process
 // code. You can also put them in separate files and import them here.
 
-ipcMain.on("getPreloadPath", (e) => {
+ipcMain.onFromRenderer("getPreloadPath", (e) => {
   e.replySync(MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY);
 });
 
-ipcMain.on("getTrackStreamInfo", async (ev, track) => {
+ipcMain.onFromRenderer("getTrackStreamInfo", async (ev, track) => {
   ev.reply(await mediaSources.parse(track));
 });
 
-ipcMain.on("windowMaximize", () => {
+ipcMain.onFromRenderer("windowMaximize", () => {
   if (mainWindow) {
     if (mainWindow.isMaximized()) {
       mainWindow.unmaximize();
@@ -161,96 +195,104 @@ ipcMain.on("windowMaximize", () => {
   }
 });
 
-ipcMain.on("windowMinimize", () => {
+ipcMain.onFromRenderer("windowMinimize", () => {
   mainWindow?.minimize();
 });
 
-ipcMain.on("windowClose", () => {
+ipcMain.onFromRenderer("windowClose", () => {
   mainWindow?.close();
 });
 
-ipcMain.on("getAlbums", (e, ids) => {
+ipcMain.onFromRenderer("getAlbums", (e, ids) => {
   e.reply(getAlbums(ids || []));
 });
 
-ipcMain.on("getPlaylists", (ev) => {
+ipcMain.onFromRenderer("getPlaylists", (ev) => {
   const playlists = getPlaylists();
   ev.reply(playlists);
 });
 
-ipcMain.on("createPlaylists", (ev, data) => {
-  const newData: IPlaylistRaw[] = data.map((a) => ({
+ipcMain.onFromRenderer("createPlaylists", (ev, data) => {
+  const newData: IPlaylist[] = data.map((a) => ({
     ...a,
     id: a.id || makeLocalId("playlist"),
+    tracks: [],
   }));
 
-  //tCreatePlaylists.deferred(newData);
+  tCreatePlaylists.deferred(newData);
 
   ev.reply(newData.map((a) => ({ ...a, tracks: [] })));
 });
 
-ipcMain.on("getAlbumTracks", (e, album) => {
+ipcMain.onFromRenderer("getAlbumTracks", (e, album) => {
   e.reply(getAlbumTracks(album));
 });
 
-ipcMain.on("updateDiscordPresence", (ev) => {
-  // const album = getAlbums([track.album])[0];
-  // const artist = getArtists(album.artists)[0];
+ipcMain.onFromRenderer("updateDiscordPresence", async (ev, track) => {
+  if (!PRESENCE_CLIENT) PRESENCE_CLIENT = await connectRichPrecence();
 
-  // PRESENCE_CLIENT.updatePresence({
-  //   state: `by ${artist.name}`,
-  //   details: track.title,
-  //   startTimestamp: Date.now(),
-  //   largeImageKey: album.cover,
-  //   instance: false,
-  // });
+  try {
+    const album = getAlbums([track.album])[0];
+    const artist = getArtists(album?.artists)[0];
+
+    PRESENCE_CLIENT?.updatePresence({
+      state: `by ${artist?.name}`,
+      details: track.title,
+      startTimestamp: Date.now(),
+      largeImageKey: album?.cover || "default",
+      instance: false,
+    });
+  } catch (error) {
+    console.error(error);
+  }
   ev.reply();
 });
 
-ipcMain.on("clearDiscordPresence", (ev) => {
-  PRESENCE_CLIENT.updatePresence({});
+ipcMain.onFromRenderer("clearDiscordPresence", async (ev) => {
+  if (!PRESENCE_CLIENT) PRESENCE_CLIENT = await connectRichPrecence();
+  PRESENCE_CLIENT?.updatePresence({});
   ev.reply();
 });
 
-ipcMain.on("getLibraryPath", (ev) => {
+ipcMain.onFromRenderer("getLibraryPath", (ev) => {
   ev.reply(getLocalLibraryFilesPath());
 });
 
-ipcMain.on("getTracks", (ev, ids) => {
+ipcMain.onFromRenderer("getTracks", (ev, ids) => {
   ev.reply(getTracks(ids || []));
 });
 
-ipcMain.on("getArtists", async (ev, ids) => {
+ipcMain.onFromRenderer("getArtists", async (ev, ids) => {
   ev.reply(getArtists(ids || []));
 });
 
-ipcMain.on("getPlatform", (ev) => {
+ipcMain.onFromRenderer("getPlatform", (ev) => {
   ev.replySync(platform());
 });
 
-ipcMain.on("importItems", async (ev, uri) => {
+ipcMain.onFromRenderer("importItems", async (ev, uri) => {
   ev.reply(await mediaImporters.parse(uri));
 });
 
-ipcMain.on("updateTrack", (ev, track) => {
+ipcMain.onFromRenderer("updateTrack", (ev, track) => {
   tUpdateTracks([track]);
   ev.reply();
 });
 
-ipcMain.on("isDev", (ev) => {
+ipcMain.onFromRenderer("isDev", (ev) => {
   ev.replySync(isDev());
 });
 
-ipcMain.on("getLikedTracks", (ev) => {
+ipcMain.onFromRenderer("getLikedTracks", (ev) => {
   ev.reply(getLikedTracks());
 });
 
-ipcMain.on("addLikedTracks", (ev, tracks) => {
+ipcMain.onFromRenderer("addLikedTracks", (ev, tracks) => {
   tAddLikedTracks(tracks);
   ev.reply();
 });
 
-ipcMain.on("removeLikedTracks", (ev, tracks) => {
+ipcMain.onFromRenderer("removeLikedTracks", (ev, tracks) => {
   tRemovedLikedTracks(tracks);
   ev.reply();
 });

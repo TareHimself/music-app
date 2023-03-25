@@ -1,9 +1,10 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { GenericSliceData } from "../../../types";
+import { GenericSliceData, IActiveContextMenu } from "../../../types";
 
 export type NavigationSliceState = GenericSliceData<{
   backwardHistory: string[];
   forwardHistory: string[];
+  contextMenu: IActiveContextMenu | null;
 }>;
 
 const initialState: NavigationSliceState = {
@@ -11,6 +12,7 @@ const initialState: NavigationSliceState = {
   data: {
     backwardHistory: [],
     forwardHistory: [],
+    contextMenu: null,
   },
 };
 
@@ -25,9 +27,15 @@ export const NavigationSlice = createSlice({
     setBackwardHistory: (state, action: PayloadAction<string[]>) => {
       state.data.backwardHistory = action.payload;
     },
+    setContextMenu: (
+      state,
+      action: PayloadAction<NavigationSliceState["data"]["contextMenu"]>
+    ) => {
+      state.data.contextMenu = action.payload;
+    },
   },
 });
 
-export const { setForwardHistory, setBackwardHistory } =
+export const { setForwardHistory, setBackwardHistory, setContextMenu } =
   NavigationSlice.actions;
 export default NavigationSlice.reducer;

@@ -578,6 +578,15 @@ p {
   --track-icon-size: 30px;
 }
 
+.track-album-cover {
+  display: flex;
+  aspect-ratio: 1;
+  height: 85%;
+  margin-right: 20px;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
 .track-title h2 {
   margin: 0px;
   font-size: 20px;

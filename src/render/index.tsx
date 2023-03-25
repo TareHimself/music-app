@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useCallback, useEffect } from "react";
 import { createRoot } from "react-dom/client";
 import { Provider } from "react-redux";
 import { IPlayTrackEventData, IQueueTrackEventData } from "../types";
@@ -8,7 +8,7 @@ import PlayerTab from "./components/PlayerTab";
 import TopFrame from "./components/TopFrame";
 import "./css/base.css";
 import { useAppDispatch } from "./redux/hooks";
-import { initLibrary } from "./redux/slices/library";
+import { importIntoLibrary, initLibrary } from "./redux/slices/library";
 import { store } from "./redux/store";
 import { MemoryRouter } from "react-router-dom";
 import ContextMenus from "./components/ContextMenus";
@@ -17,10 +17,28 @@ import { Toaster } from "react-hot-toast";
 export function RootApp() {
   const dispatch = useAppDispatch();
 
+  const onImportFromMain = useCallback(
+    (items: string) => {
+      dispatch(
+        importIntoLibrary({
+          items: items.split(","),
+        })
+      );
+    },
+    [dispatch]
+  );
+
   useEffect(() => {
     console.log("Loading App inital Data");
     dispatch(initLibrary());
   }, [dispatch]);
+
+  useEffect(() => {
+    window.bridge.onFromMain("onImport", onImportFromMain);
+    return () => {
+      window.bridge.offFromMain("onImport", onImportFromMain);
+    };
+  }, [onImportFromMain]);
 
   return (
     <>
@@ -52,6 +70,10 @@ if (container) {
         })
       );
     },
+    // eslint-disable-next-line @typescript-eslint/no-empty-function, @typescript-eslint/no-unused-vars
+    addTracksToLater: async (_data) => {},
+    // eslint-disable-next-line @typescript-eslint/no-empty-function, @typescript-eslint/no-unused-vars
+    addTracksToNext: async (_data) => {},
   };
 
   root.render(

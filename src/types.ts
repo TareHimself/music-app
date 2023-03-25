@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-namespace */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 
@@ -138,14 +139,6 @@ export interface ITrackResource {
 
 export type Awaitable<T> = T | Promise<T>;
 
-export type IQueueTrackEventData = {
-  tracks: string[];
-  replaceQueue: boolean;
-};
-export type IPlayTrackEventData = {
-  track: string;
-};
-
 export interface IContextMenuOption {
   id: string;
   name: string;
@@ -157,7 +150,7 @@ export type ICreateContextMenuEventData = {
   callback: (selectedOption: string) => Awaitable<void>;
 };
 
-export interface IBridgeEvents {
+export interface IRendererToMainEvents {
   getPreloadPath: () => string;
   windowMinimize: () => void;
   windowMaximize: () => void;
@@ -187,24 +180,60 @@ export interface IBridgeEvents {
   getLikedTracks: () => Promise<ILikedTrack[]>;
   addLikedTracks: (tracks: ILikedTrack[]) => Promise<void>;
   removeLikedTracks: (tracks: string[]) => Promise<void>;
+  onFromMain: <T extends keyof IMainToRendererEvents>(
+    event: T,
+    callback: (...args: MainToRendererEventParams<T>) => Awaitable<any>
+  ) => void;
+
+  onceFromMain: <T extends keyof IMainToRendererEvents>(
+    event: T,
+    callback: (...args: MainToRendererEventParams<T>) => Awaitable<any>
+  ) => void;
+
+  offFromMain: <T extends keyof IMainToRendererEvents>(
+    event: T,
+    callback: (...args: MainToRendererEventParams<T>) => Awaitable<any>
+  ) => void;
 }
 
-export type BridgeEventReturn<T extends keyof IBridgeEvents> = Awaited<
-  ReturnType<IBridgeEvents[T]>
->;
+export interface IMainToRendererEvents {
+  onImport: (ids: string) => void;
+}
 
-export type BridgeEventParams<T extends keyof IBridgeEvents> = Parameters<
-  IBridgeEvents[T]
->;
+export type RendererToMainEventReturn<T extends keyof IRendererToMainEvents> =
+  Awaited<ReturnType<IRendererToMainEvents[T]>>;
+
+export type RendererToMainEventParams<T extends keyof IRendererToMainEvents> =
+  Parameters<IRendererToMainEvents[T]>;
+
+export type MainToRendererEventReturn<T extends keyof IMainToRendererEvents> =
+  Awaited<ReturnType<IMainToRendererEvents[T]>>;
+
+export type MainToRendererEventParams<T extends keyof IMainToRendererEvents> =
+  Parameters<IMainToRendererEvents[T]>;
+
+export type IAddTracksEventData = {
+  tracks: string[];
+};
+
+export type IQueueTrackEventData = {
+  tracks: string[];
+  replaceQueue: boolean;
+};
+export type IPlayTrackEventData = {
+  track: string;
+};
 
 export interface IGlobalUtils {
   playTrack: (data: IPlayTrackEventData) => Promise<void>;
+  addTracksToNext: (data: IAddTracksEventData) => Promise<void>;
+  addTracksToLater: (data: IAddTracksEventData) => Promise<void>;
   queueTracks: (data: IQueueTrackEventData) => Promise<void>;
 }
 
 declare global {
   interface Window {
-    bridge: IBridgeEvents;
+    bridge: IRendererToMainEvents;
     utils: IGlobalUtils;
   }
 }
@@ -285,6 +314,12 @@ export const enum ERepeatState {
 export const enum EShuffleState {
   OFF = "Off",
   ON = "On",
+}
+
+export interface IActiveContextMenu {
+  position: Vector2;
+  options: IContextMenuOption[];
+  callback: ICreateContextMenuEventData["callback"];
 }
 
 export {};

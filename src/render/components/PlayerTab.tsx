@@ -28,7 +28,6 @@ import {
 } from "../redux/slices/player";
 import { toTimeString, wait } from "../utils";
 import ControllableSlider from "./ControllableSlider";
-import { useNavigate } from "react-router-dom";
 import { StreamManager } from "../global";
 import AppConstants from "../../data";
 import { IconBaseProps } from "react-icons";
@@ -305,14 +304,15 @@ export default function PlayerTab() {
   // handles switching to the previous track
   const onPreviousClicked = useCallback(async () => {
     if (recentTracks.length > 0) {
-      if (currentTrackId) {
-        dispatch(replaceQueuedTracks([currentTrackId, ...queuedTracks]));
-      }
+      const previousTrackId = currentTrackId;
 
       const newRecent = [...recentTracks];
       const pendingTrack = newRecent.shift();
       if (pendingTrack) {
         await loadAndPlayTrack(pendingTrack);
+        if (previousTrackId) {
+          dispatch(replaceQueuedTracks([currentTrackId, ...queuedTracks]));
+        }
         dispatch(replaceRecentTracks(newRecent));
       }
       return;

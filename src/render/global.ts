@@ -10,13 +10,15 @@ class StreamManagerClass {
   }
 
   async getStreamInfo(track: ITrackResource, forceNew = false) {
+    console.log("Fetching resource for ", track);
     if (!forceNew && this.cache.has(track.id)) {
       console.log("Fetching track from cache");
+      console.log("Got", this.cache.get(track.id));
       return this.cache.get(track.id);
     }
 
     const streamInfo = await window.bridge.getTrackStreamInfo(track);
-
+    console.log("Got", streamInfo);
     if (!streamInfo) {
       toast.error("Failed To Fetch Stream");
       return null;

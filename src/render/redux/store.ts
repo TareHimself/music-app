@@ -9,6 +9,10 @@ export const store = configureStore({
     player: PlayerSlice,
     navigation: NavigationSlice,
   },
+  middleware: (getDefaultMiddleware) =>
+    getDefaultMiddleware({
+      serializableCheck: false,
+    }),
 });
 
 // Infer the `RootState` and `AppDispatch` types from the store itself

@@ -1,7 +1,6 @@
-import {
+import React, {
   useCallback,
   useEffect,
-  useId,
   useMemo,
   useRef,
   useState,
@@ -13,7 +12,6 @@ import { useAppSelector } from "../../redux/hooks";
 import { BiSearchAlt } from "react-icons/bi";
 import useAppNavigation from "../../hooks/useAppNavigation";
 import { FixedSizeList as List, ListChildComponentProps } from "react-window";
-import AutoSizer from "react-virtualized-auto-sizer";
 import AlbumItem from "../albums/AlbumItem";
 
 const itemWidth = 200;
@@ -24,6 +22,69 @@ const SCREEN_PADDING = 30;
 const SEARCH_BAR_HEIGHT = 40;
 const SEARCH_BAR_PADDING = 30;
 const PLAYER_FRAME_HEIGHT = 85;
+type AlbumListProps = {
+  items: IAlbum[];
+  expected: number;
+  index: number;
+};
+
+type ALbumListConainerProps = ListChildComponentProps<
+  {
+    items: IAlbum[];
+    expected: number;
+  }[]
+>;
+
+class AlbumList extends React.Component<AlbumListProps> {
+  constructor(props: AlbumListProps) {
+    super(props);
+  }
+
+  render(): React.ReactNode {
+    const { items, expected } = this.props;
+
+    const rows: IAlbum[] = items || [];
+    const fakesNeeded = Math.max((expected || 0) - rows.length, 0);
+    return (
+      <div className="library-content-row">
+        {[
+          ...rows.map((row) => <AlbumItem key={row.id} data={row} />),
+          ...new Array(fakesNeeded)
+            .fill(fakesNeeded)
+            .map((_, idx) => <AlbumItem key={`placeholder-${idx}`} />),
+        ]}
+      </div>
+    );
+  }
+
+  shouldComponentUpdate(nextProps: Readonly<AlbumListProps>): boolean {
+    return (
+      nextProps.expected !== this.props.expected ||
+      !this.props.items.every((a, idx) => nextProps.items[idx]?.id === a.id)
+    );
+  }
+}
+
+function AlbumListContainer({ data, index, style }: ALbumListConainerProps) {
+  return (
+    <div
+      style={{
+        ...style,
+        ...{
+          display: "flex",
+          justifyContent: "center",
+        },
+      }}
+    >
+      <AlbumList
+        items={data[index]?.items || []}
+        expected={data[index]?.expected || 0}
+        index={index}
+      />
+    </div>
+  );
+}
+
 export default function LibraryScreen() {
   const [albums, artists] = useAppSelector((s) => [
     Object.values(s.library.data.albums),
@@ -82,37 +143,6 @@ export default function LibraryScreen() {
     [albums, buildRows, currentSearch, maxPerRow]
   );
 
-  const Row = ({
-    index,
-    style,
-    data,
-  }: ListChildComponentProps<ReturnType<typeof buildRows>>) => {
-    const rows: IAlbum[] = data[index]?.items || [];
-    const fakesNeeded = Math.max((data[index]?.expected || 0) - rows.length, 0);
-    return (
-      <div
-        style={{
-          ...style,
-          ...{
-            display: "flex",
-            justifyContent: "center",
-          },
-        }}
-        data-expected={data[index]?.expected || 0}
-        data-gotten={rows.length}
-      >
-        <div className="library-content-row">
-          {[
-            ...rows.map((row) => <AlbumItem key={row.id} data={row} />),
-            ...new Array(fakesNeeded)
-              .fill(fakesNeeded)
-              .map((a, idx) => <AlbumItem key={`placeholder-${idx}`} />),
-          ]}
-        </div>
-      </div>
-    );
-  };
-
   const updateSearch = useThrottle<string>(0.5 * 1000, setCurrentSearch, "");
 
   useEffect(() => {
@@ -154,7 +184,7 @@ export default function LibraryScreen() {
         width={"100%"}
         itemData={rowsData}
       >
-        {Row}
+        {AlbumListContainer}
       </List>
       {/* <div
         

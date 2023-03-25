@@ -5,6 +5,8 @@ import { loadTracksForAlbum } from "../../redux/slices/library";
 import { generateContextMenu } from "../../utils";
 import { HiPlay } from "react-icons/hi2";
 import useAppNavigation from "../../hooks/useAppNavigation";
+import { toast } from "react-hot-toast";
+import AppConstants from "../../../data";
 export default function AlbumItem({ data }: { data?: IAlbum }) {
   const dispatch = useAppDispatch();
 
@@ -25,7 +27,10 @@ export default function AlbumItem({ data }: { data?: IAlbum }) {
       if (!data) return;
 
       switch (selection) {
-        case "add":
+        case "add-next":
+          toast.error(AppConstants.UNAVAILABLE_FEATURE_ERROR);
+          break;
+        case "add-later":
           await dispatch(loadTracksForAlbum({ albumId: data.id }));
           window.utils.queueTracks({
             tracks: [...data.tracks],
@@ -46,12 +51,16 @@ export default function AlbumItem({ data }: { data?: IAlbum }) {
         event: e,
         options: [
           {
-            id: "add",
-            name: "Add Album Queue",
+            id: "add-next",
+            name: "Play next",
+          },
+          {
+            id: "add-later",
+            name: "Play later",
           },
           {
             id: "remove",
-            name: "Delete Album",
+            name: "Remove from library",
           },
         ],
         callback: onContextMenuItemSelected,

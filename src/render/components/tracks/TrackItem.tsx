@@ -11,6 +11,9 @@ import { HiPause, HiPlay } from "react-icons/hi2";
 import { StreamManager } from "../../global";
 import { addRecentTracks } from "../../redux/slices/player";
 import { useLocation } from "react-router";
+import { toast } from "react-hot-toast";
+import AppConstants from "../../../data";
+import useAppNavigation from "../../hooks/useAppNavigation";
 
 export type TrackItemProps =
   | { type: "playlist"; playlistInfo: IPlaylistTrack }
@@ -21,6 +24,8 @@ export default function TrackItem(
 ) {
   const trackId =
     props.type === "playlist" ? props.playlistInfo.track : props.trackId;
+
+  const { navigate } = useAppNavigation();
 
   const location = useLocation().pathname.split("/");
 
@@ -77,7 +82,9 @@ export default function TrackItem(
       return;
     }
 
-    if (props.type === "album") {
+    if (props.type === "queue") {
+      toast.error(AppConstants.UNAVAILABLE_FEATURE_ERROR);
+    } else if (props.type === "album") {
       // add the albums tracks to recent to account for
 
       await dispatch(loadTracksForAlbum({ albumId: trackData.album }));
@@ -157,7 +164,14 @@ export default function TrackItem(
       if (!trackData) return;
 
       switch (selection) {
-        case "add":
+        case "queue-next":
+          window.utils.queueTracks({
+            tracks: [trackData.id],
+            replaceQueue: false,
+          });
+          break;
+
+        case "queue-later":
           window.utils.queueTracks({
             tracks: [trackData.id],
             replaceQueue: false,
@@ -172,20 +186,15 @@ export default function TrackItem(
           dispatch(removeLikedTrack({ track: trackData.id }));
           break;
 
+        case "remove":
+          toast.error(AppConstants.UNAVAILABLE_FEATURE_ERROR);
+          break;
+
         default:
           break;
       }
     },
     [dispatch, trackData]
-  );
-
-  const onRemoveTrackFromQueue = useCallback(
-    async (selection: string) => {
-      if (!trackData) return;
-
-      console.log("This will work soon:", selection);
-    },
-    [trackData]
   );
 
   const makeContextMenu = useCallback(
@@ -196,30 +205,23 @@ export default function TrackItem(
         if (!isLikedPlaylist) {
           extraOptions.push({
             id: `playlist-remove`,
-            name: "Remove From Playlist",
+            name: "Remove from playlist",
           });
         }
       } else {
         extraOptions.push({
           id: `playlist-add`,
-          name: "Add To Playlist",
+          name: "Add to playlist",
         });
       }
 
       if (props.type === "queue") {
-        generateContextMenu({
-          event: e,
-          options: [
-            {
-              id: "remove",
-              name: "Remove Track",
-            },
-            ...extraOptions,
-          ],
-          callback: onRemoveTrackFromQueue,
+        extraOptions.push({
+          id: "remove",
+          name: "Remove from queue",
         });
-        return;
       }
+
       generateContextMenu({
         event: e,
         options: [
@@ -233,22 +235,26 @@ export default function TrackItem(
                 name: "Like",
               },
           {
-            id: "add",
-            name: "Add Track Queue",
+            id: "queue-next",
+            name: "Play next",
+          },
+          {
+            id: "queue-later",
+            name: "Play later",
           },
           ...extraOptions,
         ],
         callback: onContextMenuItemSelected,
       });
     },
-    [
-      isLiked,
-      isLikedPlaylist,
-      onContextMenuItemSelected,
-      onRemoveTrackFromQueue,
-      props.type,
-    ]
+    [isLiked, isLikedPlaylist, onContextMenuItemSelected, props.type]
   );
+
+  const openTrackAlbum = useCallback(() => {
+    if (!albumData?.id) return;
+    dispatch(loadTracksForAlbum({ albumId: albumData?.id }));
+    navigate(`/album/${albumData?.id}`);
+  }, [albumData?.id, dispatch, navigate]);
 
   if (!trackData) {
     return (
@@ -273,7 +279,15 @@ export default function TrackItem(
           <HiPlay onClick={tryPlayTrack} />
         )}
       </span>
+
       <span className="track-title">
+        {props.type !== "album" && (
+          <img
+            onClick={openTrackAlbum}
+            src={albumData?.cover || AppConstants.DEFAULT_COVER_ART}
+            className="track-album-cover"
+          />
+        )}
         <span data--info="text">
           <h2>{title}</h2>
           <p>

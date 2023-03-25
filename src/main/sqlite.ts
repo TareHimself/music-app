@@ -186,7 +186,9 @@ export const tCreatePlaylists: Database.Transaction<
 > = db.transaction((playlists) => {
   for (let i = 0; i < playlists.length; i++) {
     const current = playlists[i];
-    if (current) InsertNewPlaylistStatement.run(current);
+    if (current) {
+      InsertNewPlaylistStatement.run(current);
+    }
   }
 });
 

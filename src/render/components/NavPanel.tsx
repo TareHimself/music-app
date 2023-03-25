@@ -1,9 +1,5 @@
 import { useCallback } from "react";
-import {
-  BsFileEarmarkMusic,
-  BsFileEarmarkMusicFill,
-  BsSoundwave,
-} from "react-icons/bs";
+import { BsFileEarmarkMusic, BsFileEarmarkMusicFill } from "react-icons/bs";
 import { MdOutlineLibraryAdd } from "react-icons/md";
 import { RiSettings4Fill, RiSettings4Line } from "react-icons/ri";
 import AppConstants from "../../data";
@@ -122,7 +118,7 @@ export default function NavPanel() {
           .map((playlist) => (
             <NavItem
               navId={`/playlist/${playlist.id}`}
-              display={playlist.title + ` ${playlist.position}`}
+              display={playlist.title}
               activeId={selectedItem}
               onSelected={onPlaylistSelected}
               key={playlist.id}

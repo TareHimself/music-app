@@ -5,6 +5,14 @@ export type AppSliceState = GenericSliceData<{
   currentTrack: string | null;
   queuedTracks: string[];
   recentTracks: string[];
+  tempQueue: {
+    index: number;
+    tracks: string[];
+  };
+  mainQueue: {
+    index: number;
+    tracks: string[];
+  };
   volume: number;
   repeatState: ERepeatState;
   shuffleState: EShuffleState;
@@ -17,6 +25,14 @@ const initialState: AppSliceState = {
     currentTrack: null,
     queuedTracks: [],
     recentTracks: [],
+    tempQueue: {
+      index: 0,
+      tracks: [],
+    },
+    mainQueue: {
+      index: 0,
+      tracks: [],
+    },
     volume: 0.1,
     repeatState: ERepeatState.OFF,
     shuffleState: EShuffleState.OFF,

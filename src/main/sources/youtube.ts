@@ -35,11 +35,9 @@ export default class YoutubeSource extends MusiczMediaSource {
       if (this.cachedSearches.get(track.id)) {
         track.uri = this.cachedSearches.get(track.id) || "";
       } else {
-        const artist = track.artists.reduce(
-          (all, current) => `${all} ${current}`,
-          "by"
-        );
-        const searchTerm = `${track.album} - ${track.title} ${artist}`;
+        const searchTerm = `${track.title} ${track.artists.join(" ")}, ${
+          track.album
+        }`;
 
         console.log(searchTerm);
 

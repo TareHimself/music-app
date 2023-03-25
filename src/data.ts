@@ -10,4 +10,5 @@ export default class AppConstants {
     AppConstants.NAV_ID_VISUALIZER,
   ];
   static DEFAULT_COVER_ART = "assets/default-cover.png";
+  static UNAVAILABLE_FEATURE_ERROR = "This feature is not yet available";
 }

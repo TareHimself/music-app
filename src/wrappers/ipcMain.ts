@@ -1,9 +1,3 @@
-/**
- * This file exists because I can no longer handle the lack of generic typing in electrons ipcMain and ipcRenderer and as such have made wrappers to type them for me
- */
-
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import { v4 as uuidv4 } from "uuid";
 import {
   contextBridge,
   ipcMain as electronIpcMain,
@@ -11,7 +5,7 @@ import {
   ipcRenderer as electronIpcRenderer,
   IpcRendererEvent,
 } from "electron";
-import { startStopProfile } from "./global-utils";
+import { startStopProfile } from "../global-utils";
 import {
   Awaitable,
   RendererToMainEventParams,
@@ -19,16 +13,11 @@ import {
   IRendererToMainEvents,
   IMainToRendererEvents,
   MainToRendererEventParams,
-} from "./types";
+} from "../types";
 // (...args: any) => any, (...args: any) => any
 
 export type IpcCallbackItem = Map<(...args: any) => any, (...args: any) => any>;
-export type RendererToMainEventReturnWithId<
-  T extends keyof IRendererToMainEvents
-> = {
-  data: RendererToMainEventReturn<T>;
-  id: string;
-};
+
 class IpcRendererWrapper {
   _callbacks: Map<string, IpcCallbackItem> = new Map();
 
@@ -75,7 +64,7 @@ class IpcRendererWrapper {
 
   onToMain<T extends keyof IRendererToMainEvents>(
     event: T,
-    callback: (result: RendererToMainEventReturnWithId<T>) => Awaitable<any>
+    callback: (result: RendererToMainEventReturn<T>) => Awaitable<any>
   ): this {
     this.on(event, callback);
     return this;
@@ -83,7 +72,7 @@ class IpcRendererWrapper {
 
   onceToMain<T extends keyof IRendererToMainEvents>(
     event: T,
-    callback: (result: RendererToMainEventReturnWithId<T>) => Awaitable<any>
+    callback: (result: RendererToMainEventReturn<T>) => Awaitable<any>
   ): this {
     this.once(event, callback);
 
@@ -92,7 +81,7 @@ class IpcRendererWrapper {
 
   offToMain<T extends keyof IRendererToMainEvents>(
     event: T,
-    callback: (result: RendererToMainEventReturnWithId<T>) => Awaitable<any>
+    callback: (result: RendererToMainEventReturn<T>) => Awaitable<any>
   ): this {
     this.off(event, callback);
 
@@ -127,11 +116,10 @@ class IpcRendererWrapper {
 
   sendToMain<T extends keyof IRendererToMainEvents>(
     event: T,
-    messageId: string,
     ...args: RendererToMainEventParams<T>
   ): this {
     console.log("Sent event to channel", event);
-    electronIpcRenderer.send(event, messageId, ...args);
+    electronIpcRenderer.send(event, ...args);
 
     return this;
   }
@@ -140,23 +128,18 @@ class IpcRendererWrapper {
     event: T,
     ...args: RendererToMainEventParams<T>
   ): RendererToMainEventReturn<T> {
-    return electronIpcRenderer.sendSync(event, uuidv4(), ...args);
+    return electronIpcRenderer.sendSync(event, ...args);
   }
 
   sendToMainAsync<T extends keyof IRendererToMainEvents>(
     event: T,
     ...args: RendererToMainEventParams<T>
   ) {
-    const operationId = uuidv4();
     return new Promise<RendererToMainEventReturn<T>>((resolve) => {
-      const callback = ({ data, id }: RendererToMainEventReturnWithId<T>) => {
-        if (id === operationId) {
-          this.offToMain(event, callback);
-        }
-        resolve(data);
-      };
-      this.onToMain(event, callback);
-      this.sendToMain(event, operationId, ...args);
+      this.onceToMain(event, (d) => {
+        resolve(d);
+      });
+      this.sendToMain(event, ...args);
     });
   }
 }
@@ -167,9 +150,7 @@ class IpcMainEventWrapper<T extends keyof IRendererToMainEvents> {
   channel: T;
   ref: IpcMainEvent;
   created: number = Date.now();
-  id: string;
-  constructor(channel: T, ref: IpcMainEvent, id: string) {
-    this.id = id;
+  constructor(channel: T, ref: IpcMainEvent) {
     this.channel = channel;
     this.ref = ref;
     startStopProfile(`${this.channel}-${this.ref.frameId}`, this.channel);
@@ -177,10 +158,7 @@ class IpcMainEventWrapper<T extends keyof IRendererToMainEvents> {
 
   reply(data: RendererToMainEventReturn<T>) {
     startStopProfile(`${this.channel}-${this.ref.frameId}`);
-    this.ref.reply(this.channel, {
-      data,
-      id: this.id,
-    });
+    this.ref.reply(this.channel, data);
   }
 
   replySync(data: RendererToMainEventReturn<T>) {
@@ -203,11 +181,8 @@ class IpcMainWrapper {
       this._callbacks.set(event, new Map());
     }
 
-    const midWay = (
-      e: IpcMainEvent,
-      messageId: string,
-      ...args: RendererToMainEventParams<T>
-    ) => callback(new IpcMainEventWrapper<T>(event, e, messageId), ...args);
+    const midWay = (e: IpcMainEvent, ...args: RendererToMainEventParams<T>) =>
+      callback(new IpcMainEventWrapper<T>(event, e), ...args);
 
     this._callbacks.get(event)?.set(callback, midWay);
 
@@ -226,11 +201,8 @@ class IpcMainWrapper {
       ...args: RendererToMainEventParams<T>
     ) => Awaitable<any>
   ): this {
-    const midWay = (
-      e: IpcMainEvent,
-      messageId: string,
-      ...args: RendererToMainEventParams<T>
-    ) => callback(new IpcMainEventWrapper<T>(event, e, messageId), ...args);
+    const midWay = (e: IpcMainEvent, ...args: RendererToMainEventParams<T>) =>
+      callback(new IpcMainEventWrapper<T>(event, e), ...args);
 
     electronIpcMain.once(
       event,
@@ -273,4 +245,6 @@ class IpcMainWrapper {
   }
 }
 
-export const ipcMain = new IpcMainWrapper();
+const ipcMain = new IpcMainWrapper();
+
+export default ipcMain;

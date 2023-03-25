@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { KeyValuePair } from "../../types";
 import { useAppDispatch, useAppSelector } from "../redux/hooks";
@@ -25,6 +25,11 @@ export default function useAppNavigation() {
       if (forwardHistory) {
         dispatch(setForwardHistory([]));
       }
+
+      if (STORED_SCROLL[path]) {
+        delete STORED_SCROLL[path];
+      }
+
       dispatch(setBackwardHistory([...backwardHistory, location]));
       naviagteOrginal(path);
     },
