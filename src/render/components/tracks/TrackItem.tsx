@@ -1,12 +1,7 @@
 import { useCallback } from "react";
 import { IContextMenuOption, IPlaylistTrack } from "../../../types";
 import { useAppDispatch, useAppSelector } from "../../redux/hooks";
-import {
-  likeTrack,
-  loadTracksForAlbum,
-  removeLikedTrack,
-  updateTracks,
-} from "../../redux/slices/library";
+import { loadTracksForAlbum, updateTracks } from "../../redux/slices/library";
 import { generateContextMenu, toTimeString } from "../../utils";
 import { HiPause, HiPlay } from "react-icons/hi2";
 import { StreamManager } from "../../global";
@@ -35,21 +30,14 @@ export default function TrackItem(
 
   const isLikedPlaylist = location[1] === "playlist" && contextId === "liked";
 
-  const [
-    trackData,
-    currentTrack,
-    isPaused,
-    likedTracks,
-    likedTracksLookup,
-    playlistsIndex,
-  ] = useAppSelector((s) => [
-    s.library.data.tracks[trackId],
-    s.player.data.currentTrack,
-    s.player.data.isPaused,
-    s.library.data.likedTracks,
-    s.library.data.likedTracksLookup,
-    s.library.data.playlists,
-  ]);
+  const [trackData, currentTrack, isPaused, likedTracks, playlistsIndex] =
+    useAppSelector((s) => [
+      s.library.data.tracks[trackId],
+      s.player.data.currentTrack,
+      s.player.data.isPaused,
+      s.library.data.likedTracks,
+      s.library.data.playlists,
+    ]);
 
   const dispatch = useAppDispatch();
 
@@ -69,8 +57,6 @@ export default function TrackItem(
     props.activeOverride === undefined
       ? currentTrack === trackData?.id
       : props.activeOverride;
-
-  const isLiked = likedTracksLookup[trackData?.id || ""] !== undefined;
 
   const tryPlayTrack = useCallback(async () => {
     if (!trackData?.album || !albumData) return;
