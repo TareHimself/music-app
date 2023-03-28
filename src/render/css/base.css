@@ -776,6 +776,29 @@ p {
   padding-left: 10px;
 }
 
+.like-icon {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: fit-content;
+}
+
+.like-icon svg {
+  transition: all 0.2s ease-in-out;
+  width: 20px;
+  height: 20px;
+  color: white;
+
+}
+
+.like-icon[data-value="true"] svg {
+  color: rgb(0, 255, 0);
+}
+
+.like-icon:hover svg {
+  transform: scale(1.2);
+}
+
 @media only screen and (max-width: 1580px) {
   .item-grid {
     grid-template-columns: repeat(2, var(--rowWidth));

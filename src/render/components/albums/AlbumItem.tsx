@@ -1,7 +1,7 @@
 import { useCallback } from "react";
 import { IAlbum } from "../../../types";
 import { useAppDispatch, useAppSelector } from "../../redux/hooks";
-import { loadTracksForAlbum } from "../../redux/slices/library";
+import { loadTracksForAlbum, removeAlbums } from "../../redux/slices/library";
 import { generateContextMenu } from "../../utils";
 import { HiPlay } from "react-icons/hi2";
 import useAppNavigation from "../../hooks/useAppNavigation";
@@ -36,6 +36,10 @@ export default function AlbumItem({ data }: { data?: IAlbum }) {
             tracks: [...data.tracks],
             replaceQueue: false,
           });
+          break;
+
+        case "remove":
+          dispatch(removeAlbums({ items: [data.id] }));
           break;
 
         default:

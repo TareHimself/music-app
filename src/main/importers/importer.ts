@@ -56,8 +56,6 @@ export class SourceImporterManager {
       }
     }
 
-    console.log("Import result", result);
-
     return result;
   }
 }

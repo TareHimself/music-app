@@ -58,7 +58,7 @@ const initLibrary = createAsyncThunk<
   undefined,
   SliceState
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
->("library/load", async (_, _thunk) => {
+>("library/init", async (_, _thunk) => {
   try {
     const result = await toast.promise(
       new Promise<
@@ -102,43 +102,41 @@ const initLibrary = createAsyncThunk<
               (a) => a
             );
 
-            // This is to fix some dev bugs
-            // const playlistUpdates = Object.values(playlistsIndex)
-            //   .sort((a, b) => {
-            //     const posA = a.position;
-            //     const posB = b.position;
-            //     if (posA === -1 && posA === posB) {
-            //       return 0;
-            //     } else if (posA === -1) {
-            //       return 1;
-            //     } else if (posB === -1) {
-            //       return -1;
-            //     }
-            //     return posA - posB;
-            //   })
-            //   .filter((a, idx) => {
-            //     if (a.position === -1) {
-            //       a.position = idx;
-            //       const item = playlistsIndex[a.id];
-            //       if (item) {
-            //         item.position = idx;
-            //       }
-            //       return true;
-            //     }
-            //     return false;
-            //   })
-            //   .map((a) => {
-            //     const update: IPlaylistUpdate = {
-            //       id: a.id,
-            //       position: a.position,
-            //     };
+            const playlistUpdates = Object.values(playlistsIndex)
+              .sort((a, b) => {
+                const posA = a.position;
+                const posB = b.position;
+                if (posA === -1 && posA === posB) {
+                  return 0;
+                } else if (posA === -1) {
+                  return 1;
+                } else if (posB === -1) {
+                  return -1;
+                }
+                return posA - posB;
+              })
+              .filter((a, idx) => {
+                if (a.position !== idx) {
+                  const item = playlistsIndex[a.id];
+                  if (item) {
+                    item.position = idx;
+                    return true;
+                  }
+                }
+                return false;
+              })
+              .map((a) => {
+                const update: IPlaylistUpdate = {
+                  id: a.id,
+                  position: playlistsIndex[a.id]?.position || -1,
+                };
 
-            //     return update;
-            //   });
+                return update;
+              });
 
-            // if (playlistUpdates.length > 0) {
-            //   await window.bridge.updatePlaylists(playlistUpdates);
-            // }
+            if (playlistUpdates.length > 0) {
+              await window.bridge.updatePlaylists(playlistUpdates);
+            }
 
             console.log();
 
@@ -177,7 +175,7 @@ const loadTracks = createAsyncThunk<
   [ITrack[], IArtist[]],
   { trackIds: string[] },
   SliceState
->("library/load-tracks", async ({ trackIds }, thunk) => {
+>("library/tracks/load", async ({ trackIds }, thunk) => {
   try {
     await ensureBridge();
     const currentState = thunk.getState();
@@ -222,7 +220,7 @@ const loadTracksForAlbum = createAsyncThunk<
   [ITrack[], IArtist[]],
   { albumId: string },
   SliceState
->("library/load-album-tracks", async ({ albumId }, thunk) => {
+>("library/albums/tracks/load", async ({ albumId }, thunk) => {
   try {
     await ensureBridge();
 
@@ -259,7 +257,7 @@ const loadTracksForAlbum = createAsyncThunk<
 });
 
 const createPlaylist = createAsyncThunk(
-  "library/create-playlist",
+  "library/playlists/create",
   async ({ title, position }: { title: string; position: number }) => {
     try {
       await ensureBridge();
@@ -285,7 +283,7 @@ const importIntoLibrary = createAsyncThunk<
   Awaited<ReturnType<typeof window.bridge.importItems>> | null,
   { items: string[] },
   SliceState
->("library/import-items", async ({ items }, thunk) => {
+>("library/import", async ({ items }, thunk) => {
   try {
     const result = await toast.promise(
       new Promise<Awaited<ReturnType<typeof window.bridge.importItems>>>(
@@ -316,20 +314,19 @@ const importIntoLibrary = createAsyncThunk<
                   return posA - posB;
                 })
                 .filter((a, idx) => {
-                  if (a.position === -1) {
-                    a.position = idx;
+                  if (a.position !== idx) {
                     const item = newData.playlists[a.id];
                     if (item) {
                       item.position = idx;
+                      return true;
                     }
-                    return true;
                   }
                   return false;
                 })
                 .map((a) => {
                   const update: IPlaylistUpdate = {
                     id: a.id,
-                    position: a.position,
+                    position: newData.playlists[a.id]?.position || -1,
                   };
 
                   return update;
@@ -368,7 +365,7 @@ const importIntoLibrary = createAsyncThunk<
 });
 
 const updateTracks = createAsyncThunk(
-  "library/update-track",
+  "library/tracks/update",
   async ({ update }: { update: ITrackUpdate[] }) => {
     try {
       await window.bridge.updateTracks(update);
@@ -376,13 +373,13 @@ const updateTracks = createAsyncThunk(
     } catch (e: unknown) {
       // eslint-disable-next-line no-console
       console.error(e);
-      return null;
+      return [];
     }
   }
 );
 
 const likeTrack = createAsyncThunk(
-  "library/track-like-add",
+  "library/tracks/like/add",
   async ({ track }: { track: string }) => {
     try {
       const newLiked: ILikedTrack = {
@@ -400,7 +397,7 @@ const likeTrack = createAsyncThunk(
 );
 
 const removeLikedTrack = createAsyncThunk(
-  "library/track-like-remove",
+  "library/tracks/like/remove",
   async ({ track }: { track: string }) => {
     try {
       await window.bridge.removeLikedTracks([track]);
@@ -409,6 +406,34 @@ const removeLikedTrack = createAsyncThunk(
       // eslint-disable-next-line no-console
       console.error(e);
       return null;
+    }
+  }
+);
+
+const removeAlbums = createAsyncThunk(
+  "library/albums/remove",
+  async ({ items }: { items: string[] }) => {
+    try {
+      await window.bridge.removeAlbums(items);
+      return items;
+    } catch (e: unknown) {
+      // eslint-disable-next-line no-console
+      console.error(e);
+      return [];
+    }
+  }
+);
+
+const removePlaylists = createAsyncThunk(
+  "library/playlists/remove",
+  async ({ items }: { items: string[] }) => {
+    try {
+      await window.bridge.removePlaylists(items);
+      return items;
+    } catch (e: unknown) {
+      // eslint-disable-next-line no-console
+      console.error(e);
+      return [];
     }
   }
 );
@@ -483,19 +508,16 @@ export const LibarySlice = createSlice({
       }
     });
     builder.addCase(updateTracks.fulfilled, (state, action) => {
-      if (action.payload !== null) {
-        action.payload.forEach((t) => {
-          if (state.data.tracks[t.id]) {
-            const newTrack = {
-              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-              ...state.data.tracks[t.id]!,
-              ...action.payload,
-            };
-            console.log("Updating", state.data.tracks[t.id], "=>", newTrack);
-            state.data.tracks[t.id] = newTrack;
-          }
-        });
-      }
+      action.payload.forEach((t) => {
+        if (state.data.tracks[t.id]) {
+          const newTrack = {
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+            ...state.data.tracks[t.id]!,
+            ...t,
+          };
+          state.data.tracks[t.id] = newTrack;
+        }
+      });
     });
     builder.addCase(likeTrack.fulfilled, (state, action) => {
       if (action.payload) {
@@ -512,6 +534,20 @@ export const LibarySlice = createSlice({
         delete state.data.likedTracksLookup[action.payload];
       }
     });
+    builder.addCase(removeAlbums.fulfilled, (state, action) => {
+      action.payload.forEach((item) => {
+        if (state.data.albums[item]) {
+          delete state.data.albums[item];
+        }
+      });
+    });
+    builder.addCase(removePlaylists.fulfilled, (state, action) => {
+      action.payload.forEach((item) => {
+        if (state.data.playlists[item]) {
+          delete state.data.playlists[item];
+        }
+      });
+    });
   },
 });
 
@@ -525,5 +561,7 @@ export {
   updateTracks,
   likeTrack,
   removeLikedTrack,
+  removeAlbums,
+  removePlaylists,
 };
 export default LibarySlice.reducer;

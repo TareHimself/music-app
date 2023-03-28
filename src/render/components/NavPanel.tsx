@@ -4,7 +4,11 @@ import { MdOutlineLibraryAdd } from "react-icons/md";
 import { RiSettings4Fill, RiSettings4Line } from "react-icons/ri";
 import AppConstants from "../../data";
 import { useAppDispatch, useAppSelector } from "../redux/hooks";
-import { createPlaylist, loadTracks } from "../redux/slices/library";
+import {
+  createPlaylist,
+  loadTracks,
+  removePlaylists,
+} from "../redux/slices/library";
 import { useLocation } from "react-router-dom";
 import NavItem from "./NavItem";
 import useAppNavigation from "../hooks/useAppNavigation";
@@ -157,11 +161,18 @@ export default function NavPanel() {
                   // eslint-disable-next-line @typescript-eslint/no-unused-vars
                   callback: (s) => {
                     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-                    const [operation, _playlist_id] = s.split("|");
+                    const [operation, playlist_id] = s.split("|") as [
+                      string,
+                      string
+                    ];
                     switch (operation) {
                       case "delete":
                         {
-                          toast.error(AppConstants.UNAVAILABLE_FEATURE_ERROR);
+                          dispatch(
+                            removePlaylists({
+                              items: [playlist_id],
+                            })
+                          );
                         }
                         break;
                       case "rename":

@@ -88,6 +88,6 @@ ipcRenderer.exposeApi<IRendererToMainEvents>("bridge", {
     return ipcRenderer.sendToMainAsync("removePlaylists", items);
   },
   removeAlbums: (items) => {
-    return ipcRenderer.sendToMainAsync("removePlaylists", items);
+    return ipcRenderer.sendToMainAsync("removeAlbums", items);
   },
 });

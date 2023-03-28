@@ -33,6 +33,7 @@ import AppConstants from "../../data";
 import { IconBaseProps } from "react-icons";
 import { loadTracksForAlbum, updateTracks } from "../redux/slices/library";
 import useAppNavigation from "../hooks/useAppNavigation";
+import LikeButton from "./LikeButton";
 
 // eslint-disable-next-line @typescript-eslint/ban-types
 export type PlayerTabProps = {};
@@ -504,23 +505,37 @@ export default function PlayerTab() {
         }}
       >
         {currentTrackId && (
-          <>
-            <img
-              src={currentAlbum?.cover}
-              className="player-cover"
-              onClick={navigateToCurrentAlbum}
-            ></img>
-            <span className="player-title">
-              <h3>{currentTrack?.title || ""}</h3>
-              <p>
-                {(currentTrack?.artists || [])
-                  .map((a) => artists[a]?.name || `unk=${a}`)
-                  .join(" , ")}
-              </p>
-              {/* <h3>Title</h3>
-              <p>Artist</p> */}
+          <span
+            style={{
+              display: "flex",
+              flexDirection: "row",
+              width: "100%",
+              alignItems: "center",
+            }}
+          >
+            <span
+              style={{
+                display: "flex",
+                flexGrow: "1",
+                alignItems: "center",
+              }}
+            >
+              <img
+                src={currentAlbum?.cover}
+                className="player-cover"
+                onClick={navigateToCurrentAlbum}
+              ></img>
+              <span className="player-title">
+                <h3>{currentTrack?.title || ""}</h3>
+                <p>
+                  {(currentTrack?.artists || [])
+                    .map((a) => artists[a]?.name || `unk=${a}`)
+                    .join(" , ")}
+                </p>
+              </span>
             </span>
-          </>
+            <LikeButton trackId={currentTrackId} />
+          </span>
         )}
       </span>
       <span className="player-section">

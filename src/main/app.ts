@@ -13,6 +13,8 @@ import {
   tRemoveLikedTracks,
   tCreatePlaylists,
   tUpdatePlaylists,
+  tRemovePlaylists,
+  tRemoveAlbums,
 } from "./sqlite";
 import { ipcMain } from "../ipc";
 import DiscordRichPrecenceClient from "discord-rich-presence";
@@ -304,11 +306,11 @@ ipcMain.onFromRenderer("updateTracks", (ev, items) => {
 });
 
 ipcMain.onFromRenderer("removePlaylists", (ev, items) => {
-  tUpdateTracks(items);
+  tRemovePlaylists(items);
   ev.reply();
 });
 
-ipcMain.onFromRenderer("removePlaylists", (ev, items) => {
-  tUpdateTracks(items);
+ipcMain.onFromRenderer("removeAlbums", (ev, items) => {
+  tRemoveAlbums(items);
   ev.reply();
 });

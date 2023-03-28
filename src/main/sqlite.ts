@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import Database from "better-sqlite3";
-import { batchArray } from "../global-utils";
 import {
   IAlbum,
   IAlbumRaw,
@@ -191,13 +190,35 @@ const RemovePlaylistStatement = db.prepare<{
   id: string;
 }>("DELETE FROM playlists WHERE id=@id");
 
+const RemoveAlbumTracksInPlaylistsStatement = db.prepare<{
+  id: string;
+}>(
+  "DELETE FROM playlist_tracks WHERE track in (SELECT id from tracks WHERE album=@id)"
+);
+
+const RemoveAlbumTracksArtistsLinksStatement = db.prepare<{
+  id: string;
+}>(
+  "DELETE FROM track_artist WHERE track in (SELECT id from tracks WHERE album=@id)"
+);
+
+const RemoveAlbumLikedTracksStatement = db.prepare<{
+  id: string;
+}>(
+  "DELETE FROM liked_tracks WHERE track in (SELECT id from tracks WHERE album=@id)"
+);
+
 const RemoveAlbumTracksStatement = db.prepare<{
   id: string;
-}>("DELETE FROM playlist_tracks WHERE playlist=@id");
+}>("DELETE FROM tracks WHERE album=@id");
+
+const RemoveAlbumArtistsLinksStatement = db.prepare<{
+  id: string;
+}>("DELETE FROM album_artist WHERE album=@id");
 
 const RemoveAlbumStatement = db.prepare<{
   id: string;
-}>("DELETE FROM playlist_tracks WHERE playlist=@id");
+}>("DELETE FROM albums WHERE id=@id");
 
 // const tInsertArtists = db.transaction((artists: ILocalArtist[]) => {});
 
@@ -320,11 +341,27 @@ export const tRemoveAlbums: Database.Transaction<(items: string[]) => void> =
     for (let i = 0; i < items.length; i++) {
       const current = items[i];
       if (!current) continue;
-      RemovePlaylistTracksStatement.run({
+      RemoveAlbumTracksInPlaylistsStatement.run({
         id: current,
       });
 
-      RemovePlaylistStatement.run({
+      RemoveAlbumLikedTracksStatement.run({
+        id: current,
+      });
+
+      RemoveAlbumTracksArtistsLinksStatement.run({
+        id: current,
+      });
+
+      RemoveAlbumTracksStatement.run({
+        id: current,
+      });
+
+      RemoveAlbumArtistsLinksStatement.run({
+        id: current,
+      });
+
+      RemoveAlbumStatement.run({
         id: current,
       });
     }
@@ -407,7 +444,7 @@ export function getTracks(ids: string[] = []): ITrack[] {
   let tracks: ITrackRaw[] = [];
 
   if (ids.length) {
-    tracks = batchArray(ids, 30).reduce<ITrack[]>((all, cur) => {
+    tracks = ids.batch(30).reduce<ITrack[]>((all, cur) => {
       all.push(
         ...db
           .prepare(

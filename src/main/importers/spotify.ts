@@ -1,5 +1,4 @@
 import { SpotifyApi } from "../../api";
-import { batchArray } from "../../global-utils";
 import {
   IAlbum,
   IArtist,
@@ -19,6 +18,7 @@ import {
   tCreatePlaylists,
   tCreateTracks,
 } from "../sqlite";
+import { v4 as uuidv4 } from "uuid";
 import SourceImporter from "./importer";
 
 const SPOTIFY_URI_REGEX = /open.spotify.com\/([a-z]+)\/([a-zA-Z0-9]+)/;
@@ -38,7 +38,7 @@ export default class SpotifyImporter extends SourceImporter {
   }
 
   async importTracks(cache: ISpotifyImportCache, items: string[]) {
-    const batches = batchArray(items, 40);
+    const batches = items.batch(40);
 
     for (let i = 0; i < batches.length; i++) {
       const batch = batches[i];
@@ -91,7 +91,9 @@ export default class SpotifyImporter extends SourceImporter {
           cache.albums[albumId]?.tracks.push(trackId);
           cache.albums[albumId]?.tracks.sort(
             // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-            (a, b) => cache.tracks[a]!.position - cache.tracks[b]!.position
+            (a, b) =>
+              (cache.tracks[a]?.position || 0) -
+              (cache.tracks[b]?.position || 0)
           );
         }
 
@@ -130,7 +132,7 @@ export default class SpotifyImporter extends SourceImporter {
   }
 
   async importAlbums(cache: ISpotifyImportCache, items: string[]) {
-    const batches = batchArray(items, 20);
+    const batches = items.batch(20);
 
     for (let i = 0; i < batches.length; i++) {
       const batch = batches[i];
@@ -216,9 +218,13 @@ export default class SpotifyImporter extends SourceImporter {
   }
 
   async importPlaylists(cache: ISpotifyImportCache, items: string[]) {
+    items = Array.from(new Set(items));
+
     for (let i = 0; i < items.length; i++) {
       const currentPlaylistId = items[0];
-      const newPlaylistId = this.toSourceId(`playlist-${currentPlaylistId}`);
+      const newPlaylistId = this.toSourceId(
+        `playlist-${uuidv4().replaceAll("-", "")}`
+      );
       if (!cache.playlists[newPlaylistId]) {
         try {
           const response = await SpotifyApi.get<ISpotifyPlaylistResponse>(
@@ -230,6 +236,7 @@ export default class SpotifyImporter extends SourceImporter {
               },
             }
           );
+          console.log(response.config.headers, response.data);
           if (response.data) {
             const spotifyData = response.data;
 
@@ -281,8 +288,8 @@ export default class SpotifyImporter extends SourceImporter {
                     cache.albums[albumId]?.tracks.push(trackId);
                     cache.albums[albumId]?.tracks.sort(
                       (a, b) =>
-                        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-                        cache.tracks[a]!.position - cache.tracks[b]!.position
+                        (cache.tracks[a]?.position || 0) -
+                        (cache.tracks[b]?.position || 0)
                     );
                   }
 

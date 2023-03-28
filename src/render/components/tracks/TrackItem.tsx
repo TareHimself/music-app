@@ -15,6 +15,7 @@ import { useLocation } from "react-router";
 import { toast } from "react-hot-toast";
 import AppConstants from "../../../data";
 import useAppNavigation from "../../hooks/useAppNavigation";
+import LikeButton from "../LikeButton";
 
 export type TrackItemProps =
   | { type: "playlist"; playlistInfo: IPlaylistTrack }
@@ -179,14 +180,6 @@ export default function TrackItem(
           });
           break;
 
-        case "like-add":
-          dispatch(likeTrack({ track: trackData.id }));
-          break;
-
-        case "like-remove":
-          dispatch(removeLikedTrack({ track: trackData.id }));
-          break;
-
         case "remove":
           toast.error(AppConstants.UNAVAILABLE_FEATURE_ERROR);
           break;
@@ -245,15 +238,6 @@ export default function TrackItem(
       generateContextMenu({
         event: e,
         options: [
-          isLiked
-            ? {
-                id: "like-remove",
-                name: "Dislike",
-              }
-            : {
-                id: "like-add",
-                name: "Like",
-              },
           {
             id: "queue-next",
             name: "Play next",
@@ -280,7 +264,6 @@ export default function TrackItem(
       });
     },
     [
-      isLiked,
       isLikedPlaylist,
       onContextMenuItemSelected,
       props.type,
@@ -336,8 +319,23 @@ export default function TrackItem(
           </p>
         </span>
       </span>
-      <span>
-        <h3>{duration === 0 ? "-:--" : toTimeString(duration)}</h3>
+
+      <span
+        style={{
+          display: "flex",
+          flexDirection: "row",
+          alignItems: "center",
+        }}
+      >
+        <LikeButton trackId={trackId} />
+        <h3
+          style={{
+            width: "60px",
+            textAlign: "right",
+          }}
+        >
+          {duration === 0 ? "--:--" : toTimeString(duration)}
+        </h3>
       </span>
     </div>
   );

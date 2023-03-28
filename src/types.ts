@@ -291,6 +291,8 @@ export interface ISpotifyPlaylistResponse {
       added_at: string;
       track: ISpotifyTrack & { album: ISpotifyAlbum };
     }[];
+    next: string | null;
+    previous: string | null;
   };
 }
 
@@ -334,6 +336,12 @@ export interface IActiveContextMenu {
   position: Vector2;
   options: IContextMenuOption[];
   callback: ICreateContextMenuEventData["callback"];
+}
+
+declare global {
+  interface Array<T> {
+    batch: (size: number) => T[][];
+  }
 }
 
 export {};
