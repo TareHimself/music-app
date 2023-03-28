@@ -8,6 +8,7 @@ import {
   IArtistRaw,
   ILikedTrack,
   IPlaylist,
+  IPlaylistUpdate,
   ITrack,
   ITrackUpdate,
   KeyValuePair,
@@ -26,6 +27,12 @@ export type AppSliceState = GenericSliceData<{
   googleDriveApiKey: string;
 }>;
 
+type SliceState = {
+  state: {
+    library: AppSliceState;
+  };
+};
+
 const initialState: AppSliceState = {
   status: "loading",
   data: {
@@ -40,7 +47,18 @@ const initialState: AppSliceState = {
   },
 };
 
-const initLibrary = createAsyncThunk("library/load", async () => {
+const initLibrary = createAsyncThunk<
+  [
+    KeyValuePair<string, IPlaylist>,
+    KeyValuePair<string, IArtist>,
+    KeyValuePair<string, IAlbum>,
+    KeyValuePair<string, ITrack>,
+    ILikedTrack[]
+  ],
+  undefined,
+  SliceState
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+>("library/load", async (_, _thunk) => {
   try {
     const result = await toast.promise(
       new Promise<
@@ -83,11 +101,46 @@ const initLibrary = createAsyncThunk("library/load", async () => {
               ),
               (a) => a
             );
-            console.log(
-              `Loaded ${playlists.length} Playlists, ${
-                albums.length
-              } Albums and ${Object.keys(artistsIndex).length} Artists`
-            );
+
+            // This is to fix some dev bugs
+            // const playlistUpdates = Object.values(playlistsIndex)
+            //   .sort((a, b) => {
+            //     const posA = a.position;
+            //     const posB = b.position;
+            //     if (posA === -1 && posA === posB) {
+            //       return 0;
+            //     } else if (posA === -1) {
+            //       return 1;
+            //     } else if (posB === -1) {
+            //       return -1;
+            //     }
+            //     return posA - posB;
+            //   })
+            //   .filter((a, idx) => {
+            //     if (a.position === -1) {
+            //       a.position = idx;
+            //       const item = playlistsIndex[a.id];
+            //       if (item) {
+            //         item.position = idx;
+            //       }
+            //       return true;
+            //     }
+            //     return false;
+            //   })
+            //   .map((a) => {
+            //     const update: IPlaylistUpdate = {
+            //       id: a.id,
+            //       position: a.position,
+            //     };
+
+            //     return update;
+            //   });
+
+            // if (playlistUpdates.length > 0) {
+            //   await window.bridge.updatePlaylists(playlistUpdates);
+            // }
+
+            console.log();
 
             res([
               playlistsIndex,
@@ -103,7 +156,11 @@ const initLibrary = createAsyncThunk("library/load", async () => {
       }),
       {
         loading: "Loading Library",
-        success: "Library Loaded",
+        success: (data) => {
+          return `Loaded ${Object.keys(data[0]).length} Playlists, and ${
+            Object.keys(data[2]).length
+          } Albums`;
+        },
         error: "Error Loading Library",
       }
     );
@@ -112,31 +169,30 @@ const initLibrary = createAsyncThunk("library/load", async () => {
   } catch (e: unknown) {
     // eslint-disable-next-line no-console
     console.error(e);
-    return [{}, {}, {}, {}, []] as [
-      KeyValuePair<string, IPlaylist>,
-      KeyValuePair<string, IArtist>,
-      KeyValuePair<string, IAlbum>,
-      KeyValuePair<string, ITrack>,
-      ILikedTrack[]
-    ];
+    return [{}, {}, {}, {}, []];
   }
 });
 
 const loadTracks = createAsyncThunk<
   [ITrack[], IArtist[]],
   { trackIds: string[] },
-  {
-    state: {
-      library: GenericSliceData<{ artists: KeyValuePair<string, IArtist> }>;
-    };
-  }
+  SliceState
 >("library/load-tracks", async ({ trackIds }, thunk) => {
   try {
     await ensureBridge();
+    const currentState = thunk.getState();
+    const [existingArtists, exisingTracks] = [
+      currentState.library.data.artists,
+      currentState.library.data.tracks,
+    ];
+    const tracksToFetch = trackIds.filter(
+      (t) => exisingTracks[t] === undefined
+    );
 
-    const existingArtists = thunk.getState().library.data.artists;
-
-    const tracks = await window.bridge.getTracks(trackIds);
+    if (tracksToFetch.length === 0) {
+      return [[], []];
+    }
+    const tracks = await window.bridge.getTracks(tracksToFetch);
 
     const artistsNeeded = Array.from(
       new Set(
@@ -165,11 +221,7 @@ const loadTracks = createAsyncThunk<
 const loadTracksForAlbum = createAsyncThunk<
   [ITrack[], IArtist[]],
   { albumId: string },
-  {
-    state: {
-      library: GenericSliceData<{ artists: KeyValuePair<string, IArtist> }>;
-    };
-  }
+  SliceState
 >("library/load-album-tracks", async ({ albumId }, thunk) => {
   try {
     await ensureBridge();
@@ -229,53 +281,97 @@ const createPlaylist = createAsyncThunk(
   }
 );
 
-const importIntoLibrary = createAsyncThunk(
-  "library/import-items",
-  async ({ items }: { items: string[] }) => {
-    try {
-      const result = await toast.promise(
-        new Promise<Awaited<ReturnType<typeof window.bridge.importItems>>>(
-          (res, rej) => {
-            try {
-              ensureBridge().then(async () => {
-                const newData = await window.bridge.importItems(items);
+const importIntoLibrary = createAsyncThunk<
+  Awaited<ReturnType<typeof window.bridge.importItems>> | null,
+  { items: string[] },
+  SliceState
+>("library/import-items", async ({ items }, thunk) => {
+  try {
+    const result = await toast.promise(
+      new Promise<Awaited<ReturnType<typeof window.bridge.importItems>>>(
+        (res, rej) => {
+          try {
+            ensureBridge().then(async () => {
+              const newData = await window.bridge.importItems(items);
+              const existingPlaylists = thunk.getState().library.data.playlists;
+              console.log(
+                `Immported ${
+                  Object.keys(newData.playlists).length
+                } Playlists, ${Object.keys(newData.albums).length} Albums and ${
+                  Object.keys(newData.artists).length
+                } Artists`
+              );
 
-                console.log(
-                  `Immported ${
-                    Object.keys(newData.playlists).length
-                  } Playlists, ${
-                    Object.keys(newData.albums).length
-                  } Albums and ${Object.keys(newData.artists).length} Artists`
-                );
+              const playlistUpdates = Object.values(existingPlaylists)
+                .sort((a, b) => {
+                  const posA = a.position;
+                  const posB = b.position;
+                  if (posA === -1 && posA === posB) {
+                    return 0;
+                  } else if (posA === -1) {
+                    return 1;
+                  } else if (posB === -1) {
+                    return -1;
+                  }
+                  return posA - posB;
+                })
+                .filter((a, idx) => {
+                  if (a.position === -1) {
+                    a.position = idx;
+                    const item = newData.playlists[a.id];
+                    if (item) {
+                      item.position = idx;
+                    }
+                    return true;
+                  }
+                  return false;
+                })
+                .map((a) => {
+                  const update: IPlaylistUpdate = {
+                    id: a.id,
+                    position: a.position,
+                  };
 
-                res(newData);
-              });
-            } catch (error) {
-              rej(error);
-            }
+                  return update;
+                });
+
+              if (playlistUpdates.length > 0) {
+                await window.bridge.updatePlaylists(playlistUpdates);
+              }
+
+              console.log("Imported data", newData);
+
+              res(newData);
+            });
+          } catch (error) {
+            rej(error);
           }
-        ),
-        {
-          loading: "Importing",
-          success: "Import Complete",
-          error: "Import Error",
         }
-      );
+      ),
+      {
+        loading: "Importing",
+        success: (data) => {
+          return `Imported ${
+            Object.keys(data.playlists).length
+          } Playlists, and ${Object.keys(data.albums).length} Albums`;
+        },
+        error: "Import Error",
+      }
+    );
 
-      return result;
-    } catch (e: unknown) {
-      // eslint-disable-next-line no-console
-      console.error(e);
-      return null;
-    }
+    return result;
+  } catch (e: unknown) {
+    // eslint-disable-next-line no-console
+    console.error(e);
+    return null;
   }
-);
+});
 
-const updateTrack = createAsyncThunk(
+const updateTracks = createAsyncThunk(
   "library/update-track",
-  async ({ update }: { update: ITrackUpdate }) => {
+  async ({ update }: { update: ITrackUpdate[] }) => {
     try {
-      await window.bridge.updateTrack(update);
+      await window.bridge.updateTracks(update);
       return update;
     } catch (e: unknown) {
       // eslint-disable-next-line no-console
@@ -291,7 +387,7 @@ const likeTrack = createAsyncThunk(
     try {
       const newLiked: ILikedTrack = {
         track: track,
-        timestamp: Math.round(Date.now() * 1000), // accurate to seconds
+        timestamp: Math.round(Date.now() / 1000), // accurate to seconds
       };
       await window.bridge.addLikedTracks([newLiked]);
       return newLiked;
@@ -338,6 +434,7 @@ export const LibarySlice = createSlice({
   // eslint-disable-next-line @typescript-eslint/no-empty-function
   extraReducers: (builder) => {
     builder.addCase(initLibrary.fulfilled, (state, action) => {
+      console.log(action.payload[0]);
       state.data.playlists = action.payload[0];
       state.data.artists = action.payload[1];
       state.data.albums = action.payload[2];
@@ -385,13 +482,19 @@ export const LibarySlice = createSlice({
         };
       }
     });
-    builder.addCase(updateTrack.fulfilled, (state, action) => {
-      if (action.payload && state.data.tracks[action.payload.id]) {
-        state.data.tracks[action.payload.id] = {
-          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          ...state.data.tracks[action.payload.id]!,
-          ...action.payload,
-        };
+    builder.addCase(updateTracks.fulfilled, (state, action) => {
+      if (action.payload !== null) {
+        action.payload.forEach((t) => {
+          if (state.data.tracks[t.id]) {
+            const newTrack = {
+              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+              ...state.data.tracks[t.id]!,
+              ...action.payload,
+            };
+            console.log("Updating", state.data.tracks[t.id], "=>", newTrack);
+            state.data.tracks[t.id] = newTrack;
+          }
+        });
       }
     });
     builder.addCase(likeTrack.fulfilled, (state, action) => {
@@ -419,7 +522,7 @@ export {
   loadTracksForAlbum,
   createPlaylist,
   importIntoLibrary,
-  updateTrack,
+  updateTracks,
   likeTrack,
   removeLikedTrack,
 };

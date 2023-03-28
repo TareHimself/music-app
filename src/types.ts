@@ -41,7 +41,7 @@ export interface IPlaylistTrack {
   timestamp: IPlaylistTrackRaw["timestamp"];
 }
 
-export interface IPlaylistRawMetaUpdate extends Partial<IPlaylistRaw> {
+export interface IPlaylistUpdate extends Partial<IPlaylistRaw> {
   id: IPlaylistRaw["id"];
 }
 
@@ -175,7 +175,6 @@ export interface IRendererToMainEvents {
     playlists: KeyValuePair<string, IPlaylist>;
   }>;
   getPlatform: () => NodeJS.Platform;
-  updateTrack: (update: ITrackUpdate) => Promise<void>;
   isDev: () => boolean;
   getLikedTracks: () => Promise<ILikedTrack[]>;
   addLikedTracks: (tracks: ILikedTrack[]) => Promise<void>;
@@ -194,6 +193,10 @@ export interface IRendererToMainEvents {
     event: T,
     callback: (...args: MainToRendererEventParams<T>) => Awaitable<any>
   ) => void;
+  updatePlaylists: (items: IPlaylistUpdate[]) => Promise<void>;
+  updateTracks: (items: ITrackUpdate[]) => Promise<void>;
+  removePlaylists: (items: string[]) => Promise<void>;
+  removeAlbums: (items: string[]) => Promise<void>;
 }
 
 export interface IMainToRendererEvents {
@@ -253,7 +256,7 @@ export interface ISpotifyTrack {
   name: string;
   artists: ISpotifyArtist[];
   disc_number: number;
-  track_number: 1;
+  track_number: number;
 }
 
 export interface ISpotifyAlbumNoTracks {
@@ -278,6 +281,17 @@ export interface ISpotifyAlbumsResponse {
 
 export interface ISpotifyTracksResponse {
   tracks: (ISpotifyTrack & { album: ISpotifyAlbum })[];
+}
+
+export interface ISpotifyPlaylistResponse {
+  id: string;
+  name: string;
+  tracks: {
+    items: {
+      added_at: string;
+      track: ISpotifyTrack & { album: ISpotifyAlbum };
+    }[];
+  };
 }
 
 export interface ISearchSection<T> {

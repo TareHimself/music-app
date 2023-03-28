@@ -5,13 +5,20 @@ import {
   IArtist,
   IArtistRaw,
   IPlaylist,
+  IPlaylistTrack,
   ISpotifyAlbumsResponse,
+  ISpotifyPlaylistResponse,
   ISpotifyTracksResponse,
   ITrack,
   ITrackRaw,
   KeyValuePair,
 } from "../../types";
-import { tCreateAlbums, tCreateArtists, tCreateTracks } from "../sqlite";
+import {
+  tCreateAlbums,
+  tCreateArtists,
+  tCreatePlaylists,
+  tCreateTracks,
+} from "../sqlite";
 import SourceImporter from "./importer";
 
 const SPOTIFY_URI_REGEX = /open.spotify.com\/([a-z]+)\/([a-zA-Z0-9]+)/;
@@ -208,7 +215,125 @@ export default class SpotifyImporter extends SourceImporter {
     }
   }
 
-  // async importPlaylists(cache: ISpotifyImportCache, items: string[]) {}
+  async importPlaylists(cache: ISpotifyImportCache, items: string[]) {
+    for (let i = 0; i < items.length; i++) {
+      const currentPlaylistId = items[0];
+      const newPlaylistId = this.toSourceId(`playlist-${currentPlaylistId}`);
+      if (!cache.playlists[newPlaylistId]) {
+        try {
+          const response = await SpotifyApi.get<ISpotifyPlaylistResponse>(
+            `playlists/${currentPlaylistId}`,
+            {
+              params: {
+                fields:
+                  "tracks.items(added_at,track(album(artists,id,images,name,release_date,total_tracks),artists,id,name,track_number,disc_number)),name,id",
+              },
+            }
+          );
+          if (response.data) {
+            const spotifyData = response.data;
+
+            const newPlaylist: IPlaylist = {
+              tracks: spotifyData.tracks.items.map((item) => {
+                const track = item.track;
+
+                const trackId = this.toSourceId(`track-${track.id}`);
+
+                const newPlaylistTrack: IPlaylistTrack = {
+                  track: trackId,
+                  timestamp: Math.round(Date.parse(item.added_at) / 1000),
+                };
+
+                if (!cache.tracks[trackId]) {
+                  const albumId = this.toSourceId(`album-${track.album.id}`);
+
+                  if (!cache.albums[albumId]) {
+                    cache.albums[albumId] = {
+                      id: albumId,
+                      title: track.album.name,
+                      cover: track.album.images[0]?.url || "",
+                      released: parseInt(
+                        track.album.release_date.split("-")[0] || "2000"
+                      ),
+                      tracks: [trackId],
+                      artists: Array.from(
+                        new Set(
+                          track.album.artists
+                            .filter((a) => a.type === "artist")
+                            .map((a) => {
+                              const newArtist: IArtistRaw = {
+                                id: this.toSourceId(`artist-${a.id}`),
+                                name: a.name,
+                              };
+
+                              if (!cache.artists[newArtist.id]) {
+                                cache.artists[newArtist.id] = newArtist;
+                              }
+
+                              return newArtist.id;
+                            })
+                        )
+                      ),
+
+                      genre: "",
+                    };
+                  } else {
+                    cache.albums[albumId]?.tracks.push(trackId);
+                    cache.albums[albumId]?.tracks.sort(
+                      (a, b) =>
+                        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                        cache.tracks[a]!.position - cache.tracks[b]!.position
+                    );
+                  }
+
+                  const trackArtists = Array.from(
+                    new Set(
+                      track.artists
+                        .filter((artist) => artist.type === "artist")
+                        .map((artist) => {
+                          const newArtist: IArtistRaw = {
+                            id: this.toSourceId(`artist-${artist.id}`),
+                            name: artist.name,
+                          };
+
+                          if (!cache.artists[newArtist.id]) {
+                            cache.artists[newArtist.id] = newArtist;
+                          }
+
+                          return newArtist.id;
+                        })
+                    )
+                  );
+
+                  const newTrack: ITrackRaw = {
+                    id: trackId,
+                    title: track.name,
+                    album: albumId,
+                    uri: "",
+                    artists: trackArtists,
+                    duration: 0,
+                    position: track.track_number,
+                  };
+
+                  cache.tracks[trackId] = newTrack;
+                }
+
+                return newPlaylistTrack;
+              }),
+              id: newPlaylistId,
+              title: spotifyData.name,
+              cover: "",
+              position: -1,
+            };
+
+            cache.playlists[newPlaylistId] = newPlaylist;
+          }
+        } catch (error) {
+          console.error(error);
+        }
+      }
+    }
+  }
 
   async parse(items: string[]) {
     const remaining = [...items];
@@ -249,11 +374,13 @@ export default class SpotifyImporter extends SourceImporter {
 
     await this.importAlbums(cache, albumsToImport);
     await this.importTracks(cache, tracksToImport);
+    await this.importPlaylists(cache, playlistsToImport);
     //https://open.spotify.com/album/5p0RmmR4QuGvGLqc8Ow4ba?si=ebeac79a7d76484d,https://open.spotify.com/album/6KT8x5oqZJl9CcnM66hddo?si=c2dc102670df4888,https://open.spotify.com/album/7Hc9zEVvu3wOJXI5YVhXe2?si=e92371eab47b4912,https://open.spotify.com/album/2rBHhp9tNShxTb529Hi5AS?si=f4e3f71d63984a9e,https://open.spotify.com/album/6t5D6LEgHxqUVOxJItkzfb?si=eed322fbddeb4158,https://open.spotify.com/album/3ciEcHv8axaPC5YHTJ72Bg?si=0b9587a50ed44629
 
     tCreateArtists(Object.values(cache.artists));
     tCreateAlbums(Object.values(cache.albums));
     tCreateTracks(Object.values(cache.tracks));
+    tCreatePlaylists(Object.values(cache.playlists));
 
     return { ...cache, remaining: remaining };
   }

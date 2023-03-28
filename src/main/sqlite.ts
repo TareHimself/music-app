@@ -9,7 +9,7 @@ import {
   ILikedTrack,
   IPlaylist,
   IPlaylistRaw,
-  IPlaylistRawMetaUpdate,
+  IPlaylistUpdate,
   IPlaylistTrack,
   ITrack,
   ITrackRaw,
@@ -111,6 +111,14 @@ const InsertNewPlaylistStatement = db.prepare<IPlaylistRaw>(
   "REPLACE INTO playlists (id,title,cover,position) VALUES (@id,@title,@cover,@position)"
 );
 
+const InsertNewPlaylistTrackStatement = db.prepare<{
+  playlist: string;
+  track: string;
+  timestamp: number;
+}>(
+  "REPLACE INTO playlist_tracks (playlist,track,timestamp) VALUES (@playlist,@track,@timestamp)"
+);
+
 const InsertNewAlbumStatement = db.prepare<IAlbumRaw>(
   "REPLACE INTO albums (id,title,cover,released,genre) VALUES (@id,@title,@cover,@released,@genre)"
 );
@@ -175,6 +183,22 @@ const RemoveLikedTrackStatement = db.prepare<{ track: string }>(
   "DELETE FROM liked_tracks WHERE track=@track"
 );
 
+const RemovePlaylistTracksStatement = db.prepare<{
+  id: string;
+}>("DELETE FROM playlist_tracks WHERE playlist=@id");
+
+const RemovePlaylistStatement = db.prepare<{
+  id: string;
+}>("DELETE FROM playlists WHERE id=@id");
+
+const RemoveAlbumTracksStatement = db.prepare<{
+  id: string;
+}>("DELETE FROM playlist_tracks WHERE playlist=@id");
+
+const RemoveAlbumStatement = db.prepare<{
+  id: string;
+}>("DELETE FROM playlist_tracks WHERE playlist=@id");
+
 // const tInsertArtists = db.transaction((artists: ILocalArtist[]) => {});
 
 // const tInsertTracks = db.transaction((artists: ILocalTrack[]) => {});
@@ -188,6 +212,13 @@ export const tCreatePlaylists: Database.Transaction<
     const current = playlists[i];
     if (current) {
       InsertNewPlaylistStatement.run(current);
+      current.tracks.forEach((t) => {
+        InsertNewPlaylistTrackStatement.run({
+          playlist: current.id,
+          track: t.track,
+          timestamp: t.timestamp,
+        });
+      });
     }
   }
 });
@@ -225,18 +256,6 @@ export const tCreateArtists: Database.Transaction<(data: IArtist[]) => void> =
     }
   });
 
-export const tUpdatePlaylistsMeta: Database.Transaction<
-  (updates: IPlaylistRawMetaUpdate[]) => void
-> = db.transaction((updates: IPlaylistRawMetaUpdate[]) => {
-  for (let i = 0; i < updates.length; i++) {
-    const current = updates[i];
-    if (!current) continue;
-    db.prepare<IPlaylistRawMetaUpdate>(
-      `UPDATE playlists ${objectToSetStatement(current)} WHERE id=@id`
-    ).run(current);
-  }
-});
-
 export const tUpdateTracks: Database.Transaction<
   (updates: ITrackUpdate[]) => void
 > = db.transaction((updates: ITrackUpdate[]) => {
@@ -245,6 +264,18 @@ export const tUpdateTracks: Database.Transaction<
     if (!current) continue;
     db.prepare<ITrackUpdate>(
       `UPDATE tracks ${objectToSetStatement(current)} WHERE id=@id`
+    ).run(current);
+  }
+});
+
+export const tUpdatePlaylists: Database.Transaction<
+  (updates: IPlaylistUpdate[]) => void
+> = db.transaction((updates: IPlaylistUpdate[]) => {
+  for (let i = 0; i < updates.length; i++) {
+    const current = updates[i];
+    if (!current) continue;
+    db.prepare<IPlaylistUpdate>(
+      `UPDATE playlists ${objectToSetStatement(current)} WHERE id=@id`
     ).run(current);
   }
 });
@@ -259,7 +290,7 @@ export const tAddLikedTracks: Database.Transaction<
   }
 });
 
-export const tRemovedLikedTracks: Database.Transaction<
+export const tRemoveLikedTracks: Database.Transaction<
   (track: string[]) => void
 > = db.transaction((tracks: string[]) => {
   for (let i = 0; i < tracks.length; i++) {
@@ -268,6 +299,36 @@ export const tRemovedLikedTracks: Database.Transaction<
     RemoveLikedTrackStatement.run({ track: current });
   }
 });
+
+export const tRemovePlaylists: Database.Transaction<(items: string[]) => void> =
+  db.transaction((items: string[]) => {
+    for (let i = 0; i < items.length; i++) {
+      const current = items[i];
+      if (!current) continue;
+      RemovePlaylistTracksStatement.run({
+        id: current,
+      });
+
+      RemovePlaylistStatement.run({
+        id: current,
+      });
+    }
+  });
+
+export const tRemoveAlbums: Database.Transaction<(items: string[]) => void> =
+  db.transaction((items: string[]) => {
+    for (let i = 0; i < items.length; i++) {
+      const current = items[i];
+      if (!current) continue;
+      RemovePlaylistTracksStatement.run({
+        id: current,
+      });
+
+      RemovePlaylistStatement.run({
+        id: current,
+      });
+    }
+  });
 
 export function getPlaylists(): IPlaylist[] {
   const playlists = GetPlaylistsStatement.all() as IPlaylistRaw[];

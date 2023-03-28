@@ -5,6 +5,7 @@ import {
   likeTrack,
   loadTracksForAlbum,
   removeLikedTrack,
+  updateTracks,
 } from "../../redux/slices/library";
 import { generateContextMenu, toTimeString } from "../../utils";
 import { HiPause, HiPlay } from "react-icons/hi2";
@@ -190,6 +191,25 @@ export default function TrackItem(
           toast.error(AppConstants.UNAVAILABLE_FEATURE_ERROR);
           break;
 
+        case "uri-edit":
+          toast.error(AppConstants.UNAVAILABLE_FEATURE_ERROR);
+          break;
+
+        case "uri-reset":
+          StreamManager.cache.delete(trackData.id);
+          dispatch(
+            updateTracks({
+              update: [
+                {
+                  id: trackData.id,
+                  duration: 0,
+                  uri: "",
+                },
+              ],
+            })
+          );
+          break;
+
         default:
           break;
       }
@@ -242,12 +262,30 @@ export default function TrackItem(
             id: "queue-later",
             name: "Play later",
           },
+          {
+            id: "uri-edit",
+            name: "Modify source",
+          },
+          ...((trackData?.uri.length || 0) > 0
+            ? [
+                {
+                  id: "uri-reset",
+                  name: "Reset source",
+                },
+              ]
+            : []),
           ...extraOptions,
         ],
         callback: onContextMenuItemSelected,
       });
     },
-    [isLiked, isLikedPlaylist, onContextMenuItemSelected, props.type]
+    [
+      isLiked,
+      isLikedPlaylist,
+      onContextMenuItemSelected,
+      props.type,
+      trackData?.uri.length,
+    ]
   );
 
   const openTrackAlbum = useCallback(() => {

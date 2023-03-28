@@ -57,9 +57,6 @@ ipcRenderer.exposeApi<IRendererToMainEvents>("bridge", {
   getPlatform: () => {
     return ipcRenderer.sendToMainSync("getPlatform");
   },
-  updateTrack: (update) => {
-    return ipcRenderer.sendToMainAsync("updateTrack", update);
-  },
   isDev: () => {
     return ipcRenderer.sendToMainSync("isDev");
   },
@@ -80,5 +77,17 @@ ipcRenderer.exposeApi<IRendererToMainEvents>("bridge", {
   },
   offFromMain: (event, callback) => {
     ipcRenderer.offFromMain(event, callback);
+  },
+  updatePlaylists: (items) => {
+    return ipcRenderer.sendToMainAsync("updatePlaylists", items);
+  },
+  updateTracks: (items) => {
+    return ipcRenderer.sendToMainAsync("updateTracks", items);
+  },
+  removePlaylists: (items) => {
+    return ipcRenderer.sendToMainAsync("removePlaylists", items);
+  },
+  removeAlbums: (items) => {
+    return ipcRenderer.sendToMainAsync("removePlaylists", items);
   },
 });

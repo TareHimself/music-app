@@ -31,7 +31,7 @@ import ControllableSlider from "./ControllableSlider";
 import { StreamManager } from "../global";
 import AppConstants from "../../data";
 import { IconBaseProps } from "react-icons";
-import { loadTracksForAlbum, updateTrack } from "../redux/slices/library";
+import { loadTracksForAlbum, updateTracks } from "../redux/slices/library";
 import useAppNavigation from "../hooks/useAppNavigation";
 
 // eslint-disable-next-line @typescript-eslint/ban-types
@@ -187,12 +187,14 @@ export default function PlayerTab() {
 
         if (streamInfo.duration !== track.duration) {
           dispatch(
-            updateTrack({
-              update: {
-                id: track.id,
-                duration: streamInfo.duration,
-                uri: streamInfo.from,
-              },
+            updateTracks({
+              update: [
+                {
+                  id: track.id,
+                  duration: streamInfo.duration,
+                  uri: streamInfo.from,
+                },
+              ],
             })
           );
         }
@@ -267,12 +269,14 @@ export default function PlayerTab() {
         if (streamInfo) {
           if (streamInfo.duration !== track.duration) {
             dispatch(
-              updateTrack({
-                update: {
-                  id: track.id,
-                  duration: streamInfo.duration,
-                  uri: streamInfo.from,
-                },
+              updateTracks({
+                update: [
+                  {
+                    id: track.id,
+                    duration: streamInfo.duration,
+                    uri: streamInfo.from,
+                  },
+                ],
               })
             );
           }
@@ -404,12 +408,14 @@ export default function PlayerTab() {
           if (streamInfo) {
             if (streamInfo.duration !== track.duration) {
               dispatch(
-                updateTrack({
-                  update: {
-                    id: track.id,
-                    duration: streamInfo.duration,
-                    uri: streamInfo.from,
-                  },
+                updateTracks({
+                  update: [
+                    {
+                      id: track.id,
+                      duration: streamInfo.duration,
+                      uri: streamInfo.from,
+                    },
+                  ],
                 })
               );
             }

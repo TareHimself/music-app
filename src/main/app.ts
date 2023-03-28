@@ -10,8 +10,9 @@ import {
   tUpdateTracks,
   getLikedTracks,
   tAddLikedTracks,
-  tRemovedLikedTracks,
+  tRemoveLikedTracks,
   tCreatePlaylists,
+  tUpdatePlaylists,
 } from "./sqlite";
 import { ipcMain } from "../ipc";
 import DiscordRichPrecenceClient from "discord-rich-presence";
@@ -274,11 +275,6 @@ ipcMain.onFromRenderer("importItems", async (ev, uri) => {
   ev.reply(await mediaImporters.parse(uri));
 });
 
-ipcMain.onFromRenderer("updateTrack", (ev, track) => {
-  tUpdateTracks([track]);
-  ev.reply();
-});
-
 ipcMain.onFromRenderer("isDev", (ev) => {
   ev.replySync(isDev());
 });
@@ -293,6 +289,26 @@ ipcMain.onFromRenderer("addLikedTracks", (ev, tracks) => {
 });
 
 ipcMain.onFromRenderer("removeLikedTracks", (ev, tracks) => {
-  tRemovedLikedTracks(tracks);
+  tRemoveLikedTracks(tracks);
+  ev.reply();
+});
+
+ipcMain.onFromRenderer("updatePlaylists", (ev, items) => {
+  tUpdatePlaylists(items);
+  ev.reply();
+});
+
+ipcMain.onFromRenderer("updateTracks", (ev, items) => {
+  tUpdateTracks(items);
+  ev.reply();
+});
+
+ipcMain.onFromRenderer("removePlaylists", (ev, items) => {
+  tUpdateTracks(items);
+  ev.reply();
+});
+
+ipcMain.onFromRenderer("removePlaylists", (ev, items) => {
+  tUpdateTracks(items);
   ev.reply();
 });

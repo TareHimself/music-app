@@ -9,7 +9,6 @@ const MAX_URI_TRIES = 10;
 
 export default class YoutubeSource extends MusiczMediaSource {
   ytMusicApi: YTMusic = new YTMusic();
-  cachedSearches: Map<string, string> = new Map();
   static YOUTUBE_URI_REGEX =
     /https:\/\/(?:[a-z]+.)?youtube.[a-z]+\/watch\?v=.*/;
 
@@ -32,23 +31,22 @@ export default class YoutubeSource extends MusiczMediaSource {
     if (track.uri.length === 0) {
       console.log(track.uri);
       startStopProfile("video uri search");
-      if (this.cachedSearches.get(track.id)) {
-        track.uri = this.cachedSearches.get(track.id) || "";
-      } else {
-        const searchTerm = `${track.title} ${track.artists.join(" ")}, ${
-          track.album
-        }`;
+      const searchTerm = `${track.title} ${track.artists.join(" ")}, ${
+        track.album
+      }`.trim();
 
-        console.log(searchTerm);
+      console.log(searchTerm);
 
-        const results = await this.ytMusicApi.searchSongs(searchTerm);
+      const results = await this.ytMusicApi.searchSongs(searchTerm);
 
-        track.uri = `https://youtube.com/watch?v=${results[0]?.videoId || ""}`;
-        this.cachedSearches.set(track.id, track.uri);
-      }
+      track.uri = `https://youtube.com/watch?v=${results[0]?.videoId || ""}`;
+
+      console.info("Used", searchTerm, "To fetch", track.uri);
 
       startStopProfile("video uri search");
     }
+
+    console.info("Using uri", track.uri);
 
     let tries = 0;
     startStopProfile("uri stream fetch");

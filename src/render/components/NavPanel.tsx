@@ -4,11 +4,14 @@ import { MdOutlineLibraryAdd } from "react-icons/md";
 import { RiSettings4Fill, RiSettings4Line } from "react-icons/ri";
 import AppConstants from "../../data";
 import { useAppDispatch, useAppSelector } from "../redux/hooks";
-import { createPlaylist } from "../redux/slices/library";
+import { createPlaylist, loadTracks } from "../redux/slices/library";
 import { useLocation } from "react-router-dom";
 import NavItem from "./NavItem";
 import useAppNavigation from "../hooks/useAppNavigation";
 import { IoChevronBack, IoChevronForward } from "react-icons/io5";
+import { generateContextMenu } from "../utils";
+import { toast } from "react-hot-toast";
+import { IPlaylist } from "../../types";
 
 export default function NavPanel() {
   const location = useLocation();
@@ -46,10 +49,15 @@ export default function NavPanel() {
   }, [playlistData.length, dispatch]);
 
   const onPlaylistSelected = useCallback(
-    (playlist_id: string) => {
+    (playlist: IPlaylist, playlist_id: string) => {
       navigate(playlist_id);
+      dispatch(
+        loadTracks({
+          trackIds: playlist.tracks.map((a) => a.track),
+        })
+      );
     },
-    [navigate]
+    [dispatch, navigate]
   );
 
   return (
@@ -114,13 +122,68 @@ export default function NavPanel() {
           />
         )}
         {playlistData
-          .sort((a, b) => a.position - b.position)
-          .map((playlist) => (
+          .sort((a, b) => {
+            const posA: number = a.position;
+            const posB: number = b.position;
+            if (posA === -1 && posA === posB) {
+              return 0;
+            } else if (posA === -1) {
+              return 1;
+            } else if (posB === -1) {
+              return -1;
+            }
+            return posA - posB;
+          })
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+          .map((playlist, _idx) => (
             <NavItem
+              onContextMenu={(e) => {
+                generateContextMenu({
+                  event: e,
+                  options: [
+                    {
+                      id: `delete|${playlist.id}`,
+                      name: "Delete",
+                    },
+                    {
+                      id: `rename|${playlist.id}`,
+                      name: "Rename",
+                    },
+                    {
+                      id: `export|${playlist.id}`,
+                      name: "Export",
+                    },
+                  ],
+                  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                  callback: (s) => {
+                    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                    const [operation, _playlist_id] = s.split("|");
+                    switch (operation) {
+                      case "delete":
+                        {
+                          toast.error(AppConstants.UNAVAILABLE_FEATURE_ERROR);
+                        }
+                        break;
+                      case "rename":
+                        {
+                          toast.error(AppConstants.UNAVAILABLE_FEATURE_ERROR);
+                        }
+                        break;
+                      case "export":
+                        {
+                          toast.error(AppConstants.UNAVAILABLE_FEATURE_ERROR);
+                        }
+                        break;
+                    }
+                  },
+                });
+              }}
               navId={`/playlist/${playlist.id}`}
-              display={playlist.title}
+              display={
+                playlist.title // + ` index ${idx}, position ${playlist.position}`
+              }
               activeId={selectedItem}
-              onSelected={onPlaylistSelected}
+              onSelected={(s) => onPlaylistSelected(playlist, s)}
               key={playlist.id}
             />
           ))}

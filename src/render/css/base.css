@@ -325,6 +325,7 @@ p {
   justify-items: flex-start;
   height: 100%;
   min-width: var(--nav-panel-width);
+  max-width: var(--nav-panel-width);
   background-color: var(--nav-bg);
   padding-left: var(--main-border-size);
   padding-right: var(--main-border-size);
