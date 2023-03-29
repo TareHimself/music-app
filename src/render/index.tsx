@@ -1,7 +1,11 @@
 import { useCallback, useEffect } from "react";
 import { createRoot } from "react-dom/client";
 import { Provider } from "react-redux";
-import { IPlayTrackEventData, IQueueTrackEventData } from "../types";
+import {
+  IPlayTrackEventData,
+  IQueueTracksEventData,
+  IQueueTracksEventDataWithReplace,
+} from "../types";
 import App from "./App";
 import NotificationContainer from "./components/NotificationContainer";
 import PlayerTab from "./components/PlayerTab";
@@ -13,6 +17,7 @@ import { store } from "./redux/store";
 import { MemoryRouter } from "react-router-dom";
 import ContextMenus from "./components/ContextMenus";
 import { Toaster } from "react-hot-toast";
+import AppConstants from "../data";
 
 export function RootApp() {
   const dispatch = useAppDispatch();
@@ -56,24 +61,46 @@ if (container) {
   const root = createRoot(container);
 
   window.utils = {
-    playTrack: async (data: IPlayTrackEventData) => {
+    playTrack: (data: IPlayTrackEventData) => {
       document.dispatchEvent(
-        new CustomEvent<IPlayTrackEventData>("custom-play-track", {
-          detail: data,
-        })
+        new CustomEvent<IPlayTrackEventData>(
+          AppConstants.RENDERER_EVENT_PLAY_SINGLE,
+          {
+            detail: data,
+          }
+        )
       );
     },
-    queueTracks: async (data: IQueueTrackEventData) => {
+    queueTracks: (data: IQueueTracksEventDataWithReplace) => {
       document.dispatchEvent(
-        new CustomEvent<IQueueTrackEventData>("custom-queue-track", {
-          detail: data,
-        })
+        new CustomEvent<IQueueTracksEventDataWithReplace>(
+          AppConstants.RENDERER_EVENT_QUEUE_TRACKS,
+          {
+            detail: data,
+          }
+        )
       );
     },
-    // eslint-disable-next-line @typescript-eslint/no-empty-function, @typescript-eslint/no-unused-vars
-    addTracksToLater: async (_data) => {},
-    // eslint-disable-next-line @typescript-eslint/no-empty-function, @typescript-eslint/no-unused-vars
-    addTracksToNext: async (_data) => {},
+    playLater: (data) => {
+      document.dispatchEvent(
+        new CustomEvent<IQueueTracksEventData>(
+          AppConstants.RENDERER_EVENT_PLAY_LATER,
+          {
+            detail: data,
+          }
+        )
+      );
+    },
+    playNext: (data) => {
+      document.dispatchEvent(
+        new CustomEvent<IQueueTracksEventData>(
+          AppConstants.RENDERER_EVENT_PLAY_NEXT,
+          {
+            detail: data,
+          }
+        )
+      );
+    },
   };
 
   root.render(

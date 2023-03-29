@@ -2,6 +2,10 @@ import { useAppSelector } from "../../redux/hooks";
 import TrackItem from "../tracks/TrackItem";
 import ScreenWithImage from "./ScreenWithImage";
 
+export type IQueuedItem = {
+  track: string;
+  index: number;
+};
 export default function QueueScreen() {
   const [queuedTracks, currentTrack, album] = useAppSelector((s) => [
     s.player.data.queuedTracks,
@@ -18,12 +22,19 @@ export default function QueueScreen() {
   return (
     <ScreenWithImage cover={album?.cover || ""}>
       <div className="track-items">
-        {[currentTrack, ...queuedTracks].map((a, idx) => {
+        {[
+          { track: currentTrack, index: -1 },
+          ...queuedTracks.map<IQueuedItem>((a, idx) => ({
+            track: a,
+            index: idx,
+          })),
+        ].map((a, idx) => {
           return (
             <TrackItem
-              trackId={a}
+              trackId={a.track}
               key={idx}
               type={"queue"}
+              index={a.index}
               activeOverride={idx === 0}
             />
           );

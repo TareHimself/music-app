@@ -17,11 +17,19 @@ class StreamManagerClass {
       return this.cache.get(track.id);
     }
 
-    const streamInfo = await window.bridge.getTrackStreamInfo(track);
+    const streamInfo = await toast.promise(
+      window.bridge.getTrackStreamInfo(track),
+      {
+        loading: "Fetching Stream",
+        error: "Failed To Fetch Stream",
+        success: "Stream Fetched",
+      }
+    );
+
     console.log("Got", streamInfo);
     if (!streamInfo) {
       toast.error("Failed To Fetch Stream");
-      return null;
+      return undefined;
     }
 
     const expireAtStr = (streamInfo.uri.match(EXPIRE_AT_REGEX) || [])[1];
@@ -42,6 +50,10 @@ class StreamManagerClass {
     console.log("Gotten stream info for track", track.title);
 
     return streamInfo;
+  }
+
+  has(trackId: string) {
+    return this.cache.has(trackId);
   }
 }
 

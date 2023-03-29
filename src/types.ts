@@ -215,23 +215,24 @@ export type MainToRendererEventReturn<T extends keyof IMainToRendererEvents> =
 export type MainToRendererEventParams<T extends keyof IMainToRendererEvents> =
   Parameters<IMainToRendererEvents[T]>;
 
-export type IAddTracksEventData = {
+export type IQueueTracksEventData = {
   tracks: string[];
 };
 
-export type IQueueTrackEventData = {
-  tracks: string[];
+export interface IQueueTracksEventDataWithReplace
+  extends IQueueTracksEventData {
   replaceQueue: boolean;
-};
+}
+
 export type IPlayTrackEventData = {
   track: string;
 };
 
 export interface IGlobalUtils {
-  playTrack: (data: IPlayTrackEventData) => Promise<void>;
-  addTracksToNext: (data: IAddTracksEventData) => Promise<void>;
-  addTracksToLater: (data: IAddTracksEventData) => Promise<void>;
-  queueTracks: (data: IQueueTrackEventData) => Promise<void>;
+  playTrack: (data: IPlayTrackEventData) => void;
+  playNext: (data: IQueueTracksEventData) => void;
+  playLater: (data: IQueueTracksEventData) => void;
+  queueTracks: (data: IQueueTracksEventDataWithReplace) => void;
 }
 
 declare global {
@@ -341,6 +342,7 @@ export interface IActiveContextMenu {
 declare global {
   interface Array<T> {
     batch: (size: number) => T[][];
+    lastIndex: () => number;
   }
 }
 

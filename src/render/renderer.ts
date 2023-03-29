@@ -35,4 +35,9 @@ Array.prototype.batch = function <T>(this: T[], size: number) {
     return batches;
   }, []);
 };
+
+Array.prototype.lastIndex = function <T>(this: T[]) {
+  return this.length - 1;
+};
+
 import "./index.tsx";

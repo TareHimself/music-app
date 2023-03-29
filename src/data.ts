@@ -11,4 +11,8 @@ export default class AppConstants {
   ];
   static DEFAULT_COVER_ART = "assets/default-cover.png";
   static UNAVAILABLE_FEATURE_ERROR = "This feature is not yet available";
+  static RENDERER_EVENT_QUEUE_TRACKS = "tracks/queue";
+  static RENDERER_EVENT_PLAY_LATER = "tracks/queue/later";
+  static RENDERER_EVENT_PLAY_NEXT = "tracks/queue/next";
+  static RENDERER_EVENT_PLAY_SINGLE = "tracks/play";
 }

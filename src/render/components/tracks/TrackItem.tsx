@@ -14,7 +14,7 @@ import LikeButton from "../LikeButton";
 
 export type TrackItemProps =
   | { type: "playlist"; playlistInfo: IPlaylistTrack }
-  | { type: "queue"; trackId: string }
+  | { type: "queue"; trackId: string; index: number }
   | { type: "album"; trackId: string };
 export default function TrackItem(
   props: TrackItemProps & { activeOverride?: boolean }
@@ -30,14 +30,21 @@ export default function TrackItem(
 
   const isLikedPlaylist = location[1] === "playlist" && contextId === "liked";
 
-  const [trackData, currentTrack, isPaused, likedTracks, playlistsIndex] =
-    useAppSelector((s) => [
-      s.library.data.tracks[trackId],
-      s.player.data.currentTrack,
-      s.player.data.isPaused,
-      s.library.data.likedTracks,
-      s.library.data.playlists,
-    ]);
+  const [
+    trackData,
+    currentTrack,
+    isPaused,
+    likedTracks,
+    playlistsIndex,
+    queuedTracks,
+  ] = useAppSelector((s) => [
+    s.library.data.tracks[trackId],
+    s.player.data.currentTrack,
+    s.player.data.isPaused,
+    s.library.data.likedTracks,
+    s.library.data.playlists,
+    s.player.data.queuedTracks,
+  ]);
 
   const dispatch = useAppDispatch();
 
@@ -46,6 +53,8 @@ export default function TrackItem(
   );
 
   const allArtists = useAppSelector((s) => s.library.data.artists || {});
+
+  const queueIndex = props.type === "queue" ? props.index : null;
 
   const { title, artists, duration } = trackData || {
     title: "",
@@ -70,8 +79,13 @@ export default function TrackItem(
       return;
     }
 
-    if (props.type === "queue") {
-      toast.error(AppConstants.UNAVAILABLE_FEATURE_ERROR);
+    if (props.type === "queue" && queueIndex) {
+      const currentIndex = queueIndex;
+      const newQueued = [...queuedTracks].slice(currentIndex);
+      window.utils.queueTracks({
+        tracks: newQueued,
+        replaceQueue: true,
+      });
     } else if (props.type === "album") {
       // add the albums tracks to recent to account for
 
@@ -142,6 +156,8 @@ export default function TrackItem(
     likedTracks,
     playlistsIndex,
     props.type,
+    queueIndex,
+    queuedTracks,
     trackData?.album,
     trackData?.id,
     trackId,
@@ -153,16 +169,14 @@ export default function TrackItem(
 
       switch (selection) {
         case "queue-next":
-          window.utils.queueTracks({
+          window.utils.playNext({
             tracks: [trackData.id],
-            replaceQueue: false,
           });
           break;
 
         case "queue-later":
-          window.utils.queueTracks({
+          window.utils.playLater({
             tracks: [trackData.id],
-            replaceQueue: false,
           });
           break;
 

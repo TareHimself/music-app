@@ -13,7 +13,8 @@ import {
   ERepeatState,
   EShuffleState,
   IPlayTrackEventData,
-  IQueueTrackEventData,
+  IQueueTracksEventData,
+  IQueueTracksEventDataWithReplace,
 } from "../../types";
 import { useAppDispatch, useAppSelector } from "../redux/hooks";
 import {
@@ -26,7 +27,7 @@ import {
   setShuffleState,
   setIsPaused,
 } from "../redux/slices/player";
-import { toTimeString, wait } from "../utils";
+import { toTimeString } from "../utils";
 import ControllableSlider from "./ControllableSlider";
 import { StreamManager } from "../global";
 import AppConstants from "../../data";
@@ -164,8 +165,7 @@ export default function PlayerTab() {
     player.play();
   }, [player]);
 
-  // Just loads and plays a track
-  const loadAndPlayTrack = useCallback(
+  const loadAndUpdateTrack = useCallback(
     async (trackId: string) => {
       const track = allTracks[trackId];
       if (!track) return;
@@ -180,25 +180,44 @@ export default function PlayerTab() {
         artists: track.artists.map((a) => artists[a]?.name || ""),
       });
 
+      if (!streamInfo) {
+        return streamInfo;
+      }
+
+      if (streamInfo.duration !== track.duration) {
+        dispatch(
+          updateTracks({
+            update: [
+              {
+                id: track.id,
+                duration: streamInfo.duration,
+                uri: streamInfo.from,
+              },
+            ],
+          })
+        );
+      }
+
+      return streamInfo;
+    },
+    [albums, allTracks, artists, dispatch]
+  );
+
+  // Just loads and plays a track
+  const loadAndPlayTrack = useCallback(
+    async (trackId: string) => {
+      const track = allTracks[trackId];
+      if (!track) return;
+      const album = albums[track.album];
+      if (!album) return;
+
+      const streamInfo = await loadAndUpdateTrack(trackId);
+
       console.log("Gotten stream Info", streamInfo);
 
       if (streamInfo) {
         player.src = streamInfo.uri;
         player.play();
-
-        if (streamInfo.duration !== track.duration) {
-          dispatch(
-            updateTracks({
-              update: [
-                {
-                  id: track.id,
-                  duration: streamInfo.duration,
-                  uri: streamInfo.from,
-                },
-              ],
-            })
-          );
-        }
       } else {
         console.error("No sources found for the track");
         return;
@@ -216,7 +235,7 @@ export default function PlayerTab() {
       });
       window.bridge.updateDiscordPresence(track);
     },
-    [allTracks, albums, player, dispatch, artists]
+    [allTracks, albums, loadAndUpdateTrack, dispatch, player, artists]
   );
 
   // handles switching to the next track and pre-loading the one after that
@@ -249,50 +268,17 @@ export default function PlayerTab() {
           dispatch(replaceQueuedTracks(newQueued));
         }
       }
+      if (!newQueued[0]) {
+        dispatch(setCurrentTrack(null));
+        player.src = "";
 
-      // Preload Stream URI
-      const trackId = newQueued[0];
-      if (trackId) {
-        await wait(1000);
-        const track = allTracks[trackId];
-        if (!track) return;
-        const album = albums[track.album];
-        if (!album) return;
-
-        const streamInfo = await StreamManager.getStreamInfo({
-          id: track.id,
-          title: track.title,
-          album: album.title,
-          uri: track.uri,
-          artists: track.artists.map((a) => artists[a]?.name || ""),
+        setTrackTiming({
+          progress: 0,
+          length: 0,
         });
-
-        if (streamInfo) {
-          if (streamInfo.duration !== track.duration) {
-            dispatch(
-              updateTracks({
-                update: [
-                  {
-                    id: track.id,
-                    duration: streamInfo.duration,
-                    uri: streamInfo.from,
-                  },
-                ],
-              })
-            );
-          }
-        }
+        navigator.mediaSession.metadata = null;
+        await window.bridge.clearDiscordPresence();
       }
-    } else {
-      dispatch(setCurrentTrack(null));
-      player.src = "";
-
-      setTrackTiming({
-        progress: 0,
-        length: 0,
-      });
-      navigator.mediaSession.metadata = null;
-      await window.bridge.clearDiscordPresence();
     }
   }, [
     repeatState,
@@ -300,9 +286,6 @@ export default function PlayerTab() {
     currentTrackId,
     loadAndPlayTrack,
     dispatch,
-    allTracks,
-    albums,
-    artists,
     player,
   ]);
 
@@ -358,7 +341,7 @@ export default function PlayerTab() {
     await onNextClicked();
   }, [onNextClicked]);
 
-  const onPlayTrack = useCallback(
+  const onEventPlayTrack = useCallback(
     async (e: Event) => {
       const actualEvent = e as CustomEvent<IPlayTrackEventData>;
       await loadAndPlayTrack(actualEvent.detail.track);
@@ -367,9 +350,9 @@ export default function PlayerTab() {
   );
 
   // handles external queue adds
-  const onAddQueuedTrack = useCallback(
+  const onEventQueueTracks = useCallback(
     async (e: Event) => {
-      const actualEvent = e as CustomEvent<IQueueTrackEventData>;
+      const actualEvent = e as CustomEvent<IQueueTracksEventDataWithReplace>;
 
       const toPlay =
         !currentTrackId || actualEvent.detail.replaceQueue
@@ -385,54 +368,45 @@ export default function PlayerTab() {
       } else {
         dispatch(addQueuedTracks(actualEvent.detail.tracks));
       }
+    },
+    [currentTrackId, dispatch, loadAndPlayTrack]
+  );
 
-      // Preload Stream URI
-      if (queuedTracks.length === 0 && actualEvent.detail.tracks.length > 1) {
-        await wait(1000);
-        // Preload Stream URI
-        const trackId = actualEvent.detail.tracks[0];
-        if (trackId) {
-          await wait(1000);
-          const track = allTracks[trackId];
-          if (!track) return;
-          const album = albums[track.album];
-          if (!album) return;
+  const onEventPlayTracksNext = useCallback(
+    async (e: Event) => {
+      const actualEvent = e as CustomEvent<IQueueTracksEventData>;
 
-          const streamInfo = await StreamManager.getStreamInfo({
-            id: track.id,
-            title: track.title,
-            album: album.title,
-            uri: track.uri,
-            artists: track.artists.map((a) => artists[a]?.name || ""),
-          });
+      const tracks = actualEvent.detail.tracks;
 
-          if (streamInfo) {
-            if (streamInfo.duration !== track.duration) {
-              dispatch(
-                updateTracks({
-                  update: [
-                    {
-                      id: track.id,
-                      duration: streamInfo.duration,
-                      uri: streamInfo.from,
-                    },
-                  ],
-                })
-              );
-            }
-          }
-        }
+      const trackToPlay = currentTrackId === null ? tracks.shift() : undefined;
+
+      dispatch(replaceQueuedTracks([...tracks, ...queuedTracks]));
+
+      if (trackToPlay) {
+        loadAndPlayTrack(trackToPlay);
       }
     },
-    [
-      albums,
-      allTracks,
-      artists,
-      currentTrackId,
-      dispatch,
-      loadAndPlayTrack,
-      queuedTracks.length,
-    ]
+    [currentTrackId, dispatch, loadAndPlayTrack, queuedTracks]
+  );
+
+  const onEventPlayTracksLater = useCallback(
+    async (e: Event) => {
+      const actualEvent = e as CustomEvent<IQueueTracksEventData>;
+
+      const tracks = actualEvent.detail.tracks;
+
+      const trackToPlay =
+        currentTrackId === null && queuedTracks.length === 0
+          ? tracks.shift()
+          : undefined;
+
+      dispatch(replaceQueuedTracks([...queuedTracks, ...tracks]));
+
+      if (trackToPlay) {
+        loadAndPlayTrack(trackToPlay);
+      }
+    },
+    [currentTrackId, dispatch, loadAndPlayTrack, queuedTracks]
   );
 
   // pauses the current track
@@ -451,9 +425,25 @@ export default function PlayerTab() {
   }, [dispatch]);
 
   useEffect(() => {
-    document.addEventListener("custom-play-track", onPlayTrack);
+    document.addEventListener(
+      AppConstants.RENDERER_EVENT_PLAY_SINGLE,
+      onEventPlayTrack
+    );
 
-    document.addEventListener("custom-queue-track", onAddQueuedTrack);
+    document.addEventListener(
+      AppConstants.RENDERER_EVENT_QUEUE_TRACKS,
+      onEventQueueTracks
+    );
+
+    document.addEventListener(
+      AppConstants.RENDERER_EVENT_PLAY_NEXT,
+      onEventPlayTracksNext
+    );
+
+    document.addEventListener(
+      AppConstants.RENDERER_EVENT_PLAY_LATER,
+      onEventPlayTracksLater
+    );
 
     player.addEventListener("timeupdate", onPlayerTimeUpdate);
 
@@ -468,9 +458,25 @@ export default function PlayerTab() {
     navigator.mediaSession.setActionHandler("nexttrack", onNextClicked);
 
     return () => {
-      document.removeEventListener("custom-play-track", onPlayTrack);
+      document.removeEventListener(
+        AppConstants.RENDERER_EVENT_PLAY_SINGLE,
+        onEventPlayTrack
+      );
 
-      document.removeEventListener("custom-queue-track", onAddQueuedTrack);
+      document.removeEventListener(
+        AppConstants.RENDERER_EVENT_QUEUE_TRACKS,
+        onEventQueueTracks
+      );
+
+      document.removeEventListener(
+        AppConstants.RENDERER_EVENT_PLAY_NEXT,
+        onEventPlayTracksNext
+      );
+
+      document.removeEventListener(
+        AppConstants.RENDERER_EVENT_PLAY_LATER,
+        onEventPlayTracksLater
+      );
 
       player.removeEventListener("timeupdate", onPlayerTimeUpdate);
 
@@ -485,8 +491,8 @@ export default function PlayerTab() {
       navigator.mediaSession.setActionHandler("nexttrack", null);
     };
   }, [
-    onPlayTrack,
-    onAddQueuedTrack,
+    onEventPlayTrack,
+    onEventQueueTracks,
     onPlayerTimeUpdate,
     onPlayerPause,
     onPlayerPlay,
@@ -494,7 +500,23 @@ export default function PlayerTab() {
     player,
     onPreviousClicked,
     onNextClicked,
+    onEventPlayTracksNext,
+    onEventPlayTracksLater,
   ]);
+
+  // preload next and previous tracks
+  useEffect(() => {
+    if (currentTrackId) {
+      if (queuedTracks[0] && !StreamManager.has(queuedTracks[0])) {
+        loadAndUpdateTrack(queuedTracks[0]);
+      }
+
+      const lastRecent = recentTracks[recentTracks.lastIndex()];
+      if (lastRecent && !StreamManager.has(lastRecent)) {
+        loadAndUpdateTrack(lastRecent);
+      }
+    }
+  }, [currentTrackId, loadAndUpdateTrack, queuedTracks, recentTracks]);
 
   return (
     <div id="player-tab">

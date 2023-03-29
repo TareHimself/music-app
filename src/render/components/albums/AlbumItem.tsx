@@ -5,8 +5,6 @@ import { loadTracksForAlbum, removeAlbums } from "../../redux/slices/library";
 import { generateContextMenu } from "../../utils";
 import { HiPlay } from "react-icons/hi2";
 import useAppNavigation from "../../hooks/useAppNavigation";
-import { toast } from "react-hot-toast";
-import AppConstants from "../../../data";
 export default function AlbumItem({ data }: { data?: IAlbum }) {
   const dispatch = useAppDispatch();
 
@@ -28,13 +26,15 @@ export default function AlbumItem({ data }: { data?: IAlbum }) {
 
       switch (selection) {
         case "add-next":
-          toast.error(AppConstants.UNAVAILABLE_FEATURE_ERROR);
+          await dispatch(loadTracksForAlbum({ albumId: data.id }));
+          window.utils.playNext({
+            tracks: [...data.tracks],
+          });
           break;
         case "add-later":
           await dispatch(loadTracksForAlbum({ albumId: data.id }));
-          window.utils.queueTracks({
+          window.utils.playLater({
             tracks: [...data.tracks],
-            replaceQueue: false,
           });
           break;
 
