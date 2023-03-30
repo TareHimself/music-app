@@ -53,28 +53,20 @@ export const PlayerSlice = createSlice({
     },
     addQueuedTracks: (state, action: PayloadAction<string[]>) => {
       state.data.queuedTracks = [...state.data.queuedTracks, ...action.payload];
-      if (state.data.shuffleState === EShuffleState.ON) {
-        state.data.queuedTracks = [...state.data.queuedTracks].sort(
-          () => 0.5 - Math.random()
-        );
-      }
     },
     replaceRecentTracks: (state, action: PayloadAction<string[]>) => {
       state.data.recentTracks = action.payload;
     },
     replaceQueuedTracks: (state, action: PayloadAction<string[]>) => {
       state.data.queuedTracks = action.payload;
-      if (state.data.shuffleState === EShuffleState.ON) {
+    },
+    setShuffleState: (state, action: PayloadAction<EShuffleState>) => {
+      state.data.shuffleState = action.payload;
+      if (action.payload === EShuffleState.ON) {
         state.data.queuedTracks = [...state.data.queuedTracks].sort(
           () => 0.5 - Math.random()
         );
       }
-    },
-    setShuffleState: (state, action: PayloadAction<EShuffleState>) => {
-      state.data.shuffleState = action.payload;
-      state.data.queuedTracks = [...state.data.queuedTracks].sort(
-        () => 0.5 - Math.random()
-      );
     },
     setRepeatState: (state, action: PayloadAction<ERepeatState>) => {
       state.data.repeatState = action.payload;

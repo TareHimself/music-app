@@ -353,6 +353,9 @@ export default function PlayerTab() {
   const onEventQueueTracks = useCallback(
     async (e: Event) => {
       const actualEvent = e as CustomEvent<IQueueTracksEventDataWithReplace>;
+      // if (shuffleState === EShuffleState.ON) {
+      //   actualEvent.detail.tracks.sort(() => 0.5 - Math.random());
+      // }
 
       const toPlay =
         !currentTrackId || actualEvent.detail.replaceQueue
@@ -376,6 +379,10 @@ export default function PlayerTab() {
     async (e: Event) => {
       const actualEvent = e as CustomEvent<IQueueTracksEventData>;
 
+      // if (shuffleState === EShuffleState.ON) {
+      //   actualEvent.detail.tracks.sort(() => 0.5 - Math.random());
+      // }
+
       const tracks = actualEvent.detail.tracks;
 
       const trackToPlay = currentTrackId === null ? tracks.shift() : undefined;
@@ -392,6 +399,10 @@ export default function PlayerTab() {
   const onEventPlayTracksLater = useCallback(
     async (e: Event) => {
       const actualEvent = e as CustomEvent<IQueueTracksEventData>;
+
+      // if (shuffleState === EShuffleState.ON) {
+      //   actualEvent.detail.tracks.sort(() => 0.5 - Math.random());
+      // }
 
       const tracks = actualEvent.detail.tracks;
 
