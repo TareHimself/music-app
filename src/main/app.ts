@@ -91,6 +91,8 @@ const createWindow = (): void => {
     icon: "./assets/icon",
     height: 600,
     width: 800,
+    minWidth: 800,
+    minHeight: 600,
     webPreferences: {
       preload: MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY,
       nodeIntegration: true,
@@ -188,22 +190,26 @@ ipcMain.onFromRenderer("getTrackStreamInfo", async (ev, track) => {
   ev.reply(await mediaSources.parse(track));
 });
 
-ipcMain.onFromRenderer("windowMaximize", () => {
+ipcMain.onFromRenderer("windowMaximize", (ev) => {
   if (mainWindow) {
+    console.log(mainWindow.isMaximizable(), mainWindow.isMaximized());
     if (mainWindow.isMaximized()) {
       mainWindow.unmaximize();
     } else {
       mainWindow.maximize();
     }
   }
+  ev.reply();
 });
 
-ipcMain.onFromRenderer("windowMinimize", () => {
+ipcMain.onFromRenderer("windowMinimize", (ev) => {
   mainWindow?.minimize();
+  ev.reply();
 });
 
-ipcMain.onFromRenderer("windowClose", () => {
+ipcMain.onFromRenderer("windowClose", (ev) => {
   mainWindow?.close();
+  ev.reply();
 });
 
 ipcMain.onFromRenderer("getAlbums", (e, ids) => {

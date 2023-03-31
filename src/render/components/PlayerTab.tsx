@@ -367,6 +367,7 @@ export default function PlayerTab() {
       }
 
       if (actualEvent.detail.replaceQueue) {
+        dispatch(replaceRecentTracks([]));
         dispatch(replaceQueuedTracks(actualEvent.detail.tracks));
       } else {
         dispatch(addQueuedTracks(actualEvent.detail.tracks));

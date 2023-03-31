@@ -6,13 +6,13 @@ import { IRendererToMainEvents, ITrack } from "../types";
 ipcRenderer.exposeApi<IRendererToMainEvents>("bridge", {
   getPreloadPath: () => ipcRenderer.sendToMainSync("getPreloadPath"),
   windowMinimize: () => {
-    ipcRenderer.sendToMainSync("windowMinimize");
+    ipcRenderer.sendToMainAsync("windowMinimize");
   },
   windowMaximize: () => {
-    ipcRenderer.sendToMainSync("windowMaximize");
+    ipcRenderer.sendToMainAsync("windowMaximize");
   },
   windowClose: () => {
-    ipcRenderer.sendToMainSync("windowClose");
+    ipcRenderer.sendToMainAsync("windowClose");
   },
   toStreamUrl: (uri: string) => {
     return ipcRenderer.sendToMainAsync("toStreamUrl", uri);
