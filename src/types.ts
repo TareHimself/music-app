@@ -150,7 +150,7 @@ export type ICreateContextMenuEventData = {
   callback: (selectedOption: string) => Awaitable<void>;
 };
 
-export interface IRendererToMainEvents {
+export type IRendererToMainEvents = {
   getPreloadPath: () => string;
   windowMinimize: () => void;
   windowMaximize: () => void;
@@ -181,39 +181,39 @@ export interface IRendererToMainEvents {
   removeLikedTracks: (tracks: string[]) => Promise<void>;
   onFromMain: <T extends keyof IMainToRendererEvents>(
     event: T,
-    callback: (...args: MainToRendererEventParams<T>) => Awaitable<any>
+    callback: (...args: EventParams<IMainToRendererEvents, T>) => Awaitable<any>
   ) => void;
 
   onceFromMain: <T extends keyof IMainToRendererEvents>(
     event: T,
-    callback: (...args: MainToRendererEventParams<T>) => Awaitable<any>
+    callback: (...args: EventParams<IMainToRendererEvents, T>) => Awaitable<any>
   ) => void;
 
   offFromMain: <T extends keyof IMainToRendererEvents>(
     event: T,
-    callback: (...args: MainToRendererEventParams<T>) => Awaitable<any>
+    callback: (...args: EventParams<IMainToRendererEvents, T>) => Awaitable<any>
   ) => void;
   updatePlaylists: (items: IPlaylistUpdate[]) => Promise<void>;
   updateTracks: (items: ITrackUpdate[]) => Promise<void>;
   removePlaylists: (items: string[]) => Promise<void>;
   removeAlbums: (items: string[]) => Promise<void>;
-}
+};
 
-export interface IMainToRendererEvents {
+export type IMainToRendererEvents = {
   onImport: (ids: string) => void;
-}
+};
 
-export type RendererToMainEventReturn<T extends keyof IRendererToMainEvents> =
-  Awaited<ReturnType<IRendererToMainEvents[T]>>;
+export type IEventBase = {
+  [key: string]: (...args: any[]) => Awaitable<any>;
+};
 
-export type RendererToMainEventParams<T extends keyof IRendererToMainEvents> =
-  Parameters<IRendererToMainEvents[T]>;
+export type EventReturnType<E extends IEventBase, T extends keyof E> = Awaited<
+  ReturnType<E[T]>
+>;
 
-export type MainToRendererEventReturn<T extends keyof IMainToRendererEvents> =
-  Awaited<ReturnType<IMainToRendererEvents[T]>>;
-
-export type MainToRendererEventParams<T extends keyof IMainToRendererEvents> =
-  Parameters<IMainToRendererEvents[T]>;
+export type EventParams<E extends IEventBase, T extends keyof E> = Parameters<
+  E[T]
+>;
 
 export type IQueueTracksEventData = {
   tracks: string[];
