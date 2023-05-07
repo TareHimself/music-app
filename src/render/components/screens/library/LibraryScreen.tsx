@@ -91,14 +91,17 @@ export default function LibraryScreen() {
     s.library.data.artists,
   ]);
 
-  const [currentSearch, setCurrentSearch] = useState("");
-
-  const { width, height } = useWindowDimensions();
-
   const { getValue: getScroll, updateValue: updateScroll } = usePathValue(
     "scroll",
     0
   );
+
+  const { getValue: getSearchValue, updateValue: updateSearchValue } =
+    usePathValue("search", "");
+
+  const [currentSearch, setCurrentSearch] = useState(getSearchValue());
+
+  const { width, height } = useWindowDimensions();
 
   const scrollElementRef = useRef<List | null>(null);
 
@@ -142,11 +145,18 @@ export default function LibraryScreen() {
   );
 
   const rowsData = useMemo(
-    () => buildRows(albums, maxPerRow, currentSearch),
+    () => buildRows(albums, maxPerRow, currentSearch.toLowerCase()),
     [albums, buildRows, currentSearch, maxPerRow]
   );
 
-  const updateSearch = useThrottle<string>(0.5 * 1000, setCurrentSearch, "");
+  const updateSearch = useThrottle<string>(
+    0.5 * 1000,
+    (e) => {
+      setCurrentSearch(e);
+      updateSearchValue(e);
+    },
+    ""
+  );
 
   useEffect(() => {
     scrollElementRef.current?.scrollTo(getScroll());
@@ -159,7 +169,8 @@ export default function LibraryScreen() {
         <input
           type={"text"}
           placeholder="Looking for something?"
-          onChange={(c) => updateSearch(c.currentTarget.value.toLowerCase())}
+          defaultValue={getSearchValue()}
+          onChange={(c) => updateSearch(c.currentTarget.value)}
         />
       </div>
       <List

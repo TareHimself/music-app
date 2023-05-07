@@ -1,7 +1,12 @@
 import { useCallback } from "react";
 import { IAlbum } from "@types";
-import { useAppDispatch, useAppSelector } from "@redux/hooks";
-import { loadTracksForAlbum, removeAlbums } from "@redux/slices/library";
+import {
+  importIntoLibrary,
+  loadTracksForAlbum,
+  removeAlbums,
+  useAppDispatch,
+  useAppSelector,
+} from "@redux/exports";
 import { generateContextMenu } from "@render/utils";
 import { HiPlay } from "react-icons/hi2";
 import useAppNavigation from "@hooks/useAppNavigation";
@@ -43,6 +48,10 @@ export default function AlbumItem({ data }: { data?: IAlbum }) {
           dispatch(removeAlbums({ items: [data.id] }));
           break;
 
+        case "reimport":
+          dispatch(importIntoLibrary({ items: [data.id] }));
+          break;
+
         default:
           break;
       }
@@ -67,6 +76,10 @@ export default function AlbumItem({ data }: { data?: IAlbum }) {
             id: "remove",
             name: "Remove from library",
           },
+          {
+            id: "reimport",
+            name: "Re-Import",
+          },
         ],
         callback: onContextMenuItemSelected,
       });
@@ -79,7 +92,7 @@ export default function AlbumItem({ data }: { data?: IAlbum }) {
       await dispatch(loadTracksForAlbum({ albumId: data.id }));
       window.utils.queueTracks({
         tracks: [...data.tracks],
-        replaceQueue: true,
+        startIndex: 0,
       });
     }
   }, [data, dispatch]);

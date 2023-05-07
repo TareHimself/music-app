@@ -14,6 +14,6 @@ export default function usePathValue<T = any>(key: string, defaultValue: T) {
 
   return {
     updateValue: (update: T) => setPathData({ ...pathData, [key]: update }),
-    getValue: () => pathData[key] || defaultValue,
+    getValue: () => (pathData[key] as T) || defaultValue,
   };
 }

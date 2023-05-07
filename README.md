@@ -21,6 +21,8 @@ Was bored and wanted to try making one
 - [ ] Local tracks importer
 - [ ] Spotify search
 - [ ] Track download
+- [ ] Ability to rename playlists
+- [ ] Ability to change playlist covers
 
 ## Run
 

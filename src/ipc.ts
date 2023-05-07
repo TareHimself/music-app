@@ -162,8 +162,8 @@ class IpcRendererWrapper<ToM extends IEventBase, FromM extends IEventBase> {
       const callback = ({ data, id }: EventReturnWithId<ToM, T>) => {
         if (id === operationId) {
           this.offToMain(event, callback);
+          resolve(data);
         }
-        resolve(data);
       };
       this.onToMain(event, callback);
       this.sendToMain(event, operationId, ...args);

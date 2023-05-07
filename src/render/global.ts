@@ -15,7 +15,7 @@ class StreamManagerClass {
       this.streamsBeingFetched.delete(track.id);
       return this.cache.get(track.id);
     }
-    const toastId = toast.loading(`Fetching Stream | ${track.title}`);
+    const toastId = toast.loading(`Fetching Stream`);
     const streamInfo = await window.bridge.getTrackStreamInfo(track);
 
     if (!streamInfo) {

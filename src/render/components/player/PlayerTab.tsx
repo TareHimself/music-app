@@ -239,52 +239,47 @@ export default function PlayerTab() {
 
   // handles switching to the next track and pre-loading the one after that
   const onNextClicked = useCallback(async () => {
-    const newQueued = [...queuedTracks];
-    const newRecents = [...recentTracks];
-    const toPlay = newQueued.shift();
-    if (toPlay && (await loadAndUpdateTrack(toPlay)) !== undefined) {
-      if (currentTrackId) newRecents.push(currentTrackId);
-      dispatch(replaceRecentTracks(newRecents));
-      await loadAndPlayTrack(toPlay);
-      dispatch(replaceQueuedTracks(newQueued));
+    if (queuedTracks.length || repeatState !== ERepeatState.OFF) {
+      if (repeatState === ERepeatState.OFF && queuedTracks.length) {
+        const newQueued = [...queuedTracks];
+        const newRecents = [...recentTracks];
+        const toPlay = newQueued.shift();
+        if (toPlay && (await loadAndUpdateTrack(toPlay)) !== undefined) {
+          if (currentTrackId) newRecents.push(currentTrackId);
+          dispatch(replaceRecentTracks(newRecents));
+          await loadAndPlayTrack(toPlay);
+          dispatch(replaceQueuedTracks(newQueued));
+          return;
+        } else if (!toPlay) {
+          if (currentTrackId) newRecents.push(currentTrackId);
+          dispatch(replaceRecentTracks(newRecents));
+          return;
+        }
+      } else if (currentTrackId) {
+        if (repeatState === ERepeatState.REPEAT_ONE) {
+          await loadAndPlayTrack(currentTrackId);
+          return;
+        } else {
+          const newQueued = [...queuedTracks];
+          newQueued.push(currentTrackId);
+          const toPlay = newQueued.shift();
+          if (toPlay && (await loadAndUpdateTrack(toPlay)) !== undefined) {
+            await loadAndPlayTrack(toPlay);
+            dispatch(replaceQueuedTracks(newQueued));
+            return;
+          }
+        }
+      }
     }
-    // if (queuedTracks.length > 0 || repeatState !== ERepeatState.OFF) {
-    //   const newQueued = [...queuedTracks];
-    //   if (repeatState === ERepeatState.REPEAT) {
-    //     if (previousCurrent) newQueued.push(previousCurrent);
+    dispatch(setCurrentTrack(null));
+    player.src = "";
 
-    //     const pendingTrack = newQueued.shift();
-    //     if (pendingTrack) {
-    //       await loadAndPlayTrack(pendingTrack);
-    //       dispatch(replaceQueuedTracks(newQueued));
-    //       return;
-    //     }
-    //   } else if (repeatState === ERepeatState.REPEAT_ONE) {
-    //     if (currentTrackId) {
-    //       await loadAndPlayTrack(currentTrackId);
-    //       return;
-    //     }
-    //   } else {
-    //     if (previousCurrent)
-    //       dispatch(replaceRecentTracks([...recentTracks, previousCurrent]));
-
-    //     const pendingTrack = newQueued.shift();
-    //     if (pendingTrack) {
-    //       await loadAndPlayTrack(pendingTrack);
-    //       dispatch(replaceQueuedTracks(newQueued));
-    //       return;
-    //     }
-    //   }
-    //   dispatch(setCurrentTrack(null));
-    //   player.src = "";
-
-    //   setTrackTiming({
-    //     progress: 0,
-    //     length: 0,
-    //   });
-    //   navigator.mediaSession.metadata = null;
-    //   await window.bridge.clearDiscordPresence();
-    // }
+    setTrackTiming({
+      progress: 0,
+      length: 0,
+    });
+    navigator.mediaSession.metadata = null;
+    await window.bridge.clearDiscordPresence();
   }, [
     repeatState,
     queuedTracks,
@@ -296,20 +291,23 @@ export default function PlayerTab() {
 
   // handles switching to the previous track
   const onPreviousClicked = useCallback(async () => {
-    console.log(
-      "Recent tracks",
-      recentTracks.map((a) => allTracks[a]?.title)
-    );
-    if (recentTracks.length > 0) {
+    if (repeatState === ERepeatState.REPEAT) {
+      const newQueued = [...queuedTracks];
+      if (currentTrackId) newQueued.unshift(currentTrackId);
+      const toPlay = newQueued.pop();
+      if (toPlay && (await loadAndUpdateTrack(toPlay)) !== undefined) {
+        await loadAndPlayTrack(toPlay);
+        dispatch(replaceQueuedTracks(newQueued));
+        return;
+      }
+    } else if (repeatState === ERepeatState.REPEAT_ONE) {
+      player.currentTime = 0;
+      if (player.paused) player.play();
+    } else if (recentTracks.length > 0) {
       const previousTrackId = currentTrackId;
 
       const newRecent = [...recentTracks];
       const pendingTrack = newRecent.pop();
-      console.log(
-        "new data",
-        newRecent.map((a) => allTracks[a]?.title),
-        allTracks[pendingTrack!]
-      );
       if (pendingTrack) {
         dispatch(replaceRecentTracks(newRecent));
         await loadAndPlayTrack(pendingTrack);
@@ -322,6 +320,7 @@ export default function PlayerTab() {
 
     player.currentTime = 0;
   }, [
+    repeatState,
     currentTrackId,
     dispatch,
     loadAndPlayTrack,
@@ -548,12 +547,25 @@ export default function PlayerTab() {
         loadAndUpdateTrack(queuedTracks[0]);
       }
 
-      const lastRecent = recentTracks[recentTracks.lastIndex()];
-      if (lastRecent && !StreamManager.has(lastRecent)) {
-        loadAndUpdateTrack(lastRecent);
+      if (repeatState === ERepeatState.REPEAT) {
+        const lastQueued = queuedTracks[queuedTracks.lastIndex()];
+        if (lastQueued && !StreamManager.has(lastQueued)) {
+          loadAndUpdateTrack(lastQueued);
+        }
+      } else {
+        const lastRecent = recentTracks[recentTracks.lastIndex()];
+        if (lastRecent && !StreamManager.has(lastRecent)) {
+          loadAndUpdateTrack(lastRecent);
+        }
       }
     }
-  }, [currentTrackId, loadAndUpdateTrack, queuedTracks, recentTracks]);
+  }, [
+    repeatState,
+    currentTrackId,
+    loadAndUpdateTrack,
+    queuedTracks,
+    recentTracks,
+  ]);
 
   return (
     <div id="player-tab">
