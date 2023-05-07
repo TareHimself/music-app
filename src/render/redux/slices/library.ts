@@ -1,8 +1,8 @@
 import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
 import toast from "react-hot-toast";
-import AppConstants from "../../../data";
+import AppConstants from "@root/data";
 import {
-  GenericSliceData,
+  AppSliceState,
   IAlbum,
   IArtist,
   IArtistRaw,
@@ -12,27 +12,11 @@ import {
   ITrack,
   ITrackUpdate,
   KeyValuePair,
-} from "../../../types";
-import { arrayToIndex, ensureBridge } from "../../utils";
+  LibrarySliceState,
+} from "@types";
+import { arrayToIndex, ensureBridge } from "@render/utils";
 
-export type AppSliceState = GenericSliceData<{
-  screenId: string;
-  tracks: KeyValuePair<string, ITrack>;
-  albums: KeyValuePair<string, IAlbum>;
-  playlists: KeyValuePair<string, IPlaylist>;
-  artists: KeyValuePair<string, IArtist>;
-  likedTracks: ILikedTrack[];
-  likedTracksLookup: KeyValuePair<string, boolean>;
-  googleDriveApiKey: string;
-}>;
-
-type SliceState = {
-  state: {
-    library: AppSliceState;
-  };
-};
-
-const initialState: AppSliceState = {
+const initialState: LibrarySliceState = {
   status: "loading",
   data: {
     screenId: AppConstants.MAIN_NAV_IDS[1] || "",
@@ -55,7 +39,7 @@ const initLibrary = createAsyncThunk<
     ILikedTrack[]
   ],
   undefined,
-  SliceState
+  AppSliceState
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
 >("library/init", async (_, _thunk) => {
   try {
@@ -137,8 +121,6 @@ const initLibrary = createAsyncThunk<
               await window.bridge.updatePlaylists(playlistUpdates);
             }
 
-            console.log();
-
             res([
               playlistsIndex,
               artistsIndex,
@@ -173,7 +155,7 @@ const initLibrary = createAsyncThunk<
 const loadTracks = createAsyncThunk<
   [ITrack[], IArtist[]],
   { trackIds: string[] },
-  SliceState
+  AppSliceState
 >("library/tracks/load", async ({ trackIds }, thunk) => {
   try {
     await ensureBridge();
@@ -218,7 +200,7 @@ const loadTracks = createAsyncThunk<
 const loadTracksForAlbum = createAsyncThunk<
   [ITrack[], IArtist[]],
   { albumId: string },
-  SliceState
+  AppSliceState
 >("library/albums/tracks/load", async ({ albumId }, thunk) => {
   try {
     await ensureBridge();
@@ -292,7 +274,7 @@ const createPlaylist = createAsyncThunk(
 const importIntoLibrary = createAsyncThunk<
   Awaited<ReturnType<typeof window.bridge.importItems>> | null,
   { items: string[] },
-  SliceState
+  AppSliceState
 >("library/import", async ({ items }, thunk) => {
   try {
     const result = await toast.promise(
@@ -345,8 +327,6 @@ const importIntoLibrary = createAsyncThunk<
               if (playlistUpdates.length > 0) {
                 await window.bridge.updatePlaylists(playlistUpdates);
               }
-
-              console.log("Imported data", newData);
 
               res(newData);
             });
@@ -469,7 +449,6 @@ export const LibarySlice = createSlice({
   // eslint-disable-next-line @typescript-eslint/no-empty-function
   extraReducers: (builder) => {
     builder.addCase(initLibrary.fulfilled, (state, action) => {
-      console.log(action.payload[0]);
       state.data.playlists = action.payload[0];
       state.data.artists = action.payload[1];
       state.data.albums = action.payload[2];

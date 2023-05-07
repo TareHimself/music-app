@@ -1,9 +1,9 @@
 import { useLocation } from "react-router-dom";
-import AppConstants from "../../../data";
-import { IPlaylist } from "../../../types";
-import { useAppSelector } from "../../redux/hooks";
-import TracksView from "../tracks/TracksList";
-import ScreenWithImage from "./ScreenWithImage";
+import AppConstants from "@root/data";
+import { IPlaylist } from "@types";
+import { useAppSelector } from "@redux/hooks";
+import TracksList from "../common/tracks/TracksList";
+import ScreenWithImage from "../common/ScreenWithImage";
 
 export default function PlaylistScreen() {
   const location = useLocation();
@@ -29,7 +29,7 @@ export default function PlaylistScreen() {
       cover={playlist?.cover || AppConstants.DEFAULT_COVER_ART}
       header={<h1>{playlist?.title}</h1>}
     >
-      <TracksView data={playlist?.tracks || []} />
+      <TracksList data={playlist?.tracks || []} />
     </ScreenWithImage>
   );
 }

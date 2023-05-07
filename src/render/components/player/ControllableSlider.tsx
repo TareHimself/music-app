@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { ControllableSliderProps } from "../../types";
+import { ControllableSliderProps } from "@types";
 
 const DEFAULT_PROPS = {
   style: {},

@@ -1,6 +1,6 @@
-import { useAppSelector } from "../../redux/hooks";
-import TrackItem from "../tracks/TrackItem";
-import ScreenWithImage from "./ScreenWithImage";
+import { useAppSelector } from "@redux/hooks";
+import TrackItem from "../common/tracks/TrackItem";
+import ScreenWithImage from "../common/ScreenWithImage";
 
 export type IQueuedItem = {
   track: string;

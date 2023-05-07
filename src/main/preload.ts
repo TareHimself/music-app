@@ -1,7 +1,7 @@
 // See the Electron documentation for details on how to use preload scripts:
 // https://www.electronjs.org/docs/latest/tutorial/process-model#preload-scripts
 import { ipcRenderer } from "../ipc";
-import { IRendererToMainEvents, ITrack } from "../types";
+import { IRendererToMainEvents, ITrack } from "@types";
 
 ipcRenderer.exposeApi<IRendererToMainEvents>("bridge", {
   getPreloadPath: () => ipcRenderer.sendToMainSync("getPreloadPath"),

@@ -14,5 +14,5 @@ export default class AppConstants {
   static RENDERER_EVENT_QUEUE_TRACKS = "tracks/queue";
   static RENDERER_EVENT_PLAY_LATER = "tracks/queue/later";
   static RENDERER_EVENT_PLAY_NEXT = "tracks/queue/next";
-  static RENDERER_EVENT_PLAY_SINGLE = "tracks/play";
+  static RENDERER_EVENT_SKIP_TO_INDEX = "tracks/skip/index";
 }

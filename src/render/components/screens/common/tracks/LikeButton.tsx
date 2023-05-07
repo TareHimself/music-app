@@ -1,7 +1,11 @@
 import { useCallback } from "react";
 import { AiOutlineHeart, AiFillHeart } from "react-icons/ai";
-import { useAppDispatch, useAppSelector } from "../redux/hooks";
-import { likeTrack, removeLikedTrack } from "../redux/slices/library";
+import {
+  useAppDispatch,
+  useAppSelector,
+  likeTrack,
+  removeLikedTrack,
+} from "@redux/exports";
 
 export default function LikeButton({ trackId }: { trackId: string }) {
   const isLiked = useAppSelector(

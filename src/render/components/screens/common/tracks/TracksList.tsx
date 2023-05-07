@@ -1,7 +1,7 @@
-import { IPlaylistTrack } from "../../../types";
+import { IPlaylistTrack } from "@types";
 import TrackItem from "./TrackItem";
 
-export default function TracksView(props: {
+export default function TracksList(props: {
   data: string[] | IPlaylistTrack[];
 }) {
   if (props.data.length === 0) {

@@ -1,13 +1,16 @@
 import React, { PropsWithChildren, useCallback, useEffect, useId } from "react";
-import useAppNavigation from "../../hooks/useAppNavigation";
-import { imageColor } from "../../utils";
+import { imageColor } from "@render/utils";
+import usePathValue from "@hooks/usePathValue";
 
 export type ScreenWithImageProps = PropsWithChildren<{
   cover: string;
   header?: React.ReactNode;
 }>;
 export default function ScreenWithImage(props: ScreenWithImageProps) {
-  const { getScroll, updateScroll } = useAppNavigation();
+  const { getValue: getScroll, updateValue: updateScroll } = usePathValue(
+    "scroll",
+    0
+  );
 
   const scrollId = useId();
 

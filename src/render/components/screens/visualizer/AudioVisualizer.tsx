@@ -1,5 +1,5 @@
 import { useEffect, useId } from "react";
-import { StreamManager } from "../global";
+import { StreamManager } from "@render/global";
 
 export type AudioVisualizerProps = {
   fftSize: number;
@@ -39,7 +39,6 @@ export default function AudioVisualizer({
         canvasCtx.canvas.width,
         canvasCtx.canvas.height
       );
-      console.log("FRAME", waveform);
       analyser.getByteFrequencyData(waveform);
 
       let actualBarWidth = barWidth;

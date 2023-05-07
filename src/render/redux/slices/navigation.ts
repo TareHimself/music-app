@@ -1,17 +1,12 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { GenericSliceData, IActiveContextMenu } from "../../../types";
-
-export type NavigationSliceState = GenericSliceData<{
-  backwardHistory: string[];
-  forwardHistory: string[];
-  contextMenu: IActiveContextMenu | null;
-}>;
+import { INavigationHistory, NavigationSliceState } from "@types";
 
 const initialState: NavigationSliceState = {
   status: "loaded",
   data: {
     backwardHistory: [],
     forwardHistory: [],
+    pathData: {},
     contextMenu: null,
   },
 };
@@ -21,11 +16,17 @@ export const NavigationSlice = createSlice({
   // `createSlice` will infer the state type from the `initialState` argument
   initialState,
   reducers: {
-    setForwardHistory: (state, action: PayloadAction<string[]>) => {
+    setForwardHistory: (state, action: PayloadAction<INavigationHistory[]>) => {
       state.data.forwardHistory = action.payload;
     },
-    setBackwardHistory: (state, action: PayloadAction<string[]>) => {
+    setBackwardHistory: (
+      state,
+      action: PayloadAction<INavigationHistory[]>
+    ) => {
       state.data.backwardHistory = action.payload;
+    },
+    setPathData: (state, action: PayloadAction<INavigationHistory["data"]>) => {
+      state.data.pathData = action.payload;
     },
     setContextMenu: (
       state,
@@ -36,6 +37,10 @@ export const NavigationSlice = createSlice({
   },
 });
 
-export const { setForwardHistory, setBackwardHistory, setContextMenu } =
-  NavigationSlice.actions;
+export const {
+  setForwardHistory,
+  setBackwardHistory,
+  setContextMenu,
+  setPathData,
+} = NavigationSlice.actions;
 export default NavigationSlice.reducer;

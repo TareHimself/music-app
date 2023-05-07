@@ -1,10 +1,10 @@
 import { useCallback } from "react";
-import { IAlbum } from "../../../types";
-import { useAppDispatch, useAppSelector } from "../../redux/hooks";
-import { loadTracksForAlbum, removeAlbums } from "../../redux/slices/library";
-import { generateContextMenu } from "../../utils";
+import { IAlbum } from "@types";
+import { useAppDispatch, useAppSelector } from "@redux/hooks";
+import { loadTracksForAlbum, removeAlbums } from "@redux/slices/library";
+import { generateContextMenu } from "@render/utils";
 import { HiPlay } from "react-icons/hi2";
-import useAppNavigation from "../../hooks/useAppNavigation";
+import useAppNavigation from "@hooks/useAppNavigation";
 export default function AlbumItem({ data }: { data?: IAlbum }) {
   const dispatch = useAppDispatch();
 
@@ -13,6 +13,7 @@ export default function AlbumItem({ data }: { data?: IAlbum }) {
   );
 
   const { navigate } = useAppNavigation();
+
   const selectAlbum = useCallback(() => {
     if (!data) return;
 

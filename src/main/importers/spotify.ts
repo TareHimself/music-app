@@ -11,7 +11,7 @@ import {
   ITrack,
   ITrackRaw,
   KeyValuePair,
-} from "../../types";
+} from "@types";
 import {
   tCreateAlbums,
   tCreateArtists,

@@ -1,6 +1,6 @@
 import React from "react";
-import NavPanel from "./components/NavPanel";
-import Screens from "./components/Screens";
+import { NavPanel } from "@components/navigation/exports";
+import Screens from "@components/Screens";
 import "./css/base.css";
 
 export default class App extends React.Component {

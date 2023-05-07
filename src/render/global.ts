@@ -1,34 +1,28 @@
 import { toast } from "react-hot-toast";
-import { ITrackResource, TrackStreamInfo } from "../types";
+import { ITrackResource, TrackStreamInfo } from "@types";
 const EXPIRE_AT_REGEX = /expire=([0-9]+)/;
 class StreamManagerClass {
   cache: Map<string, TrackStreamInfo> = new Map();
   player: HTMLAudioElement = new Audio();
-
+  streamsBeingFetched: Set<string> = new Set();
   constructor() {
     this.player.volume = 0.1;
   }
 
   async getStreamInfo(track: ITrackResource, forceNew = false) {
-    console.log("Fetching resource for ", track);
+    this.streamsBeingFetched.add(track.id);
     if (!forceNew && this.cache.has(track.id)) {
-      console.log("Fetching track from cache");
-      console.log("Got", this.cache.get(track.id));
+      this.streamsBeingFetched.delete(track.id);
       return this.cache.get(track.id);
     }
+    const toastId = toast.loading(`Fetching Stream | ${track.title}`);
+    const streamInfo = await window.bridge.getTrackStreamInfo(track);
 
-    const streamInfo = await toast.promise(
-      window.bridge.getTrackStreamInfo(track),
-      {
-        loading: "Fetching Stream",
-        error: "Failed To Fetch Stream",
-        success: "Stream Fetched",
-      }
-    );
-
-    console.log("Got", streamInfo);
     if (!streamInfo) {
-      toast.error("Failed To Fetch Stream");
+      toast.error("Failed To Fetch Stream", {
+        id: toastId,
+      });
+      this.streamsBeingFetched.delete(track.id);
       return undefined;
     }
 
@@ -45,15 +39,46 @@ class StreamManagerClass {
         expire_in,
         this.cache
       );
+
+      this.streamsBeingFetched.delete(track.id);
+      toast.success("Fetched Stream", {
+        id: toastId,
+      });
+      return streamInfo;
     }
 
-    console.log("Gotten stream info for track", track.title);
+    toast.error("Failed To Fetch Stream", {
+      id: toastId,
+    });
 
-    return streamInfo;
+    return undefined;
   }
 
   has(trackId: string) {
     return this.cache.has(trackId);
+  }
+
+  fetching(trackId: string) {
+    return this.streamsBeingFetched.has(trackId);
+  }
+
+  remove(trackId: string) {
+    this.cache.delete(trackId);
+    this.streamsBeingFetched.delete(trackId);
+    if (this.player.getAttribute("track") === trackId) {
+      this.player.src = "";
+    }
+  }
+
+  play(trackId: string): boolean {
+    if (!this.has(trackId)) {
+      return false;
+    }
+
+    this.player.setAttribute("track", trackId);
+    this.player.src = this.cache.get(trackId)!.uri;
+    this.player.play();
+    return true;
   }
 }
 

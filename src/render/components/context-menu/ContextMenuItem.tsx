@@ -1,4 +1,4 @@
-import { IContextMenuOption, ICreateContextMenuEventData } from "../../types";
+import { IContextMenuOption, ICreateContextMenuEventData } from "@types";
 export type IContextMenuItemProps = IContextMenuOption & {
   onSelected: ICreateContextMenuEventData["callback"];
 };

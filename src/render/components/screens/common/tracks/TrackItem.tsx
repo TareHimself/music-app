@@ -1,16 +1,15 @@
 import { useCallback } from "react";
-import { IContextMenuOption, IPlaylistTrack } from "../../../types";
-import { useAppDispatch, useAppSelector } from "../../redux/hooks";
-import { loadTracksForAlbum, updateTracks } from "../../redux/slices/library";
-import { generateContextMenu, toTimeString } from "../../utils";
+import { IContextMenuOption, IPlaylistTrack } from "@types";
+import { useAppDispatch, useAppSelector } from "@redux/hooks";
+import { loadTracksForAlbum, updateTracks } from "@redux/slices/library";
+import { generateContextMenu, toTimeString } from "@render/utils";
 import { HiPause, HiPlay } from "react-icons/hi2";
-import { StreamManager } from "../../global";
-import { addRecentTracks } from "../../redux/slices/player";
+import { StreamManager } from "@render/global";
 import { useLocation } from "react-router";
 import { toast } from "react-hot-toast";
-import AppConstants from "../../../data";
-import useAppNavigation from "../../hooks/useAppNavigation";
-import LikeButton from "../LikeButton";
+import AppConstants from "@root/data";
+import useAppNavigation from "@hooks/useAppNavigation";
+import LikeButton from "./LikeButton";
 
 export type TrackItemProps =
   | { type: "playlist"; playlistInfo: IPlaylistTrack }
@@ -81,27 +80,15 @@ export default function TrackItem(
 
     if (props.type === "queue" && queueIndex) {
       const currentIndex = queueIndex;
-      const newQueued = [...queuedTracks].slice(currentIndex);
-      window.utils.queueTracks({
-        tracks: newQueued,
-        replaceQueue: true,
-      });
+      window.utils.skipToQueueIndex(currentIndex);
     } else if (props.type === "album") {
       // add the albums tracks to recent to account for
 
       await dispatch(loadTracksForAlbum({ albumId: trackData.album }));
-      const thisIndex = albumData.tracks.indexOf(trackId);
-
-      if (thisIndex !== 0) {
-        const newRecent = [...albumData.tracks.slice(0, thisIndex)];
-        newRecent.reverse();
-
-        dispatch(addRecentTracks(newRecent));
-      }
 
       window.utils.queueTracks({
-        tracks: albumData.tracks.slice(thisIndex),
-        replaceQueue: true,
+        tracks: [...albumData.tracks],
+        startIndex: albumData.tracks.indexOf(trackId),
       });
     } else if (props.type === "playlist") {
       if (isLikedPlaylist) {
@@ -109,18 +96,9 @@ export default function TrackItem(
           (a) => a.track === trackData.id
         );
 
-        if (thisIndex !== 0) {
-          const newRecent = [
-            ...likedTracks.slice(0, thisIndex).map((a) => a.track),
-          ];
-          newRecent.reverse();
-
-          dispatch(addRecentTracks(newRecent));
-        }
-
         window.utils.queueTracks({
-          tracks: likedTracks.slice(thisIndex).map((a) => a.track),
-          replaceQueue: true,
+          tracks: likedTracks.map((a) => a.track),
+          startIndex: thisIndex,
         });
       } else {
         const currentPlaylist = playlistsIndex[contextId || ""];
@@ -130,18 +108,9 @@ export default function TrackItem(
             (a) => a.track === trackData.id
           );
 
-          if (thisIndex !== 0) {
-            const newRecent = [
-              ...currentPlaylist.tracks.slice(0, thisIndex).map((a) => a.track),
-            ];
-            newRecent.reverse();
-
-            dispatch(addRecentTracks(newRecent));
-          }
-
           window.utils.queueTracks({
-            tracks: currentPlaylist.tracks.slice(thisIndex).map((a) => a.track),
-            replaceQueue: true,
+            tracks: currentPlaylist.tracks.map((a) => a.track),
+            startIndex: thisIndex,
           });
         }
       }
@@ -189,7 +158,7 @@ export default function TrackItem(
           break;
 
         case "uri-reset":
-          StreamManager.cache.delete(trackData.id);
+          StreamManager.remove(trackData.id);
           dispatch(
             updateTracks({
               update: [
@@ -292,6 +261,7 @@ export default function TrackItem(
     <div
       className={isActiveTrack ? "track-item active" : "track-item"}
       onContextMenu={makeContextMenu}
+      data--id={trackId}
     >
       <span className="track-icon">
         {isActiveTrack && !isPaused ? (

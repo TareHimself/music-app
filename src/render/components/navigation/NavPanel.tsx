@@ -2,20 +2,21 @@ import { useCallback } from "react";
 import { BsFileEarmarkMusic, BsFileEarmarkMusicFill } from "react-icons/bs";
 import { MdOutlineLibraryAdd } from "react-icons/md";
 import { RiSettings4Fill, RiSettings4Line } from "react-icons/ri";
-import AppConstants from "../../data";
-import { useAppDispatch, useAppSelector } from "../redux/hooks";
+import AppConstants from "@root/data";
 import {
   createPlaylist,
   loadTracks,
   removePlaylists,
-} from "../redux/slices/library";
+  useAppDispatch,
+  useAppSelector,
+} from "@redux/exports";
 import { useLocation } from "react-router-dom";
 import NavItem from "./NavItem";
-import useAppNavigation from "../hooks/useAppNavigation";
+import useAppNavigation from "@hooks/useAppNavigation";
 import { IoChevronBack, IoChevronForward } from "react-icons/io5";
-import { generateContextMenu } from "../utils";
+import { generateContextMenu } from "@render/utils";
 import { toast } from "react-hot-toast";
-import { IPlaylist } from "../../types";
+import { IPlaylist } from "@types";
 
 export default function NavPanel() {
   const location = useLocation();

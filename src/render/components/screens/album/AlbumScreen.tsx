@@ -1,7 +1,7 @@
 import { useLocation } from "react-router-dom";
-import { useAppSelector } from "../../redux/hooks";
-import TracksView from "../tracks/TracksList";
-import ScreenWithImage from "./ScreenWithImage";
+import { useAppSelector } from "@redux/hooks";
+import TracksView from "../common/tracks/TracksList";
+import ScreenWithImage from "../common/ScreenWithImage";
 
 export default function AlbumScreen() {
   const location = useLocation();

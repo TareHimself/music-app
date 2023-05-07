@@ -1,11 +1,13 @@
 import { Route, Routes, Navigate } from "react-router-dom";
-import AppConstants from "../../data";
-import AlbumScreen from "./screens/AlbumScreen";
-import LibraryScreen from "./screens/LibraryScreen";
-import PlaylistScreen from "./screens/PlaylistScreen";
-import QueueScreen from "./screens/QueueScreen";
-import SettingsScreen from "./screens/SettingsScreen";
-import VisualizerScreen from "./screens/VisualizerScreen";
+import AppConstants from "@root/data";
+import {
+  AlbumScreen,
+  LibraryScreen,
+  PlaylistScreen,
+  QueueScreen,
+  VisualizerScreen,
+  SettingsScreen,
+} from "@components/screens/exports";
 
 export default function Screens() {
   return (

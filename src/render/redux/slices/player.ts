@@ -1,25 +1,7 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { ERepeatState, EShuffleState, GenericSliceData } from "../../../types";
+import { ERepeatState, EShuffleState, PlayerSliceState } from "@types";
 
-export type AppSliceState = GenericSliceData<{
-  currentTrack: string | null;
-  queuedTracks: string[];
-  recentTracks: string[];
-  tempQueue: {
-    index: number;
-    tracks: string[];
-  };
-  mainQueue: {
-    index: number;
-    tracks: string[];
-  };
-  volume: number;
-  repeatState: ERepeatState;
-  shuffleState: EShuffleState;
-  isPaused: boolean;
-}>;
-
-const initialState: AppSliceState = {
+const initialState: PlayerSliceState = {
   status: "loaded",
   data: {
     currentTrack: null,

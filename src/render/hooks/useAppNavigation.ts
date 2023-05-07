@@ -1,24 +1,39 @@
-import { useCallback, useEffect } from "react";
+import { useCallback } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { KeyValuePair } from "../../types";
-import { useAppDispatch, useAppSelector } from "../redux/hooks";
+import { INavigationHistory, KeyValuePair } from "@types";
 import {
   setBackwardHistory,
   setForwardHistory,
-} from "../redux/slices/navigation";
-
-let STORED_SCROLL: KeyValuePair<string, number> = {};
+  useAppDispatch,
+  useAppSelector,
+  setPathData as reduxSetPathData,
+} from "@redux/exports";
 
 export default function useAppNavigation() {
   const location = useLocation().pathname;
-  const naviagteOrginal = useNavigate();
+  const naviagteOriginal = useNavigate();
 
-  const [forwardHistory, backwardHistory] = useAppSelector((s) => [
+  const [forwardHistory, backwardHistory, pathData] = useAppSelector((s) => [
     s.navigation.data.forwardHistory,
     s.navigation.data.backwardHistory,
+    s.navigation.data.pathData,
   ]);
 
   const dispatch = useAppDispatch();
+
+  const setPathData = useCallback(
+    (data: INavigationHistory["data"]) => {
+      dispatch(reduxSetPathData(data));
+    },
+    [reduxSetPathData]
+  );
+  const navigateToHistory = useCallback(
+    (data: INavigationHistory) => {
+      setPathData(data.data);
+      naviagteOriginal(data.path);
+    },
+    [naviagteOriginal, setPathData]
+  );
 
   const navigate = useCallback(
     (path: string) => {
@@ -26,50 +41,79 @@ export default function useAppNavigation() {
         dispatch(setForwardHistory([]));
       }
 
-      if (STORED_SCROLL[path]) {
-        delete STORED_SCROLL[path];
-      }
+      dispatch(
+        setBackwardHistory([
+          ...backwardHistory,
+          { path: location, data: pathData },
+        ])
+      );
 
-      dispatch(setBackwardHistory([...backwardHistory, location]));
-      naviagteOrginal(path);
+      navigateToHistory({
+        path: path,
+        data: {},
+      });
     },
-    [backwardHistory, dispatch, forwardHistory, location, naviagteOrginal]
+    [
+      backwardHistory,
+      dispatch,
+      forwardHistory,
+      location,
+      naviagteOriginal,
+      pathData,
+    ]
   );
 
   const navigateBackward = useCallback(() => {
     if (backwardHistory.length) {
-      dispatch(setForwardHistory([location, ...forwardHistory]));
+      dispatch(
+        setForwardHistory([
+          { path: location, data: pathData },
+          ...forwardHistory,
+        ])
+      );
       const newBackward = [...backwardHistory];
-      naviagteOrginal(newBackward.pop() || "");
+      const to = newBackward.pop();
+      if (to) navigateToHistory(to);
+
       dispatch(setBackwardHistory(newBackward));
     }
-  }, [backwardHistory, dispatch, forwardHistory, location, naviagteOrginal]);
+  }, [
+    backwardHistory,
+    dispatch,
+    forwardHistory,
+    location,
+    naviagteOriginal,
+    pathData,
+  ]);
 
   const navigateForward = useCallback(() => {
     if (forwardHistory.length) {
-      dispatch(setBackwardHistory([...backwardHistory, location]));
+      dispatch(
+        setBackwardHistory([
+          ...backwardHistory,
+          { path: location, data: pathData },
+        ])
+      );
       const newForward = [...forwardHistory];
-      naviagteOrginal(newForward.shift() || "");
+      const to = newForward.shift();
+      if (to) navigateToHistory(to);
       dispatch(setForwardHistory(newForward));
     }
-  }, [backwardHistory, dispatch, forwardHistory, location, naviagteOrginal]);
-
-  const onWindowResize = useCallback(() => {
-    STORED_SCROLL = {};
-  }, []);
-
-  useEffect(() => {
-    window.addEventListener("resize", onWindowResize);
-    return () => window.removeEventListener("resize", onWindowResize);
-  }, [onWindowResize]);
-
+  }, [
+    backwardHistory,
+    dispatch,
+    forwardHistory,
+    location,
+    naviagteOriginal,
+    pathData,
+  ]);
   return {
     navigate,
     navigateBackward,
     navigateForward,
     backwardHistory,
     forwardHistory,
-    updateScroll: (update: number) => (STORED_SCROLL[location] = update),
-    getScroll: () => STORED_SCROLL[location] || 0,
+    setPathData,
+    pathData,
   };
 }

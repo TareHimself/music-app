@@ -5,14 +5,14 @@ import React, {
   useRef,
   useState,
 } from "react";
-import { IAlbum } from "../../../types";
-import useThrottle from "../../hooks/useThrottle";
-import useWindowDimensions from "../../hooks/useWindowDimensions";
-import { useAppSelector } from "../../redux/hooks";
+import { IAlbum } from "@types";
+import useThrottle from "@hooks/useThrottle";
+import useWindowDimensions from "@hooks/useWindowDimensions";
+import { useAppSelector } from "@redux/hooks";
 import { BiSearchAlt } from "react-icons/bi";
-import useAppNavigation from "../../hooks/useAppNavigation";
 import { FixedSizeList as List, ListChildComponentProps } from "react-window";
-import AlbumItem from "../albums/AlbumItem";
+import AlbumItem from "../album/AlbumItem";
+import usePathValue from "@hooks/usePathValue";
 
 const itemWidth = 200;
 const itemGap = 40;
@@ -95,7 +95,10 @@ export default function LibraryScreen() {
 
   const { width, height } = useWindowDimensions();
 
-  const { getScroll, updateScroll } = useAppNavigation();
+  const { getValue: getScroll, updateValue: updateScroll } = usePathValue(
+    "scroll",
+    0
+  );
 
   const scrollElementRef = useRef<List | null>(null);
 
@@ -116,10 +119,10 @@ export default function LibraryScreen() {
             })
           : items
       ).sort((a, b) => {
-        if (a.title < b.title) {
+        if (a.title.toLowerCase() < b.title.toLowerCase()) {
           return -1;
         }
-        if (a.title > b.title) {
+        if (a.title.toLowerCase() > b.title.toLowerCase()) {
           return 1;
         }
         return 0;

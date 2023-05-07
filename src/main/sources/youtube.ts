@@ -1,4 +1,4 @@
-import { ITrackResource, TrackStreamInfo } from "../../types";
+import { ITrackResource, TrackStreamInfo } from "@types";
 import MusiczMediaSource from "./source";
 import YTMusic from "ytmusic-api";
 import axios from "axios";

@@ -1,14 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-namespace */
 /* eslint-disable @typescript-eslint/no-unused-vars */
-
-import React from "react";
-
 export type Vector2 = { x: number; y: number };
-export interface GenericSliceData<T> {
-  status: "loading" | "loaded";
-  data: T;
-}
 
 export interface INotificationInfo {
   id: number;
@@ -221,18 +214,14 @@ export type IQueueTracksEventData = {
 
 export interface IQueueTracksEventDataWithReplace
   extends IQueueTracksEventData {
-  replaceQueue: boolean;
+  startIndex: number;
 }
 
-export type IPlayTrackEventData = {
-  track: string;
-};
-
 export interface IGlobalUtils {
-  playTrack: (data: IPlayTrackEventData) => void;
   playNext: (data: IQueueTracksEventData) => void;
   playLater: (data: IQueueTracksEventData) => void;
   queueTracks: (data: IQueueTracksEventDataWithReplace) => void;
+  skipToQueueIndex: (data: number) => void;
 }
 
 declare global {
@@ -339,11 +328,69 @@ export interface IActiveContextMenu {
   callback: ICreateContextMenuEventData["callback"];
 }
 
+export interface GenericSliceData<T> {
+  status: "loading" | "loaded";
+  data: T;
+}
+
+export type LibrarySliceState = GenericSliceData<{
+  screenId: string;
+  tracks: KeyValuePair<string, ITrack>;
+  albums: KeyValuePair<string, IAlbum>;
+  playlists: KeyValuePair<string, IPlaylist>;
+  artists: KeyValuePair<string, IArtist>;
+  likedTracks: ILikedTrack[];
+  likedTracksLookup: KeyValuePair<string, boolean>;
+  googleDriveApiKey: string;
+}>;
+
+export interface INavigationHistory {
+  path: string;
+  data: { [key: string]: any };
+}
+export type NavigationSliceState = GenericSliceData<{
+  backwardHistory: INavigationHistory[];
+  forwardHistory: INavigationHistory[];
+  pathData: INavigationHistory["data"];
+  contextMenu: IActiveContextMenu | null;
+}>;
+
+export type PlayerSliceState = GenericSliceData<{
+  currentTrack: string | null;
+  queuedTracks: string[];
+  recentTracks: string[];
+  tempQueue: {
+    index: number;
+    tracks: string[];
+  };
+  mainQueue: {
+    index: number;
+    tracks: string[];
+  };
+  volume: number;
+  repeatState: ERepeatState;
+  shuffleState: EShuffleState;
+  isPaused: boolean;
+}>;
+
+export type AppSliceState = {
+  state: {
+    library: LibrarySliceState;
+    player: PlayerSliceState;
+    navigation: NavigationSliceState;
+  };
+};
+
+interface IGlobalKeys {
+  SPOTIFY_API_KEY: string;
+}
 declare global {
   interface Array<T> {
     batch: (size: number) => T[][];
     lastIndex: () => number;
   }
+
+  var keys: IGlobalKeys;
 }
 
 export {};

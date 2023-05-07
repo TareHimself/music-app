@@ -25,6 +25,10 @@
  *  });
  * ```
  */
+
+global.keys = {
+  SPOTIFY_API_KEY: "",
+};
 Array.prototype.batch = function <T>(this: T[], size: number) {
   return this.reduce<T[][]>((batches, item, index) => {
     if (index % size === 0) {

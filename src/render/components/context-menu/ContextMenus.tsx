@@ -1,13 +1,13 @@
 import { useCallback, useEffect } from "react";
-import { IActiveContextMenu, ICreateContextMenuEventData } from "../../types";
-import { useAppDispatch, useAppSelector } from "../redux/hooks";
-import { setContextMenu } from "../redux/slices/navigation";
+import { IActiveContextMenu, ICreateContextMenuEventData } from "@types";
+import { useAppDispatch, useAppSelector, setContextMenu } from "@redux/exports";
+
 import ContextMenuItem from "./ContextMenuItem";
 
 const CONTEXT_MENU_WIDTH = 150;
 const CONTEXT_MENU_SCREEN_PADDING = 50;
 
-export default function ContextMenus() {
+export default function ContextMenu() {
   const contextMenu = useAppSelector((s) => s.navigation.data.contextMenu);
   const dispatch = useAppDispatch();
 

@@ -2,22 +2,20 @@ import { useCallback, useEffect } from "react";
 import { createRoot } from "react-dom/client";
 import { Provider } from "react-redux";
 import {
-  IPlayTrackEventData,
   IQueueTracksEventData,
   IQueueTracksEventDataWithReplace,
-} from "../types";
+} from "@types";
 import App from "./App";
-import NotificationContainer from "./components/NotificationContainer";
-import PlayerTab from "./components/PlayerTab";
-import TopFrame from "./components/TopFrame";
+import { PlayerTab } from "@components/player/exports";
+import TopFrame from "@components/TopFrame";
 import "./css/base.css";
 import { useAppDispatch } from "./redux/hooks";
-import { importIntoLibrary, initLibrary } from "./redux/slices/library";
+import { importIntoLibrary, initLibrary } from "@redux/exports";
 import { store } from "./redux/store";
 import { MemoryRouter } from "react-router-dom";
-import ContextMenus from "./components/ContextMenus";
+import { ContextMenu } from "@components/context-menu/exports";
 import { Toaster } from "react-hot-toast";
-import AppConstants from "../data";
+import AppConstants from "@root/data";
 
 export function RootApp() {
   const dispatch = useAppDispatch();
@@ -49,10 +47,9 @@ export function RootApp() {
     <>
       {window.bridge?.getPlatform() === "win32" && <TopFrame />}
 
-      <ContextMenus />
+      <ContextMenu />
       <App />
       <PlayerTab />
-      <NotificationContainer />
     </>
   );
 }
@@ -61,16 +58,6 @@ if (container) {
   const root = createRoot(container);
 
   window.utils = {
-    playTrack: (data: IPlayTrackEventData) => {
-      document.dispatchEvent(
-        new CustomEvent<IPlayTrackEventData>(
-          AppConstants.RENDERER_EVENT_PLAY_SINGLE,
-          {
-            detail: data,
-          }
-        )
-      );
-    },
     queueTracks: (data: IQueueTracksEventDataWithReplace) => {
       document.dispatchEvent(
         new CustomEvent<IQueueTracksEventDataWithReplace>(
@@ -99,6 +86,13 @@ if (container) {
             detail: data,
           }
         )
+      );
+    },
+    skipToQueueIndex: (data: number) => {
+      document.dispatchEvent(
+        new CustomEvent<number>(AppConstants.RENDERER_EVENT_SKIP_TO_INDEX, {
+          detail: data,
+        })
       );
     },
   };

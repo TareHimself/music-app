@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-empty-function */
-import { ITrackResource, TrackStreamInfo } from "../../types";
+import { ITrackResource, TrackStreamInfo } from "@types";
 
 export default abstract class MusiczMediaSource {
   get id(): string {

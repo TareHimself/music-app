@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-empty-function */
-import { IResourceImport } from "../../types";
+import { IResourceImport } from "@types";
 
 export default abstract class SourceImporter {
   get id(): string {

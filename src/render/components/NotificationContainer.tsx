@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { INotificationInfo } from "../../types";
+import { INotificationInfo } from "@types";
 
 const NOTIFICATION_TIMEOUT_TIME = 2750;
 

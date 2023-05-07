@@ -1,5 +1,29 @@
 {
   "compilerOptions": {
+    "baseUrl": "./src", // This must be specified if "paths" is.
+    "paths": {
+      "@redux/*": [
+        "render/redux/*"
+      ],
+      "@hooks/*": [
+        "render/hooks/*"
+      ],
+      "@components/*": [
+        "render/components/*"
+      ],
+      "@render/*": [
+        "render/*"
+      ],
+      "@types": [
+        "./types.ts"
+      ],
+      "@root/*": [
+        "*"
+      ],
+      "*": [
+        "./node_modules/*"
+      ]
+    },
     "target": "ES2021",
     "allowJs": true,
     "module": "commonjs",
@@ -16,11 +40,6 @@
     "noFallthroughCasesInSwitch": true,
     "pretty": true,
     "jsx": "react-jsx",
-    "paths": {
-      "*": [
-        "./node_modules/*"
-      ]
-    },
     "noUncheckedIndexedAccess": true,
     "strict": true,
     "exactOptionalPropertyTypes": true,

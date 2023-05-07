@@ -11,7 +11,7 @@ import {
   ipcRenderer as electronIpcRenderer,
   IpcRendererEvent,
 } from "electron";
-import { startStopProfile } from "./global-utils";
+import { startStopProfile } from "@root/global-utils";
 import {
   Awaitable,
   RendererToMainEventParams,
@@ -19,7 +19,7 @@ import {
   IRendererToMainEvents,
   IMainToRendererEvents,
   MainToRendererEventParams,
-} from "./types";
+} from "@types";
 // (...args: any) => any, (...args: any) => any
 
 export type IpcCallbackItem = Map<(...args: any) => any, (...args: any) => any>;

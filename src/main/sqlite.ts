@@ -13,7 +13,7 @@ import {
   ITrack,
   ITrackRaw,
   ITrackUpdate,
-} from "../types";
+} from "@types";
 import { getDatabasePath } from "./utils";
 
 const DATABASE_DIR = getDatabasePath();

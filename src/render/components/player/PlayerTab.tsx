@@ -12,13 +12,11 @@ import { HiOutlineQueueList } from "react-icons/hi2";
 import {
   ERepeatState,
   EShuffleState,
-  IPlayTrackEventData,
   IQueueTracksEventData,
   IQueueTracksEventDataWithReplace,
-} from "../../types";
-import { useAppDispatch, useAppSelector } from "../redux/hooks";
+} from "@types";
+import { useAppDispatch, useAppSelector } from "@redux/hooks";
 import {
-  addQueuedTracks,
   addRecentTracks,
   setCurrentTrack,
   replaceQueuedTracks,
@@ -26,15 +24,16 @@ import {
   setRepeatState,
   setShuffleState,
   setIsPaused,
-} from "../redux/slices/player";
-import { toTimeString } from "../utils";
+  loadTracksForAlbum,
+  updateTracks,
+} from "@redux/exports";
+import { toTimeString } from "@render/utils";
 import ControllableSlider from "./ControllableSlider";
-import { StreamManager } from "../global";
-import AppConstants from "../../data";
+import { StreamManager } from "@render/global";
+import AppConstants from "../../../data";
 import { IconBaseProps } from "react-icons";
-import { loadTracksForAlbum, updateTracks } from "../redux/slices/library";
-import useAppNavigation from "../hooks/useAppNavigation";
-import LikeButton from "./LikeButton";
+import useAppNavigation from "@hooks/useAppNavigation";
+import { LikeButton } from "@components/screens/exports";
 
 // eslint-disable-next-line @typescript-eslint/ban-types
 export type PlayerTabProps = {};
@@ -172,6 +171,10 @@ export default function PlayerTab() {
       const album = albums[track.album];
       if (!album) return;
 
+      if (StreamManager.fetching(trackId)) {
+        return;
+      }
+      //console.trace(`LOAD AND UPDATE TRACK | ${trackId} | ${track.title}`);
       const streamInfo = await StreamManager.getStreamInfo({
         id: track.id,
         title: track.title,
@@ -211,16 +214,11 @@ export default function PlayerTab() {
       const album = albums[track.album];
       if (!album) return;
 
-      const streamInfo = await loadAndUpdateTrack(trackId);
+      await loadAndUpdateTrack(trackId);
 
-      console.log("Gotten stream Info", streamInfo);
-
-      if (streamInfo) {
-        player.src = streamInfo.uri;
-        player.play();
-      } else {
+      if (!StreamManager.play(trackId)) {
         console.error("No sources found for the track");
-        return;
+        return false;
       }
 
       dispatch(setCurrentTrack(trackId));
@@ -234,52 +232,59 @@ export default function PlayerTab() {
         artwork: [{ src: album.cover, sizes: "512x512", type: "image/png" }],
       });
       window.bridge.updateDiscordPresence(track);
+      return true;
     },
     [allTracks, albums, loadAndUpdateTrack, dispatch, player, artists]
   );
 
   // handles switching to the next track and pre-loading the one after that
   const onNextClicked = useCallback(async () => {
-    if (queuedTracks.length > 0 || repeatState !== ERepeatState.OFF) {
-      const newQueued = [...queuedTracks];
-      if (repeatState === ERepeatState.REPEAT) {
-        if (currentTrackId) {
-          newQueued.push(currentTrackId);
-        }
-
-        const pendingTrack = newQueued.shift();
-        if (pendingTrack) {
-          await loadAndPlayTrack(pendingTrack);
-          dispatch(replaceQueuedTracks(newQueued));
-        }
-      } else if (repeatState === ERepeatState.REPEAT_ONE) {
-        if (currentTrackId) {
-          await loadAndPlayTrack(currentTrackId);
-          return;
-        }
-      } else {
-        if (currentTrackId) {
-          dispatch(addRecentTracks([currentTrackId]));
-        }
-
-        const pendingTrack = newQueued.shift();
-        if (pendingTrack) {
-          await loadAndPlayTrack(pendingTrack);
-          dispatch(replaceQueuedTracks(newQueued));
-        }
-      }
-      if (!newQueued[0]) {
-        dispatch(setCurrentTrack(null));
-        player.src = "";
-
-        setTrackTiming({
-          progress: 0,
-          length: 0,
-        });
-        navigator.mediaSession.metadata = null;
-        await window.bridge.clearDiscordPresence();
-      }
+    const newQueued = [...queuedTracks];
+    const newRecents = [...recentTracks];
+    const toPlay = newQueued.shift();
+    if (toPlay && (await loadAndUpdateTrack(toPlay)) !== undefined) {
+      if (currentTrackId) newRecents.push(currentTrackId);
+      dispatch(replaceRecentTracks(newRecents));
+      await loadAndPlayTrack(toPlay);
+      dispatch(replaceQueuedTracks(newQueued));
     }
+    // if (queuedTracks.length > 0 || repeatState !== ERepeatState.OFF) {
+    //   const newQueued = [...queuedTracks];
+    //   if (repeatState === ERepeatState.REPEAT) {
+    //     if (previousCurrent) newQueued.push(previousCurrent);
+
+    //     const pendingTrack = newQueued.shift();
+    //     if (pendingTrack) {
+    //       await loadAndPlayTrack(pendingTrack);
+    //       dispatch(replaceQueuedTracks(newQueued));
+    //       return;
+    //     }
+    //   } else if (repeatState === ERepeatState.REPEAT_ONE) {
+    //     if (currentTrackId) {
+    //       await loadAndPlayTrack(currentTrackId);
+    //       return;
+    //     }
+    //   } else {
+    //     if (previousCurrent)
+    //       dispatch(replaceRecentTracks([...recentTracks, previousCurrent]));
+
+    //     const pendingTrack = newQueued.shift();
+    //     if (pendingTrack) {
+    //       await loadAndPlayTrack(pendingTrack);
+    //       dispatch(replaceQueuedTracks(newQueued));
+    //       return;
+    //     }
+    //   }
+    //   dispatch(setCurrentTrack(null));
+    //   player.src = "";
+
+    //   setTrackTiming({
+    //     progress: 0,
+    //     length: 0,
+    //   });
+    //   navigator.mediaSession.metadata = null;
+    //   await window.bridge.clearDiscordPresence();
+    // }
   }, [
     repeatState,
     queuedTracks,
@@ -291,17 +296,26 @@ export default function PlayerTab() {
 
   // handles switching to the previous track
   const onPreviousClicked = useCallback(async () => {
+    console.log(
+      "Recent tracks",
+      recentTracks.map((a) => allTracks[a]?.title)
+    );
     if (recentTracks.length > 0) {
       const previousTrackId = currentTrackId;
 
       const newRecent = [...recentTracks];
-      const pendingTrack = newRecent.shift();
+      const pendingTrack = newRecent.pop();
+      console.log(
+        "new data",
+        newRecent.map((a) => allTracks[a]?.title),
+        allTracks[pendingTrack!]
+      );
       if (pendingTrack) {
+        dispatch(replaceRecentTracks(newRecent));
         await loadAndPlayTrack(pendingTrack);
         if (previousTrackId) {
-          dispatch(replaceQueuedTracks([currentTrackId, ...queuedTracks]));
+          dispatch(replaceQueuedTracks([previousTrackId, ...queuedTracks]));
         }
-        dispatch(replaceRecentTracks(newRecent));
       }
       return;
     }
@@ -341,10 +355,20 @@ export default function PlayerTab() {
     await onNextClicked();
   }, [onNextClicked]);
 
-  const onEventPlayTrack = useCallback(
+  const onEventSkipToTrack = useCallback(
     async (e: Event) => {
-      const actualEvent = e as CustomEvent<IPlayTrackEventData>;
-      await loadAndPlayTrack(actualEvent.detail.track);
+      const actualEvent = e as CustomEvent<number>;
+      const queueCopy = [...queuedTracks];
+      const toAddToRecents = queueCopy.splice(0, actualEvent.detail + 1);
+      if (currentTrackId) {
+        toAddToRecents.push(currentTrackId);
+      }
+      const toPlay = queueCopy.shift();
+      dispatch(replaceQueuedTracks(queueCopy));
+      if (toPlay) {
+        await loadAndPlayTrack(toPlay);
+      }
+      dispatch(replaceRecentTracks(toAddToRecents));
     },
     [loadAndPlayTrack]
   );
@@ -357,20 +381,21 @@ export default function PlayerTab() {
       //   actualEvent.detail.tracks.sort(() => 0.5 - Math.random());
       // }
 
-      const toPlay =
-        !currentTrackId || actualEvent.detail.replaceQueue
-          ? actualEvent.detail.tracks.shift()
-          : null;
-
-      if (toPlay) {
-        await loadAndPlayTrack(toPlay);
+      const trackIds = actualEvent.detail.tracks;
+      if (actualEvent.detail.startIndex > 0) {
+        const tracksToPushToRecents = trackIds.splice(
+          0,
+          actualEvent.detail.startIndex
+        );
+        dispatch(replaceRecentTracks(tracksToPushToRecents));
       }
 
-      if (actualEvent.detail.replaceQueue) {
-        dispatch(replaceRecentTracks([]));
-        dispatch(replaceQueuedTracks(actualEvent.detail.tracks));
-      } else {
-        dispatch(addQueuedTracks(actualEvent.detail.tracks));
+      const trackToPlay = trackIds.shift();
+
+      dispatch(replaceQueuedTracks(trackIds));
+
+      if (trackToPlay) {
+        await loadAndPlayTrack(trackToPlay);
       }
     },
     [currentTrackId, dispatch, loadAndPlayTrack]
@@ -438,8 +463,8 @@ export default function PlayerTab() {
 
   useEffect(() => {
     document.addEventListener(
-      AppConstants.RENDERER_EVENT_PLAY_SINGLE,
-      onEventPlayTrack
+      AppConstants.RENDERER_EVENT_SKIP_TO_INDEX,
+      onEventSkipToTrack
     );
 
     document.addEventListener(
@@ -471,8 +496,8 @@ export default function PlayerTab() {
 
     return () => {
       document.removeEventListener(
-        AppConstants.RENDERER_EVENT_PLAY_SINGLE,
-        onEventPlayTrack
+        AppConstants.RENDERER_EVENT_SKIP_TO_INDEX,
+        onEventSkipToTrack
       );
 
       document.removeEventListener(
@@ -503,7 +528,7 @@ export default function PlayerTab() {
       navigator.mediaSession.setActionHandler("nexttrack", null);
     };
   }, [
-    onEventPlayTrack,
+    onEventSkipToTrack,
     onEventQueueTracks,
     onPlayerTimeUpdate,
     onPlayerPause,

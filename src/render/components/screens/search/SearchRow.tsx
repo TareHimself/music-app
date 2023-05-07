@@ -1,4 +1,4 @@
-import { IAlbum } from "../../../types";
+import { IAlbum } from "@types";
 import SearchItem from "./SearchItem";
 export default function SearchRow({
   rows,

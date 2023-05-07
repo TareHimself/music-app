@@ -13,6 +13,10 @@ Array.prototype.lastIndex = function <T>(this: T[]) {
   return this.length - 1;
 };
 
+global.keys = {
+  SPOTIFY_API_KEY: "",
+};
+
 import { app } from "electron";
 import { existsSync, mkdirSync } from "fs";
 import { getLocalLibraryFilesPath } from "./utils";

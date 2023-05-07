@@ -13,11 +13,26 @@
     "plugin:import/typescript",
     "plugin:react-hooks/recommended"
   ],
-  "plugins": ["react-hooks"],
+  "plugins": [
+    "react-hooks"
+  ],
   "rules": {
     // ...
     "react-hooks/rules-of-hooks": "error",
     "react-hooks/exhaustive-deps": "error"
   },
-  "parser": "@typescript-eslint/parser"
+  "parser": "@typescript-eslint/parser",
+  "import/resolver": {
+    "node": {
+      "paths": [
+        "src"
+      ],
+      "extensions": [
+        ".js",
+        ".jsx",
+        ".ts",
+        ".tsx"
+      ],
+    }
+  },
 }

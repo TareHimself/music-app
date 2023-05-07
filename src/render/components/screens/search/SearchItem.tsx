@@ -1,9 +1,12 @@
 import { useCallback } from "react";
-import { IAlbum } from "../../../types";
-import { useAppDispatch, useAppSelector } from "../../redux/hooks";
-import { loadTracksForAlbum } from "../../redux/slices/library";
-import { generateContextMenu } from "../../utils";
-import useAppNavigation from "../../hooks/useAppNavigation";
+import { IAlbum } from "@types";
+import {
+  loadTracksForAlbum,
+  useAppDispatch,
+  useAppSelector,
+} from "@redux/exports";
+import { generateContextMenu } from "@render/utils";
+import useAppNavigation from "@hooks/useAppNavigation";
 export default function SearchItem({ data }: { data?: IAlbum }) {
   const dispatch = useAppDispatch();
 

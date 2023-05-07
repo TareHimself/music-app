@@ -3,7 +3,7 @@ import axios, { AxiosRequestConfig } from "axios";
 export const SpotifyApi = axios.create({
   baseURL: "https://api.spotify.com/v1/",
   timeout: 1000,
-  headers: { Authorization: "" },
+  headers: { Authorization: global.keys.SPOTIFY_API_KEY },
 });
 
 SpotifyApi.interceptors.response.use(undefined, async (error) => {
@@ -25,6 +25,9 @@ SpotifyApi.interceptors.response.use(undefined, async (error) => {
     config.headers[
       "Authorization"
     ] = `Bearer ${tokenResponse.data.accessToken}`;
+    global.keys = {
+      SPOTIFY_API_KEY: tokenResponse.data.accessToken,
+    };
     SpotifyApi.defaults.headers["Authorization"] =
       config.headers["Authorization"];
     return axios(config);

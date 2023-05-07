@@ -11,7 +11,7 @@ import {
   IRendererToMainEvents,
   IMainToRendererEvents,
   MainToRendererEventParams,
-} from "../types";
+} from "@types";
 // (...args: any) => any, (...args: any) => any
 
 export type IpcCallbackItem = Map<(...args: any) => any, (...args: any) => any>;

@@ -1,9 +1,9 @@
-import AppConstants from "../data";
+import AppConstants from "@root/data";
 import {
   ICreateContextMenuEventData,
   INotificationInfo,
   KeyValuePair,
-} from "../types";
+} from "@types";
 import ColorThief from "colorthief";
 
 export const imageColor = new ColorThief();
@@ -75,7 +75,6 @@ export async function wait(timeout: number) {
 
 export async function ensureBridge(interval = 200) {
   while (!window?.bridge) {
-    console.log("Waiting for bridge");
     // eslint-disable-next-line no-await-in-loop
     await wait(interval);
   }

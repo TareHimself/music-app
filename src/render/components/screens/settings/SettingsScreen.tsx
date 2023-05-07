@@ -1,7 +1,6 @@
 import { useId } from "react";
-import { useAppDispatch } from "../../redux/hooks";
-import { importIntoLibrary } from "../../redux/slices/library";
-import SettingItem from "../settings/SettingItem";
+import { importIntoLibrary, useAppDispatch } from "@redux/exports";
+import SettingItem from "./SettingItem";
 
 export default function SettingsScreen() {
   const dispatch = useAppDispatch();
