@@ -16,18 +16,23 @@ export default class YoutubeSource extends MusiczMediaSource {
     return "youtube";
   }
 
+  constructor() {
+    super(false, true, false);
+  }
   override async load() {
     await this.ytMusicApi.initialize();
   }
 
-  override canParse(track: ITrackResource) {
+  override canFetchStream(track: ITrackResource) {
     return (
       track.uri.length === 0 ||
       track.uri.match(YoutubeSource.YOUTUBE_URI_REGEX) !== null
     );
   }
 
-  override async parse(track: ITrackResource): Promise<TrackStreamInfo | null> {
+  override async fetchStream(
+    track: ITrackResource
+  ): Promise<TrackStreamInfo | null> {
     if (track.uri.length === 0) {
       console.log(track.uri);
       startStopProfile("video uri search");

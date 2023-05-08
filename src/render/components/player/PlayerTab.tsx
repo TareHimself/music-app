@@ -17,7 +17,6 @@ import {
 } from "@types";
 import { useAppDispatch, useAppSelector } from "@redux/hooks";
 import {
-  addRecentTracks,
   setCurrentTrack,
   replaceQueuedTracks,
   replaceRecentTracks,

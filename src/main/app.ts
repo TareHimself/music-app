@@ -21,9 +21,8 @@ import DiscordRichPrecenceClient from "discord-rich-presence";
 import { getLocalLibraryFilesPath, isDev } from "./utils";
 import { platform } from "os";
 import YoutubeSource from "./sources/youtube";
+import SpotifySource from "./sources/spotify";
 import { SourceManager } from "./sources/source";
-import { SourceImporterManager } from "./importers/importer";
-import SpotifyImporter from "./importers/spotify";
 import { startStopProfile } from "../global-utils";
 import path from "path";
 
@@ -31,14 +30,13 @@ declare const MAIN_WINDOW_WEBPACK_ENTRY: string;
 declare const MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY: string;
 console.log("DEFAULT APP");
 const mediaSources = new SourceManager();
-const mediaImporters = new SourceImporterManager();
-startStopProfile("Spotify Importer Load");
-mediaImporters
-  .useSource(new SpotifyImporter())
-  .then(() => startStopProfile("Spotify Importer Load"))
+startStopProfile("Spotify Source Load");
+mediaSources
+  .useSource(new SpotifySource())
+  .then(() => startStopProfile("Spotify Source Load"))
   .catch((e) => {
-    console.log("Failed to load spotify importer", e);
-    startStopProfile("Spotify Importer Load");
+    console.log("Failed to load spotify source", e);
+    startStopProfile("Spotify Source Load");
   });
 startStopProfile("Youtube Source Load");
 const ytSource = new YoutubeSource();
@@ -187,7 +185,7 @@ ipcMain.onFromRenderer("getPreloadPath", (e) => {
 });
 
 ipcMain.onFromRenderer("getTrackStreamInfo", async (ev, track) => {
-  ev.reply(await mediaSources.parse(track));
+  ev.reply(await mediaSources.getStream(track));
 });
 
 ipcMain.onFromRenderer("windowMaximize", (ev) => {
@@ -280,7 +278,7 @@ ipcMain.onFromRenderer("getPlatform", (ev) => {
 });
 
 ipcMain.onFromRenderer("importItems", async (ev, uri) => {
-  ev.reply(await mediaImporters.parse(uri));
+  ev.reply(await mediaSources.import(uri));
 });
 
 ipcMain.onFromRenderer("isDev", (ev) => {

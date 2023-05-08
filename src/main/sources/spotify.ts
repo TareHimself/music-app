@@ -1,25 +1,25 @@
-import { SpotifyApi } from "../../api";
+import { SpotifyApi } from "@root/api";
 import {
+  KeyValuePair,
+  ITrack,
   IAlbum,
   IArtist,
-  IArtistRaw,
   IPlaylist,
-  IPlaylistTrack,
+  ISpotifyTracksResponse,
+  IArtistRaw,
+  ITrackRaw,
   ISpotifyAlbumsResponse,
   ISpotifyPlaylistResponse,
-  ISpotifyTracksResponse,
-  ITrack,
-  ITrackRaw,
-  KeyValuePair,
+  IPlaylistTrack,
 } from "@types";
 import {
-  tCreateAlbums,
   tCreateArtists,
-  tCreatePlaylists,
+  tCreateAlbums,
   tCreateTracks,
+  tCreatePlaylists,
 } from "../sqlite";
 import { v4 as uuidv4 } from "uuid";
-import SourceImporter from "./importer";
+import MusiczMediaSource from "./source";
 
 const SPOTIFY_URI_REGEX = /open.spotify.com\/([a-z]+)\/([a-zA-Z0-9]+)/;
 const SPOTIFY_URI_REGEX_2 =
@@ -32,9 +32,13 @@ export interface ISpotifyImportCache {
   playlists: KeyValuePair<string, IPlaylist>;
 }
 
-export default class SpotifyImporter extends SourceImporter {
+export default class SpotifySource extends MusiczMediaSource {
   get id(): string {
     return "spotify";
+  }
+
+  constructor() {
+    super(false, false, true);
   }
 
   async importTracks(cache: ISpotifyImportCache, items: string[]) {
@@ -342,7 +346,7 @@ export default class SpotifyImporter extends SourceImporter {
     }
   }
 
-  async parse(items: string[]) {
+  override async import(items: string[]) {
     const remaining = [...items];
     const albumsToImport: string[] = [];
     const tracksToImport: string[] = [];

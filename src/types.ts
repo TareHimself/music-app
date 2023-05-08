@@ -3,6 +3,11 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 export type Vector2 = { x: number; y: number };
 
+export const enum ESearchFilter {
+  TRACKS = "tracks",
+  ALBUMS = "albums",
+  PLAYLISTS = "playlists",
+}
 export interface INotificationInfo {
   id: number;
   content: string;
@@ -223,6 +228,13 @@ export interface IGlobalUtils {
   queueTracks: (data: IQueueTracksEventDataWithReplace) => void;
   skipToQueueIndex: (data: number) => void;
 }
+
+export type SearchReturnType<T extends ESearchFilter> =
+  T extends ESearchFilter.ALBUMS
+    ? IAlbum[]
+    : T extends ESearchFilter.TRACKS
+    ? ITrack[]
+    : IPlaylist[];
 
 declare global {
   interface Window {
