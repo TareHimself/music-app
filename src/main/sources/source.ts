@@ -2,10 +2,7 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
 import {
   ESearchFilter,
-  IAlbum,
-  IPlaylist,
   IResourceImport,
-  ITrack,
   ITrackResource,
   SearchReturnType,
   TrackStreamInfo,
@@ -53,8 +50,8 @@ export default abstract class MusiczMediaSource {
   }
 
   async search<T extends ESearchFilter>(
-    query: string,
-    type: T
+    _query: string,
+    _type: T
   ): Promise<SearchReturnType<T>> {
     throw new Error("Method not implemented");
   }

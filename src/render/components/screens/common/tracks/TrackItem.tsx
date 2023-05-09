@@ -79,8 +79,7 @@ export default function TrackItem(
     }
 
     if (props.type === "queue" && queueIndex) {
-      const currentIndex = queueIndex;
-      window.utils.skipToQueueIndex(currentIndex);
+      window.utils.skipToQueueIndex(queueIndex);
     } else if (props.type === "album") {
       // add the albums tracks to recent to account for
 

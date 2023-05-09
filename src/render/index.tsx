@@ -95,6 +95,13 @@ if (container) {
         })
       );
     },
+    skipCurrentTrack: () => {
+      document.dispatchEvent(
+        new CustomEvent<null>(AppConstants.RENDERER_EVENT_SKIP_CURRENT_TRACK, {
+          detail: null,
+        })
+      );
+    },
   };
 
   root.render(

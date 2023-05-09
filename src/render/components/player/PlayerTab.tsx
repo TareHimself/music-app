@@ -357,16 +357,20 @@ export default function PlayerTab() {
     async (e: Event) => {
       const actualEvent = e as CustomEvent<number>;
       const queueCopy = [...queuedTracks];
-      const toAddToRecents = queueCopy.splice(0, actualEvent.detail + 1);
+      const newRecents = [
+        ...recentTracks,
+        ...queueCopy.splice(0, actualEvent.detail),
+      ];
+
       if (currentTrackId) {
-        toAddToRecents.push(currentTrackId);
+        newRecents.unshift(currentTrackId);
       }
       const toPlay = queueCopy.shift();
-      dispatch(replaceQueuedTracks(queueCopy));
-      if (toPlay) {
-        await loadAndPlayTrack(toPlay);
+
+      if (toPlay && (await loadAndPlayTrack(toPlay))) {
+        dispatch(replaceQueuedTracks(queueCopy));
+        dispatch(replaceRecentTracks(newRecents));
       }
-      dispatch(replaceRecentTracks(toAddToRecents));
     },
     [loadAndPlayTrack]
   );
@@ -461,6 +465,11 @@ export default function PlayerTab() {
 
   useEffect(() => {
     document.addEventListener(
+      AppConstants.RENDERER_EVENT_SKIP_CURRENT_TRACK,
+      onNextClicked
+    );
+
+    document.addEventListener(
       AppConstants.RENDERER_EVENT_SKIP_TO_INDEX,
       onEventSkipToTrack
     );
@@ -493,6 +502,11 @@ export default function PlayerTab() {
     navigator.mediaSession.setActionHandler("nexttrack", onNextClicked);
 
     return () => {
+      document.removeEventListener(
+        AppConstants.RENDERER_EVENT_SKIP_CURRENT_TRACK,
+        onNextClicked
+      );
+
       document.removeEventListener(
         AppConstants.RENDERER_EVENT_SKIP_TO_INDEX,
         onEventSkipToTrack

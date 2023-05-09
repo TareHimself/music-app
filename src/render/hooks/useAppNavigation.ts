@@ -1,6 +1,6 @@
 import { useCallback } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { INavigationHistory, KeyValuePair } from "@types";
+import { INavigationHistory } from "@types";
 import {
   setBackwardHistory,
   setForwardHistory,

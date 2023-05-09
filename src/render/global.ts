@@ -66,7 +66,7 @@ class StreamManagerClass {
     this.cache.delete(trackId);
     this.streamsBeingFetched.delete(trackId);
     if (this.player.getAttribute("track") === trackId) {
-      this.player.src = "";
+      window.utils.skipCurrentTrack();
     }
   }
 

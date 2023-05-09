@@ -30,7 +30,7 @@ export default function SearchItem({ data }: { data?: IAlbum }) {
           await dispatch(loadTracksForAlbum({ albumId: data.id }));
           window.utils.queueTracks({
             tracks: [...data.tracks],
-            replaceQueue: false,
+            startIndex: -1,
           });
           break;
 
