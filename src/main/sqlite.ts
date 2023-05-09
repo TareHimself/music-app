@@ -16,6 +16,20 @@ import {
 } from "@types";
 import { getDatabasePath } from "./utils";
 
+export type TrackArtistType = {
+  track: string;
+  artist: string;
+};
+
+export type TrackAlbumType = {
+  track: string;
+  album: string;
+};
+
+export type AlbumArtistType = {
+  album: string;
+  artist: string;
+};
 const DATABASE_DIR = getDatabasePath();
 
 export const SQLITE_ARRAY_SEPERATOR = ",";
@@ -389,9 +403,9 @@ export function getArtists(ids: string[] = []): IArtist[] {
           .map((a) => `'${a}'`)
           .join(",")})`
       )
-      .all();
+      .all() as IArtist[];
   } else {
-    artists = GetArtistsStatement.all();
+    artists = GetArtistsStatement.all() as IArtist[];
   }
 
   return artists;
@@ -413,18 +427,18 @@ export function getAlbums(ids: string[] = []): IAlbum[] {
           .map((a) => `'${a}'`)
           .join(",")})`
       )
-      .all();
+      .all() as IAlbum[];
   } else {
-    albums = GetAlbumsStatement.all();
+    albums = GetAlbumsStatement.all() as IAlbum[];
   }
 
   return albums.map((p) => {
     return {
       ...p,
       tracks: getAlbumTracksIds(p.id),
-      artists: GetAlbumArtistsStatement.all({ album: p.id }).map(
-        (a) => a.artist
-      ),
+      artists: (
+        GetAlbumArtistsStatement.all({ album: p.id }) as AlbumArtistType[]
+      ).map((a) => a.artist),
     };
   });
 }
@@ -433,9 +447,9 @@ export function getAlbumTracks(album: string): ITrack[] {
   return (GetAlbumTracksStatement.all({ id: album }) as ITrackRaw[]).map(
     (a) => ({
       ...a,
-      artists: GetTrackArtistsStatement.all({ track: a.id }).map(
-        (a) => a.artist
-      ),
+      artists: (
+        GetTrackArtistsStatement.all({ track: a.id }) as TrackArtistType[]
+      ).map((a) => a.artist),
     })
   );
 }
@@ -446,27 +460,27 @@ export function getTracks(ids: string[] = []): ITrack[] {
   if (ids.length) {
     tracks = ids.batch(30).reduce<ITrack[]>((all, cur) => {
       all.push(
-        ...db
+        ...(db
           .prepare(
             `SELECT * FROM tracks WHERE id IN (${cur
               .map((a) => `'${a}'`)
               .join(",")})`
           )
-          .all()
+          .all() as ITrack[])
       );
 
       return all;
     }, []);
   } else {
-    tracks = GetTracksStatement.all();
+    tracks = GetTracksStatement.all() as ITrack[];
   }
 
   return tracks.map((p) => {
     return {
       ...p,
-      artists: GetTrackArtistsStatement.all({ track: p.id }).map(
-        (a) => a.artist
-      ),
+      artists: (
+        GetTrackArtistsStatement.all({ track: p.id }) as TrackArtistType[]
+      ).map((a) => a.artist),
     };
   });
 }

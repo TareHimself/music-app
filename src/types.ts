@@ -227,6 +227,7 @@ export interface IGlobalUtils {
   playLater: (data: IQueueTracksEventData) => void;
   queueTracks: (data: IQueueTracksEventDataWithReplace) => void;
   skipToQueueIndex: (data: number) => void;
+  skipCurrentTrack: () => void;
 }
 
 export type SearchReturnType<T extends ESearchFilter> =

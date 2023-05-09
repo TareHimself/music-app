@@ -475,6 +475,11 @@ export default function PlayerTab() {
 
   useEffect(() => {
     document.addEventListener(
+      AppConstants.RENDERER_EVENT_SKIP_CURRENT_TRACK,
+      onNextClicked
+    );
+
+    document.addEventListener(
       AppConstants.RENDERER_EVENT_SKIP_TO_INDEX,
       onEventSkipToTrack
     );
@@ -507,6 +512,11 @@ export default function PlayerTab() {
     navigator.mediaSession.setActionHandler("nexttrack", onNextClicked);
 
     return () => {
+      document.removeEventListener(
+        AppConstants.RENDERER_EVENT_SKIP_CURRENT_TRACK,
+        onNextClicked
+      );
+
       document.removeEventListener(
         AppConstants.RENDERER_EVENT_SKIP_TO_INDEX,
         onEventSkipToTrack
