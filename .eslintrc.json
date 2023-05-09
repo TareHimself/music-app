@@ -14,7 +14,8 @@
     "plugin:react-hooks/recommended"
   ],
   "plugins": [
-    "react-hooks"
+    "react-hooks",
+    "import"
   ],
   "rules": {
     // ...
@@ -22,17 +23,9 @@
     "react-hooks/exhaustive-deps": "error"
   },
   "parser": "@typescript-eslint/parser",
-  "import/resolver": {
-    "node": {
-      "paths": [
-        "src"
-      ],
-      "extensions": [
-        ".js",
-        ".jsx",
-        ".ts",
-        ".tsx"
-      ],
+  "settings": {
+    "import/resolver": {
+      "typescript": {}
     }
-  },
+  }
 }

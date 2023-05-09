@@ -31,7 +31,7 @@ export const PlayerSlice = createSlice({
       state.data.currentTrack = action.payload;
     },
     addRecentTracks: (state, action: PayloadAction<string[]>) => {
-      state.data.recentTracks = [...action.payload, ...state.data.recentTracks];
+      state.data.recentTracks = [...state.data.recentTracks, ...action.payload];
     },
     addQueuedTracks: (state, action: PayloadAction<string[]>) => {
       state.data.queuedTracks = [...state.data.queuedTracks, ...action.payload];

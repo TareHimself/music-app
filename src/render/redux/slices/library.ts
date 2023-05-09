@@ -1,5 +1,5 @@
 import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
-import toast from "react-hot-toast";
+import { toast } from "react-hot-toast";
 import AppConstants from "@root/data";
 import {
   AppSliceState,

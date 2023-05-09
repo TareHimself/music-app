@@ -29,21 +29,14 @@ export default function TrackItem(
 
   const isLikedPlaylist = location[1] === "playlist" && contextId === "liked";
 
-  const [
-    trackData,
-    currentTrack,
-    isPaused,
-    likedTracks,
-    playlistsIndex,
-    queuedTracks,
-  ] = useAppSelector((s) => [
-    s.library.data.tracks[trackId],
-    s.player.data.currentTrack,
-    s.player.data.isPaused,
-    s.library.data.likedTracks,
-    s.library.data.playlists,
-    s.player.data.queuedTracks,
-  ]);
+  const [trackData, currentTrack, isPaused, likedTracks, playlistsIndex] =
+    useAppSelector((s) => [
+      s.library.data.tracks[trackId],
+      s.player.data.currentTrack,
+      s.player.data.isPaused,
+      s.library.data.likedTracks,
+      s.library.data.playlists,
+    ]);
 
   const dispatch = useAppDispatch();
 
@@ -78,7 +71,7 @@ export default function TrackItem(
       return;
     }
 
-    if (props.type === "queue" && queueIndex) {
+    if (props.type === "queue" && queueIndex !== null) {
       const currentIndex = queueIndex;
       window.utils.skipToQueueIndex(currentIndex);
     } else if (props.type === "album") {
@@ -126,9 +119,7 @@ export default function TrackItem(
     playlistsIndex,
     props.type,
     queueIndex,
-    queuedTracks,
-    trackData?.album,
-    trackData?.id,
+    trackData,
     trackId,
   ]);
 
@@ -262,6 +253,7 @@ export default function TrackItem(
       className={isActiveTrack ? "track-item active" : "track-item"}
       onContextMenu={makeContextMenu}
       data--id={trackId}
+      data--index={props.type === "queue" ? props.index : "none"}
     >
       <span className="track-icon">
         {isActiveTrack && !isPaused ? (

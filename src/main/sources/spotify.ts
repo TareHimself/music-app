@@ -240,7 +240,6 @@ export default class SpotifySource extends MusiczMediaSource {
               },
             }
           );
-          console.log(response.config.headers, response.data);
           if (response.data) {
             const spotifyData = response.data;
 

@@ -4,6 +4,7 @@ import React, {
   useMemo,
   useRef,
   useState,
+  Component,
 } from "react";
 import { IAlbum } from "@types";
 import useThrottle from "@hooks/useThrottle";
@@ -35,7 +36,7 @@ type ALbumListConainerProps = ListChildComponentProps<
   }[]
 >;
 
-class AlbumList extends React.Component<AlbumListProps> {
+class AlbumList extends Component<AlbumListProps> {
   constructor(props: AlbumListProps) {
     super(props);
   }
@@ -185,6 +186,7 @@ export default function LibraryScreen() {
             "--row-width": `${maxPerRow * (itemWidth + itemGap)}px`,
             "--item-width": `${itemWidth}px`,
             "--item-gap": `${itemGap}px`,
+            overflow: "overlay",
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
           } as React.CSSProperties),
         }}

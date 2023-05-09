@@ -76,7 +76,7 @@ class StreamManagerClass {
     }
 
     this.player.setAttribute("track", trackId);
-    this.player.src = this.cache.get(trackId)!.uri;
+    this.player.src = this.cache.get(trackId)?.uri || "";
     this.player.play();
     return true;
   }

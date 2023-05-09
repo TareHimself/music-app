@@ -233,7 +233,7 @@ export default function PlayerTab() {
       window.bridge.updateDiscordPresence(track);
       return true;
     },
-    [allTracks, albums, loadAndUpdateTrack, dispatch, player, artists]
+    [allTracks, albums, loadAndUpdateTrack, dispatch, artists]
   );
 
   // handles switching to the next track and pre-loading the one after that
@@ -242,16 +242,18 @@ export default function PlayerTab() {
       if (repeatState === ERepeatState.OFF && queuedTracks.length) {
         const newQueued = [...queuedTracks];
         const newRecents = [...recentTracks];
+        const previousCurrent = currentTrackId;
         const toPlay = newQueued.shift();
         if (toPlay && (await loadAndUpdateTrack(toPlay)) !== undefined) {
-          if (currentTrackId) newRecents.push(currentTrackId);
-          dispatch(replaceRecentTracks(newRecents));
+          if (previousCurrent) newRecents.push(previousCurrent);
           await loadAndPlayTrack(toPlay);
+          dispatch(replaceRecentTracks(newRecents));
           dispatch(replaceQueuedTracks(newQueued));
           return;
         } else if (!toPlay) {
-          if (currentTrackId) newRecents.push(currentTrackId);
+          if (previousCurrent) newRecents.push(previousCurrent);
           dispatch(replaceRecentTracks(newRecents));
+          dispatch(replaceQueuedTracks(newQueued));
           return;
         }
       } else if (currentTrackId) {
@@ -280,12 +282,14 @@ export default function PlayerTab() {
     navigator.mediaSession.metadata = null;
     await window.bridge.clearDiscordPresence();
   }, [
-    repeatState,
     queuedTracks,
-    currentTrackId,
-    loadAndPlayTrack,
+    repeatState,
     dispatch,
     player,
+    currentTrackId,
+    recentTracks,
+    loadAndUpdateTrack,
+    loadAndPlayTrack,
   ]);
 
   // handles switching to the previous track
@@ -306,12 +310,14 @@ export default function PlayerTab() {
       const previousTrackId = currentTrackId;
 
       const newRecent = [...recentTracks];
-      const pendingTrack = newRecent.pop();
-      if (pendingTrack) {
+      const newQueued = [...queuedTracks];
+      const toPlay = newRecent.pop();
+      if (toPlay && (await loadAndUpdateTrack(toPlay))) {
+        await loadAndPlayTrack(toPlay);
         dispatch(replaceRecentTracks(newRecent));
-        await loadAndPlayTrack(pendingTrack);
         if (previousTrackId) {
-          dispatch(replaceQueuedTracks([previousTrackId, ...queuedTracks]));
+          newQueued.unshift(previousTrackId);
+          dispatch(replaceQueuedTracks(newQueued));
         }
       }
       return;
@@ -320,12 +326,13 @@ export default function PlayerTab() {
     player.currentTime = 0;
   }, [
     repeatState,
-    currentTrackId,
-    dispatch,
-    loadAndPlayTrack,
+    recentTracks,
     player,
     queuedTracks,
-    recentTracks,
+    currentTrackId,
+    loadAndUpdateTrack,
+    loadAndPlayTrack,
+    dispatch,
   ]);
 
   // eslint-disable-next-line @typescript-eslint/no-empty-function
@@ -356,19 +363,26 @@ export default function PlayerTab() {
   const onEventSkipToTrack = useCallback(
     async (e: Event) => {
       const actualEvent = e as CustomEvent<number>;
-      const queueCopy = [...queuedTracks];
-      const toAddToRecents = queueCopy.splice(0, actualEvent.detail + 1);
-      if (currentTrackId) {
-        toAddToRecents.push(currentTrackId);
-      }
-      const toPlay = queueCopy.shift();
-      dispatch(replaceQueuedTracks(queueCopy));
-      if (toPlay) {
+      const newQueued = [...queuedTracks];
+      const newRecents = [...recentTracks];
+      if (currentTrackId) newRecents.push(currentTrackId);
+      newRecents.push(...newQueued.splice(0, actualEvent.detail));
+
+      const toPlay = newQueued.shift();
+      if (toPlay && (await loadAndUpdateTrack(toPlay))) {
         await loadAndPlayTrack(toPlay);
+        dispatch(replaceRecentTracks(newRecents));
+        dispatch(replaceQueuedTracks(newQueued));
       }
-      dispatch(replaceRecentTracks(toAddToRecents));
     },
-    [loadAndPlayTrack]
+    [
+      currentTrackId,
+      dispatch,
+      loadAndPlayTrack,
+      loadAndUpdateTrack,
+      queuedTracks,
+      recentTracks,
+    ]
   );
 
   // handles external queue adds
@@ -396,7 +410,7 @@ export default function PlayerTab() {
         await loadAndPlayTrack(trackToPlay);
       }
     },
-    [currentTrackId, dispatch, loadAndPlayTrack]
+    [dispatch, loadAndPlayTrack]
   );
 
   const onEventPlayTracksNext = useCallback(
