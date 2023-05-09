@@ -91,3 +91,4 @@ out/
 *.musicz
 *.db
 *.db*
+package-lock.json
