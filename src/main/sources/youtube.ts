@@ -16,9 +16,10 @@ export default class YoutubeSource extends MusiczMediaSource {
     return "youtube";
   }
 
-  constructor() {
-    super(false, true, false);
+  override get bSupportsStreaming() {
+    return true;
   }
+
   override async load() {
     await this.ytMusicApi.initialize();
   }

@@ -90,4 +90,7 @@ ipcRenderer.exposeApi<IRendererToMainEvents>("bridge", {
   removeAlbums: (items) => {
     return ipcRenderer.sendToMainAsync("removeAlbums", items);
   },
+  downloadTrack: (...args) => {
+    return ipcRenderer.sendToMainAsync("downloadTrack", ...args);
+  },
 });

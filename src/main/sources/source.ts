@@ -9,27 +9,24 @@ import {
 } from "@types";
 
 export default abstract class MusiczMediaSource {
-  bSupportsSearch: boolean = false;
-  bSupportsStreaming: boolean = false;
-  bSupportsImports: boolean = false;
+  public get bSupportsSearch() {
+    return false;
+  }
+  public get bSupportsStreaming() {
+    return false;
+  }
+  public get bSupportsImports() {
+    return false;
+  }
 
-  get supportedSearchFilters(): ESearchFilter[] {
+  public get supportedSearchFilters(): ESearchFilter[] {
     if (this.bSupportsSearch) {
       throw new Error("Search supported but filters not specified");
     }
     return [];
   }
 
-  constructor(
-    bSupportsSearch: boolean,
-    bSupportsStreaming: boolean,
-    bSupportsImports: boolean
-  ) {
-    this.bSupportsSearch = bSupportsSearch;
-    this.bSupportsStreaming = bSupportsStreaming;
-    this.bSupportsImports = bSupportsImports;
-  }
-  get id(): string {
+  public get id(): string {
     throw new Error("How have you done this");
   }
 
@@ -39,24 +36,24 @@ export default abstract class MusiczMediaSource {
 
   async load(): Promise<void> {}
 
-  canFetchStream(_resource: ITrackResource): boolean {
+  public canFetchStream(_resource: ITrackResource): boolean {
     throw new Error("Method not implemented");
   }
 
-  async fetchStream(
+  public async fetchStream(
     _resource: ITrackResource
   ): Promise<TrackStreamInfo | null> {
     throw new Error("Method not implemented");
   }
 
-  async search<T extends ESearchFilter>(
+  public async search<T extends ESearchFilter>(
     _query: string,
     _type: T
   ): Promise<SearchReturnType<T>> {
     throw new Error("Method not implemented");
   }
 
-  async import(
+  public async import(
     _items: string[]
   ): Promise<IResourceImport & { remaining: string[] }> {
     throw new Error("Method not implemented");
@@ -70,7 +67,7 @@ export class SourceManager {
   private importSources: string[] = [];
   constructor() {}
 
-  async useSource(source: MusiczMediaSource) {
+  public async useSource(source: MusiczMediaSource) {
     await source.load();
     if (source.bSupportsSearch) {
       this.searchSources.push(source.id);
@@ -86,10 +83,18 @@ export class SourceManager {
     this.sources.set(source.id, source);
   }
 
-  async getStream(resource: ITrackResource): Promise<TrackStreamInfo | null> {
+  public getSource<T>(id: string) {
+    return this.sources.get(id) as T | undefined;
+  }
+
+  public async getStream(
+    resource: ITrackResource
+  ): Promise<TrackStreamInfo | null> {
     try {
       for (let i = 0; i < this.streamSources.length; i++) {
-        const item = this.sources.get(this.streamSources[i]!);
+        const sourceId = this.streamSources[i];
+        if (!sourceId) continue;
+        const item = this.sources.get(sourceId);
         if (!item) continue;
 
         if (item.canFetchStream(resource)) {
@@ -107,7 +112,7 @@ export class SourceManager {
     return null;
   }
 
-  async import(resources: string[]): Promise<IResourceImport> {
+  public async import(resources: string[]): Promise<IResourceImport> {
     const result: IResourceImport = {
       albums: {},
       artists: {},
@@ -116,7 +121,10 @@ export class SourceManager {
 
     let itemsNotImported = resources;
     for (let i = 0; i < this.importSources.length; i++) {
-      const currentItem = this.sources.get(this.importSources[i]!)!;
+      const sourceId = this.importSources[i];
+      if (!sourceId) continue;
+
+      const currentItem = this.sources.get(sourceId);
 
       if (!currentItem) continue;
 
@@ -135,11 +143,14 @@ export class SourceManager {
     return result;
   }
 
-  async search(query: string, type: ESearchFilter, sourceId: string) {
+  public async search(query: string, type: ESearchFilter, sourceId: string) {
     if (!this.searchSources.includes(sourceId)) {
       return [];
     }
 
-    return await this.sources.get(sourceId)!.search(query, type);
+    const source = this.sources.get(sourceId);
+    if (!source) return undefined;
+
+    return await source.search(query, type);
   }
 }

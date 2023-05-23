@@ -23,37 +23,17 @@ import { platform } from "os";
 import YoutubeSource from "./sources/youtube";
 import SpotifySource from "./sources/spotify";
 import { SourceManager } from "./sources/source";
-import { startStopProfile } from "../global-utils";
 import path from "path";
+import LocalSource from "./sources/local";
 
 declare const MAIN_WINDOW_WEBPACK_ENTRY: string;
 declare const MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY: string;
 console.log("DEFAULT APP");
 const mediaSources = new SourceManager();
-startStopProfile("Spotify Source Load");
-mediaSources
-  .useSource(new SpotifySource())
-  .then(() => startStopProfile("Spotify Source Load"))
-  .catch((e) => {
-    console.log("Failed to load spotify source", e);
-    startStopProfile("Spotify Source Load");
-  });
-startStopProfile("Youtube Source Load");
-const ytSource = new YoutubeSource();
-mediaSources
-  .useSource(ytSource)
-  .then(() => startStopProfile("Youtube Source Load"))
-  .catch((e) => {
-    console.log("Failed to load youtube sourcer", e);
-    startStopProfile("Youtube Source Load");
-    mediaSources
-      .useSource(ytSource)
-      .then(() => startStopProfile("Youtube Source Load"))
-      .catch((e) => {
-        console.log("Failed to load youtube sourcer", e);
-        startStopProfile("Youtube Source Load");
-      });
-  });
+
+mediaSources.useSource(new LocalSource());
+mediaSources.useSource(new SpotifySource());
+mediaSources.useSource(new YoutubeSource());
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (require("electron-squirrel-startup")) {
@@ -317,4 +297,14 @@ ipcMain.onFromRenderer("removePlaylists", (ev, items) => {
 ipcMain.onFromRenderer("removeAlbums", (ev, items) => {
   tRemoveAlbums(items);
   ev.reply();
+});
+
+ipcMain.onFromRenderer("downloadTrack", async (ev, trackId, streamInfo) => {
+  const localSource = mediaSources.getSource<LocalSource>("local");
+  if (!localSource) {
+    ev.reply(false);
+    return;
+  }
+
+  ev.reply(await localSource.downloadTrack(trackId, streamInfo));
 });

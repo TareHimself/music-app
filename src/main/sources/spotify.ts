@@ -37,8 +37,8 @@ export default class SpotifySource extends MusiczMediaSource {
     return "spotify";
   }
 
-  constructor() {
-    super(false, false, true);
+  override get bSupportsImports() {
+    return true;
   }
 
   async importTracks(cache: ISpotifyImportCache, items: string[]) {

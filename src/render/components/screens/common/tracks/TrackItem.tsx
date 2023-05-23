@@ -10,11 +10,12 @@ import { toast } from "react-hot-toast";
 import AppConstants from "@root/data";
 import useAppNavigation from "@hooks/useAppNavigation";
 import LikeButton from "./LikeButton";
+import { replaceQueuedTracks } from "@redux/exports";
 
 export type TrackItemProps =
-  | { type: "playlist"; playlistInfo: IPlaylistTrack }
+  | { type: "playlist"; playlistInfo: IPlaylistTrack; index?: number }
   | { type: "queue"; trackId: string; index: number }
-  | { type: "album"; trackId: string };
+  | { type: "album"; trackId: string; index?: number };
 export default function TrackItem(
   props: TrackItemProps & { activeOverride?: boolean }
 ) {
@@ -29,14 +30,21 @@ export default function TrackItem(
 
   const isLikedPlaylist = location[1] === "playlist" && contextId === "liked";
 
-  const [trackData, currentTrack, isPaused, likedTracks, playlistsIndex] =
-    useAppSelector((s) => [
-      s.library.data.tracks[trackId],
-      s.player.data.currentTrack,
-      s.player.data.isPaused,
-      s.library.data.likedTracks,
-      s.library.data.playlists,
-    ]);
+  const [
+    trackData,
+    currentTrack,
+    isPaused,
+    likedTracks,
+    playlistsIndex,
+    queuedTracks,
+  ] = useAppSelector((s) => [
+    s.library.data.tracks[trackId],
+    s.player.data.currentTrack,
+    s.player.data.isPaused,
+    s.library.data.likedTracks,
+    s.library.data.playlists,
+    s.player.data.queuedTracks,
+  ]);
 
   const dispatch = useAppDispatch();
 
@@ -141,7 +149,12 @@ export default function TrackItem(
           break;
 
         case "remove":
-          toast.error(AppConstants.UNAVAILABLE_FEATURE_ERROR);
+          if (props.type !== "queue") break;
+          {
+            const newQueued = [...queuedTracks];
+            newQueued.splice(props.index, 1);
+            dispatch(replaceQueuedTracks(newQueued));
+          }
           break;
 
         case "uri-edit":
@@ -167,29 +180,54 @@ export default function TrackItem(
           break;
       }
     },
-    [dispatch, trackData]
+    [dispatch, props.index, props.type, queuedTracks, trackData]
   );
 
   const makeContextMenu = useCallback(
     (e: React.MouseEvent) => {
-      const extraOptions: IContextMenuOption[] = [];
+      const isActiveTrack =
+        props.activeOverride === undefined
+          ? currentTrack === trackData?.id
+          : props.activeOverride;
+      const contextOptions: IContextMenuOption[] = [
+        {
+          id: "queue-next",
+          name: "Play next",
+        },
+        {
+          id: "queue-later",
+          name: "Play later",
+        },
+        {
+          id: "uri-edit",
+          name: "Modify source",
+        },
+        ...((trackData?.uri.length || 0) > 0
+          ? [
+              {
+                id: "uri-reset",
+                name: "Reset source",
+              },
+            ]
+          : []),
+      ];
 
       if (props.type === "playlist") {
         if (!isLikedPlaylist) {
-          extraOptions.push({
+          contextOptions.push({
             id: `playlist-remove`,
             name: "Remove from playlist",
           });
         }
       } else {
-        extraOptions.push({
+        contextOptions.push({
           id: `playlist-add`,
           name: "Add to playlist",
         });
       }
 
-      if (props.type === "queue") {
-        extraOptions.push({
+      if (props.type === "queue" && !isActiveTrack) {
+        contextOptions.unshift({
           id: "remove",
           name: "Remove from queue",
         });
@@ -197,36 +235,17 @@ export default function TrackItem(
 
       generateContextMenu({
         event: e,
-        options: [
-          {
-            id: "queue-next",
-            name: "Play next",
-          },
-          {
-            id: "queue-later",
-            name: "Play later",
-          },
-          {
-            id: "uri-edit",
-            name: "Modify source",
-          },
-          ...((trackData?.uri.length || 0) > 0
-            ? [
-                {
-                  id: "uri-reset",
-                  name: "Reset source",
-                },
-              ]
-            : []),
-          ...extraOptions,
-        ],
+        options: contextOptions,
         callback: onContextMenuItemSelected,
       });
     },
     [
+      currentTrack,
       isLikedPlaylist,
       onContextMenuItemSelected,
+      props.activeOverride,
       props.type,
+      trackData?.id,
       trackData?.uri.length,
     ]
   );

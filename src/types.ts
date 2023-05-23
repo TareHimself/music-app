@@ -195,6 +195,10 @@ export type IRendererToMainEvents = {
   updateTracks: (items: ITrackUpdate[]) => Promise<void>;
   removePlaylists: (items: string[]) => Promise<void>;
   removeAlbums: (items: string[]) => Promise<void>;
+  downloadTrack: (
+    trackId: string,
+    streamInfo: TrackStreamInfo
+  ) => Promise<boolean>;
 };
 
 export type IMainToRendererEvents = {
@@ -236,13 +240,6 @@ export type SearchReturnType<T extends ESearchFilter> =
     : T extends ESearchFilter.TRACKS
     ? ITrack[]
     : IPlaylist[];
-
-declare global {
-  interface Window {
-    bridge: IRendererToMainEvents;
-    utils: IGlobalUtils;
-  }
-}
 
 export interface ISpotifyArtist {
   id: string;
@@ -398,12 +395,17 @@ interface IGlobalKeys {
   SPOTIFY_API_KEY: string;
 }
 declare global {
+  interface Window {
+    bridge: IRendererToMainEvents;
+    utils: IGlobalUtils;
+  }
+
   interface Array<T> {
     batch: (size: number) => T[][];
     lastIndex: () => number;
   }
 
-  var keys: IGlobalKeys;
+  let keys: IGlobalKeys;
 }
 
 export {};

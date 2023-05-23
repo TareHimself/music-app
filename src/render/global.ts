@@ -83,3 +83,10 @@ class StreamManagerClass {
 }
 
 export const StreamManager = new StreamManagerClass();
+
+declare global {
+  // eslint-disable-next-line no-var
+  var streamManager: StreamManagerClass;
+}
+
+globalThis.streamManager = StreamManager;

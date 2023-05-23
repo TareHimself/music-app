@@ -25,7 +25,7 @@ export default function useAppNavigation() {
     (data: INavigationHistory["data"]) => {
       dispatch(reduxSetPathData(data));
     },
-    [reduxSetPathData]
+    [dispatch]
   );
   const navigateToHistory = useCallback(
     (data: INavigationHistory) => {
@@ -58,7 +58,7 @@ export default function useAppNavigation() {
       dispatch,
       forwardHistory,
       location,
-      naviagteOriginal,
+      navigateToHistory,
       pathData,
     ]
   );
@@ -82,7 +82,7 @@ export default function useAppNavigation() {
     dispatch,
     forwardHistory,
     location,
-    naviagteOriginal,
+    navigateToHistory,
     pathData,
   ]);
 
@@ -104,7 +104,7 @@ export default function useAppNavigation() {
     dispatch,
     forwardHistory,
     location,
-    naviagteOriginal,
+    navigateToHistory,
     pathData,
   ]);
   return {
