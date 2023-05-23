@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { BsPauseFill, BsPlayFill } from "react-icons/bs";
 import {
   TbArrowsShuffle,
@@ -14,6 +14,7 @@ import {
   EShuffleState,
   IQueueTracksEventData,
   IQueueTracksEventDataWithReplace,
+  TrackStreamInfo,
 } from "@types";
 import { useAppDispatch, useAppSelector } from "@redux/hooks";
 import {
@@ -171,7 +172,9 @@ export default function PlayerTab() {
       if (!album) return;
 
       if (StreamManager.fetching(trackId)) {
-        return;
+        return await new Promise<TrackStreamInfo | undefined>((res) =>
+          StreamManager.addOnStreamFetched(trackId, res)
+        );
       }
       //console.trace(`LOAD AND UPDATE TRACK | ${trackId} | ${track.title}`);
       const streamInfo = await StreamManager.getStreamInfo({
@@ -205,9 +208,11 @@ export default function PlayerTab() {
     [albums, allTracks, artists, dispatch]
   );
 
+  const latestPlayRequest = useRef("");
   // Just loads and plays a track
   const loadAndPlayTrack = useCallback(
     async (trackId: string) => {
+      latestPlayRequest.current = trackId;
       const track = allTracks[trackId];
       if (!track) return;
       const album = albums[track.album];
@@ -215,7 +220,10 @@ export default function PlayerTab() {
 
       await loadAndUpdateTrack(trackId);
 
-      if (!StreamManager.play(trackId)) {
+      if (trackId !== latestPlayRequest.current) {
+        return false;
+      }
+      if (!(await StreamManager.play(trackId))) {
         console.error("No sources found for the track");
         return false;
       }

@@ -405,7 +405,8 @@ declare global {
     lastIndex: () => number;
   }
 
-  let keys: IGlobalKeys;
+  // eslint-disable-next-line no-var
+  var keys: IGlobalKeys;
 }
 
 export {};

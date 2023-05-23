@@ -1,12 +1,54 @@
 import { toast } from "react-hot-toast";
 import { ITrackResource, TrackStreamInfo } from "@types";
 const EXPIRE_AT_REGEX = /expire=([0-9]+)/;
+type StreamFetchCallback = (success: TrackStreamInfo | undefined) => void;
+
+declare global {
+  interface AudioContext {
+    sinkId: string;
+    setSinkId: (id: string) => Promise<undefined>;
+  }
+}
+
 class StreamManagerClass {
   cache: Map<string, TrackStreamInfo> = new Map();
   player: HTMLAudioElement = new Audio();
   streamsBeingFetched: Set<string> = new Set();
+  streamFetchCallbacks: Map<string, StreamFetchCallback[]> = new Map();
+  context: AudioContext;
+
   constructor() {
     this.player.volume = 0.1;
+    this.context = new AudioContext();
+    this.context
+      .createMediaElementSource(this.player)
+      .connect(this.context.destination);
+  }
+
+  get deviceId() {
+    return this.context.sinkId;
+  }
+
+  setMediaDevice(deviceId: string) {
+    this.context.setSinkId(deviceId);
+  }
+
+  addOnStreamFetched(trackId: string, callback: StreamFetchCallback) {
+    if (this.has(trackId)) {
+      callback(this.cache.get(trackId));
+      return;
+    }
+
+    if (!this.streamFetchCallbacks.has(trackId)) {
+      this.streamFetchCallbacks.set(trackId, [callback]);
+    } else {
+      this.streamFetchCallbacks.get(trackId)?.push(callback);
+    }
+  }
+
+  notifyStreamFetched(trackId: string, result: TrackStreamInfo | undefined) {
+    this.streamFetchCallbacks.get(trackId)?.forEach((a) => a(result));
+    this.streamFetchCallbacks.delete(trackId);
   }
 
   async getStreamInfo(track: ITrackResource, forceNew = false) {
@@ -23,6 +65,7 @@ class StreamManagerClass {
         id: toastId,
       });
       this.streamsBeingFetched.delete(track.id);
+      this.notifyStreamFetched(track.id, undefined);
       return undefined;
     }
 
@@ -44,6 +87,7 @@ class StreamManagerClass {
       toast.success("Fetched Stream", {
         id: toastId,
       });
+      this.notifyStreamFetched(track.id, streamInfo);
       return streamInfo;
     }
 
@@ -51,6 +95,7 @@ class StreamManagerClass {
       id: toastId,
     });
 
+    this.notifyStreamFetched(track.id, undefined);
     return undefined;
   }
 
@@ -70,14 +115,20 @@ class StreamManagerClass {
     }
   }
 
-  play(trackId: string): boolean {
+  async play(trackId: string): Promise<boolean> {
     if (!this.has(trackId)) {
       return false;
     }
 
     this.player.setAttribute("track", trackId);
     this.player.src = this.cache.get(trackId)?.uri || "";
-    this.player.play();
+
+    try {
+      await this.player.play();
+    } catch (e) {
+      console.error(trackId, e);
+    }
+
     return true;
   }
 }
