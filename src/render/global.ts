@@ -30,7 +30,12 @@ class StreamManagerClass {
   }
 
   setMediaDevice(deviceId: string) {
-    this.context.setSinkId(deviceId);
+    try {
+      this.context.setSinkId(deviceId);
+      return true;
+    } catch (error) {
+      return false;
+    }
   }
 
   addOnStreamFetched(trackId: string, callback: StreamFetchCallback) {

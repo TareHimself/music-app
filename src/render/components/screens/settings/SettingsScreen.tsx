@@ -20,10 +20,14 @@ export default function SettingsScreen() {
     devices: [],
   });
 
+  console.log("SELECTED DEVICE", audioDeviceInfo.selected);
   useEffect(() => {
     let isMounted = true;
-    window.navigator.mediaDevices.getUserMedia();
+    // window.navigator.mediaDevices.getUserMedia({
+
+    // });
     window.navigator.mediaDevices.enumerateDevices().then((d) => {
+      console.log("Devices", d);
       if (isMounted) {
         setAudioDeviceInfo((a) => {
           return {
@@ -71,6 +75,12 @@ export default function SettingsScreen() {
           <Dropdown
             options={audioDeviceInfo.devices}
             value={audioDeviceInfo.selected}
+            onChange={(v) => {
+              setAudioDeviceInfo((i) => {
+                return { ...i, selected: v.value };
+              });
+              streamManager.setMediaDevice(v.value);
+            }}
           />
         </SettingItem>
       </div>

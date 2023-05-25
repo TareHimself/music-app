@@ -77,7 +77,7 @@
     "react-virtualized-auto-sizer": "^1.0.7",
     "react-window": "^1.8.8",
     "uuid": "^9.0.0",
-    "ytdl-core": "^4.11.4",
+    "ytdl-core": "4.10.0",
     "ytmusic-api": "^4.1.0"
   }
 }

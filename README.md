@@ -23,6 +23,7 @@ Was bored and wanted to try making one
 - [ ] Track download
 - [ ] Ability to rename playlists
 - [ ] Ability to change playlist covers
+- [ ] Fully implement setting section
 
 ## Run
 
