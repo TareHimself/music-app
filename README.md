@@ -36,10 +36,11 @@ npm run start
 
 ```
 npm install
-npm run package
+npm run make
 ```
 
 ## Samples
 
 <img src="./.github/sample-01.png" />
 <img src="./.github/sample-02.png" />
+<img src="./.github/sample-03.png" />
