@@ -37,7 +37,6 @@ export default function TracksList(props: {
       <div className="track-items">
         <AutoSizer>
           {({ height, width }) => {
-            console.log(height, width);
             return (
               <List
                 style={{

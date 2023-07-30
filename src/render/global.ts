@@ -18,31 +18,31 @@ class StreamManagerClass {
   streamFetchCallbacks: Map<string, StreamFetchCallback[]> = new Map();
   context: AudioContext;
   // https://stackoverflow.com/a/29589128
-  noTrackSrc = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAVFYAAFRWAAABAAgAZGF0YQAAAAA='
+  noTrackSrc =
+    "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAVFYAAFRWAAABAAgAZGF0YQAAAAA=";
   constructor() {
     this.player.volume = 0.1;
     this.player.crossOrigin = "anonymous";
-    this.player.src = this.noTrackSrc
+    this.player.src = this.noTrackSrc;
     this.context = new AudioContext();
     this.context
       .createMediaElementSource(this.player)
       .connect(this.context.destination);
-    this.player.addEventListener('error',(err)=>{
-      console.log(err.message)
-      window.utils.skipCurrentTrack()
-      
-    })
+    this.player.addEventListener("error", (err) => {
+      console.log(err.message);
+      window.utils.skipCurrentTrack();
+    });
   }
 
   get deviceId() {
     return this.context.sinkId;
   }
 
-  stopPlayer(){
+  stopPlayer() {
     this.player.pause();
     this.player.currentTime = 0;
-    
-    this.player.src = this.noTrackSrc; 
+
+    this.player.src = this.noTrackSrc;
   }
 
   setMediaDevice(deviceId: string) {
@@ -73,15 +73,14 @@ class StreamManagerClass {
   }
 
   async getStreamInfo(track: ITrackResource, forceNew = false) {
+    if (!forceNew && this.cache.has(track.id)) {
+      this.streamsBeingFetched.delete(track.id);
+      return this.cache.get(track.id);
+    }
+
     return await toast.promise(
       new Promise<undefined | TrackStreamInfo>((res) => {
         this.streamsBeingFetched.add(track.id);
-
-        if (!forceNew && this.cache.has(track.id)) {
-          this.streamsBeingFetched.delete(track.id);
-          res(this.cache.get(track.id));
-          return;
-        }
 
         window.bridge.getTrackStreamInfo(track).then((streamInfo) => {
           if (!streamInfo) {
@@ -125,9 +124,11 @@ class StreamManagerClass {
             return `Fetched Stream`;
           },
           type: "success",
-          delay: 2000,
         },
-        error: "Error Fetching Stream",
+        error: {
+          render: "Error Fetching Stream",
+          type: 'error'
+        },
       }
     );
   }
@@ -156,12 +157,12 @@ class StreamManagerClass {
     this.player.setAttribute("track", trackId);
     const toPlay = this.cache.get(trackId)?.uri || "";
 
-    if(toPlay.trim().length <= 0){
+    if (toPlay.trim().length <= 0) {
       return false;
     }
 
-    this.player.src = toPlay
-    
+    this.player.src = toPlay;
+
     try {
       await this.player.play();
     } catch (e) {

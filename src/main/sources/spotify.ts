@@ -459,7 +459,7 @@ export default class SpotifySource extends MusiczMediaSource {
     const artistsString = artistsInfo.map((a) => a.name).join(" ");
 
     const searchTerm =
-      `${trackInfo.title} ${artistsString} Official Audio`.trim();
+      `${trackInfo.title} ${artistsString}`.trim();
     const result = await this.ytMusicApi
       .searchVideos(searchTerm)
       .then((a) => a[0]);

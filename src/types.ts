@@ -181,6 +181,7 @@ export type IRendererToMainEvents = {
     streamInfo: TrackStreamInfo
   ) => Promise<boolean>;
   getServerAddress: () => string;
+  getRandomPlaylistCovers: (playlistId?:string) => Promise<string[]>
 };
 
 export type IMainToRendererEvents = {

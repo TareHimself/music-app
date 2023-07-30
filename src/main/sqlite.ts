@@ -235,6 +235,9 @@ const RemoveAlbumStatement = db.prepare<{
   id: string;
 }>("DELETE FROM albums WHERE id=@id");
 
+const GetRandomPlaylistCoversStatement = db.prepare<{id: string;}>(`SELECT cover from albums WHERE id in (Select DISTINCT album FROM tracks WHERE id in (SELECT track FROM playlist_tracks WHERE playlist=@id)) ORDER BY RANDOM() LIMIT 4`)
+const GetRandomLikedCoversStatement = db.prepare(`SELECT cover from albums WHERE id in (Select DISTINCT album FROM tracks WHERE id in (SELECT track FROM liked_tracks)) ORDER BY RANDOM() LIMIT 4`)
+
 // const tInsertArtists = db.transaction((artists: ILocalArtist[]) => {});
 
 // const tInsertTracks = db.transaction((artists: ILocalTrack[]) => {});
@@ -485,4 +488,14 @@ export function getTracks(ids: string[] = []): ITrack[] {
 
 export function getLikedTracks(): ILikedTrack[] {
   return GetLikedTracksStatement.all() as ILikedTrack[];
+}
+
+export function getRandomPlaylistCovers(playlistId?: string){
+  if(playlistId){
+    return (GetRandomPlaylistCoversStatement.all({
+      id: playlistId
+    }) as {cover: string}[]).map(a => a.cover) as string[]
+  }
+
+  return (GetRandomLikedCoversStatement.all() as {cover: string}[]).map(a => a.cover) as string[]
 }

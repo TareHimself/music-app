@@ -15,6 +15,7 @@ import {
   tUpdatePlaylists,
   tRemovePlaylists,
   tRemoveAlbums,
+  getRandomPlaylistCovers,
 } from "./sqlite";
 import { ipcMain } from "../ipc-impl";
 import DiscordRichPrecenceClient from "discord-rich-presence";
@@ -340,4 +341,8 @@ ipcMain.handle("downloadTrack", async (trackId, streamInfo) => {
 
 ipcMain.handle("getServerAddress", () => {
   return SERVER_ADDRESS;
+});
+
+ipcMain.handle("getRandomPlaylistCovers", async (playlistId) => {
+  return getRandomPlaylistCovers(playlistId);
 });

@@ -235,7 +235,8 @@ export default function PlayerTab() {
 
   // handles switching to the next track and pre-loading the one after that
   const onNextClicked = useCallback(async () => {
-    if (queuedTracks.length || repeatState !== ERepeatState.OFF) {
+    if (queuedTracks.length > 0 || repeatState !== ERepeatState.OFF) {
+      console.log("Resolving next track")
       if (repeatState === ERepeatState.OFF && queuedTracks.length) {
         const newQueued = [...queuedTracks];
         const newRecents = [...recentTracks];
@@ -522,11 +523,13 @@ export default function PlayerTab() {
 
     player.addEventListener("playing", onPlayerPlay);
 
-    player.addEventListener("ended", () => {
+    const currenTrackOverCallback = () => {
       if(player.src !== StreamManager.noTrackSrc){
         onCurrentTrackOver()
       }
-    });
+    }
+
+    player.addEventListener("ended",currenTrackOverCallback);
 
     navigator.mediaSession.setActionHandler("previoustrack", onPreviousClicked);
 
@@ -564,7 +567,7 @@ export default function PlayerTab() {
 
       player.removeEventListener("playing", onPlayerPlay);
 
-      player.removeEventListener("ended", onCurrentTrackOver);
+      player.removeEventListener("ended", currenTrackOverCallback);
 
       navigator.mediaSession.setActionHandler("previoustrack", null);
 

@@ -5,6 +5,7 @@ import usePathValue from "@hooks/usePathValue";
 export type ScreenWithImageProps = PropsWithChildren<{
   cover: string;
   header?: React.ReactNode;
+  onImageContextMenu?: React.MouseEventHandler<HTMLImageElement>
 }>;
 export default function ScreenWithImage(props: ScreenWithImageProps) {
   const { getValue: getScroll, updateValue: updateScroll } = usePathValue(
@@ -46,7 +47,7 @@ export default function ScreenWithImage(props: ScreenWithImageProps) {
       </div>
       <div className="screen-fg">
         <div className="screen-top">
-          <img src={props.cover} onLoad={onImageLoaded} />
+          <img src={props.cover} onLoad={onImageLoaded} alt="Cover" onContextMenu={props.onImageContextMenu}/>
           <span>{props.header}</span>
         </div>
 

@@ -77,6 +77,8 @@ const exposedApi = ipcRenderer.exposeApi("bridge", {
   },
   getServerAddress: (...args) =>
     ipcRenderer.sendSync("getServerAddress", ...args),
+  getRandomPlaylistCovers: (...args) =>
+    ipcRenderer.sendAsync("getRandomPlaylistCovers", ...args),
 });
 
 declare global {
