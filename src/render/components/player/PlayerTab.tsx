@@ -745,7 +745,7 @@ export default function PlayerTab() {
             maxWidth: "100px",
           }}
           min={0}
-          max={0.5}
+          max={1}
           defaultValue={player.volume}
           step={0.001}
           onUserUpdate={onVolumeSliderChanged}

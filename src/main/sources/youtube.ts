@@ -41,6 +41,7 @@ export default class YoutubeSource extends MusiczMediaSource {
 
   override async load() {
     await this.ytMusicApi.initialize();
+    // console.log("Search result",await searchMusics('The Glory Days by Tia'))
   }
 
   override canFetchStream(resource: ITrackResource) {

@@ -461,7 +461,7 @@ export default class SpotifySource extends MusiczMediaSource {
     const searchTerm =
       `${trackInfo.title} ${artistsString} Official Audio`.trim();
     const result = await this.ytMusicApi
-      .searchSongs(searchTerm)
+      .searchVideos(searchTerm)
       .then((a) => a[0]);
 
     if(!result?.videoId)
