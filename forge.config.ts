@@ -12,6 +12,8 @@ const ICON_DIR = "./assets/icon";
 const config: ForgeConfig = {
   packagerConfig: {
     icon: ICON_DIR,
+    name: "musicz",
+    asar: true,
     protocols: [
       {
         name: "Musicz",
@@ -21,17 +23,21 @@ const config: ForgeConfig = {
   },
   rebuildConfig: {},
   makers: [
-    new MakerSquirrel({}),
+    new MakerSquirrel({
+      name: "musicz",
+    }),
     new MakerZIP({}, ["darwin"]),
     new MakerRpm({
       options: {
         icon: ICON_DIR,
+        name: "musicz",
       },
     }),
     new MakerDeb({
       options: {
         icon: ICON_DIR,
         mimeType: ["x-scheme-handler/musicz"],
+        name: "musicz",
       },
     }),
   ],

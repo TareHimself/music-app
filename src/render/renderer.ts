@@ -44,4 +44,4 @@ Array.prototype.lastIndex = function <T>(this: T[]) {
   return this.length - 1;
 };
 
-import "./index.tsx";
+import "./index";

@@ -8,6 +8,10 @@ import {
   TrackStreamInfo,
 } from "@types";
 
+export interface IResourceImportFromSource extends IResourceImport {
+  remaining: string[];
+}
+
 export default abstract class MusiczMediaSource {
   public get bSupportsSearch() {
     return false;
@@ -53,9 +57,7 @@ export default abstract class MusiczMediaSource {
     throw new Error("Method not implemented");
   }
 
-  public async import(
-    _items: string[]
-  ): Promise<IResourceImport & { remaining: string[] }> {
+  public async import(_items: string[]): Promise<IResourceImportFromSource> {
     throw new Error("Method not implemented");
   }
 }
@@ -120,22 +122,24 @@ export class SourceManager {
     };
 
     let itemsNotImported = resources;
-    for (let i = 0; i < this.importSources.length; i++) {
-      const sourceId = this.importSources[i];
-      if (!sourceId) continue;
+    for (const sourceId of this.importSources) {
+      try {
+        const currentItem = this.sources.get(sourceId);
 
-      const currentItem = this.sources.get(sourceId);
+        if (!currentItem) continue;
 
-      if (!currentItem) continue;
+        const { remaining, albums, artists, playlists } =
+          await currentItem.import(itemsNotImported);
 
-      const { remaining, albums, artists, playlists } =
-        await currentItem.import(itemsNotImported);
-
-      result.albums = { ...result.albums, ...albums };
-      result.artists = { ...result.artists, ...artists };
-      result.playlists = { ...result.playlists, ...playlists };
-      itemsNotImported = remaining;
-      if (itemsNotImported.length === 0) {
+        result.albums = { ...result.albums, ...albums };
+        result.artists = { ...result.artists, ...artists };
+        result.playlists = { ...result.playlists, ...playlists };
+        itemsNotImported = remaining;
+        if (itemsNotImported.length === 0) {
+          break;
+        }
+      } catch (e) {
+        console.error(e);
         break;
       }
     }

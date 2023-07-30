@@ -109,6 +109,7 @@ export default function AlbumItem({ data }: { data?: IAlbum }) {
           src={data.cover}
           onClick={selectAlbum}
           onContextMenu={makeContextMenu}
+          alt={`album cover for ${data.title}`}
         />
       </div>
       <span>

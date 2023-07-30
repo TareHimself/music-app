@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
+// eslint-disable-next-line import/no-named-as-default
 import Database from "better-sqlite3";
 import {
   IAlbum,
@@ -352,9 +353,7 @@ export const tRemovePlaylists: Database.Transaction<(items: string[]) => void> =
 
 export const tRemoveAlbums: Database.Transaction<(items: string[]) => void> =
   db.transaction((items: string[]) => {
-    for (let i = 0; i < items.length; i++) {
-      const current = items[i];
-      if (!current) continue;
+    for (const current of items) {
       RemoveAlbumTracksInPlaylistsStatement.run({
         id: current,
       });
@@ -383,7 +382,6 @@ export const tRemoveAlbums: Database.Transaction<(items: string[]) => void> =
 
 export function getPlaylists(): IPlaylist[] {
   const playlists = GetPlaylistsStatement.all() as IPlaylistRaw[];
-
   return playlists.map((p) => {
     const tracks = GetPlaylistsTracksStatement.all({
       id: p.id,

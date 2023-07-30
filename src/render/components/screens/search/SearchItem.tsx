@@ -68,7 +68,7 @@ export default function SearchItem({ data }: { data?: IAlbum }) {
       onContextMenu={makeContextMenu}
     >
       <div className="album-item-image-wrapper">
-        <img src={data.cover} />
+        <img src={data.cover} alt="cover" />
       </div>
       <span>
         <h2>{data.title}</h2>

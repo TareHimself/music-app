@@ -11,15 +11,24 @@ import {
   ISpotifyAlbumsResponse,
   ISpotifyPlaylistResponse,
   IPlaylistTrack,
+  ITrackResource,
+  TrackStreamInfo,
 } from "@types";
 import {
   tCreateArtists,
   tCreateAlbums,
   tCreateTracks,
   tCreatePlaylists,
+  getTracks,
+  getAlbums,
+  getArtists,
 } from "../sqlite";
 import { v4 as uuidv4 } from "uuid";
 import MusiczMediaSource from "./source";
+import YTMusic from "ytmusic-api";
+import { video_info } from "play-dl";
+import axios from "axios";
+// import leven from "leven";
 
 const SPOTIFY_URI_REGEX = /open.spotify.com\/([a-z]+)\/([a-zA-Z0-9]+)/;
 const SPOTIFY_URI_REGEX_2 =
@@ -33,12 +42,25 @@ export interface ISpotifyImportCache {
 }
 
 export default class SpotifySource extends MusiczMediaSource {
+  ytMusicApi: YTMusic = new YTMusic();
   get id(): string {
     return "spotify";
   }
 
   override get bSupportsImports() {
     return true;
+  }
+
+  override get bSupportsStreaming() {
+    return true;
+  }
+
+  override async load(): Promise<void> {
+    await this.ytMusicApi.initialize();
+  }
+
+  public override canFetchStream(resource: ITrackResource): boolean {
+    return resource.uri.startsWith("https://open.spotify.com");
   }
 
   async importTracks(cache: ISpotifyImportCache, items: string[]) {
@@ -124,7 +146,7 @@ export default class SpotifySource extends MusiczMediaSource {
           id: trackId,
           title: track.name,
           album: albumId,
-          uri: "",
+          uri: `https://open.spotify.com/track/${trackId}`,
           artists: trackArtists,
           duration: 0,
           position: track.track_number,
@@ -185,7 +207,7 @@ export default class SpotifySource extends MusiczMediaSource {
                 id: trackId,
                 title: track.name,
                 album: albumId,
-                uri: "",
+                uri: `https://open.spotify.com/track/${trackId}`,
                 artists: Array.from(
                   new Set(
                     track.artists
@@ -221,6 +243,28 @@ export default class SpotifySource extends MusiczMediaSource {
     }
   }
 
+  async getRemainingPlaylistTracks(target: string | null): Promise<ISpotifyPlaylistResponse['tracks']['items']> {
+    if(!target){
+      return []
+    }
+
+    console.log(`playlists/${target.split('playlists/').slice(1).join('/')}`)
+
+    const response = await SpotifyApi.get<ISpotifyPlaylistResponse['tracks']>(
+      `playlists/${target.split('playlists/').slice(1).join('/')}`,
+      {
+        params: {
+          fields:
+            "items(added_at,track(album(artists,id,images,name,release_date,total_tracks),artists,id,name,track_number,disc_number)),next",
+        },
+      }
+    );
+
+    if(response.data){
+      return [...response.data.items,...(await this.getRemainingPlaylistTracks(response.data.next))]
+    }
+    return []
+  }
   async importPlaylists(cache: ISpotifyImportCache, items: string[]) {
     items = Array.from(new Set(items));
 
@@ -236,12 +280,14 @@ export default class SpotifySource extends MusiczMediaSource {
             {
               params: {
                 fields:
-                  "tracks.items(added_at,track(album(artists,id,images,name,release_date,total_tracks),artists,id,name,track_number,disc_number)),name,id",
+                  "tracks.items(added_at,track(album(artists,id,images,name,release_date,total_tracks),artists,id,name,track_number,disc_number)),name,id,tracks.next",
               },
             }
           );
           if (response.data) {
             const spotifyData = response.data;
+
+            spotifyData.tracks.items.push(...await this.getRemainingPlaylistTracks(spotifyData.tracks.next))
 
             const newPlaylist: IPlaylist = {
               tracks: spotifyData.tracks.items.map((item) => {
@@ -319,7 +365,7 @@ export default class SpotifySource extends MusiczMediaSource {
                     id: trackId,
                     title: track.name,
                     album: albumId,
-                    uri: "",
+                    uri: `https://open.spotify.com/track/${trackId}`,
                     artists: trackArtists,
                     duration: 0,
                     position: track.track_number,
@@ -393,5 +439,55 @@ export default class SpotifySource extends MusiczMediaSource {
     tCreatePlaylists(Object.values(cache.playlists));
 
     return { ...cache, remaining: remaining };
+  }
+
+  public override async fetchStream(
+    resource: ITrackResource
+  ): Promise<TrackStreamInfo | null> {
+    const trackInfo = getTracks([resource.id])[0];
+
+    if (!trackInfo) return null;
+
+    const artistsInfo = getArtists(trackInfo.artists);
+
+    if (!artistsInfo) return null;
+
+    const albumInfo = getAlbums([trackInfo.album])[0];
+
+    if (!albumInfo) return null;
+
+    const artistsString = artistsInfo.map((a) => a.name).join(" ");
+
+    const searchTerm =
+      `${trackInfo.title} ${artistsString} Official Audio`.trim();
+    const result = await this.ytMusicApi
+      .searchSongs(searchTerm)
+      .then((a) => a[0]);
+
+    if(!result?.videoId)
+    {
+      throw new Error("Track could not be found on youtube music using term:" + searchTerm)
+    }
+
+    const uri = `https://youtube.com/watch?v=${result.videoId || ""}`;
+    console.info("Used", searchTerm, "To fetch", uri);
+
+    const i = await video_info(uri);
+
+    const selected = i.format[i.format.length - 1];
+
+    if (!(selected && selected.url && selected.approxDurationMs)) return null;
+
+    try {
+      await axios.head(selected.url);
+    } catch (error) {
+      return null;
+    }
+
+    return {
+      uri: selected.url,
+      duration: i.video_details.durationInSec * 1000,
+      from: this.id,
+    };
   }
 }

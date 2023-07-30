@@ -157,13 +157,6 @@ export default function PlayerTab() {
     [setSeekProgress, player, setTrackTiming, trackTiming]
   );
 
-  const resumeTrack = useCallback(() => {
-    if (!player.src) {
-      return;
-    }
-    player.play();
-  }, [player]);
-
   const loadAndUpdateTrack = useCallback(
     async (trackId: string) => {
       const track = allTracks[trackId];
@@ -179,10 +172,7 @@ export default function PlayerTab() {
       //console.trace(`LOAD AND UPDATE TRACK | ${trackId} | ${track.title}`);
       const streamInfo = await StreamManager.getStreamInfo({
         id: track.id,
-        title: track.title,
-        album: album.title,
         uri: track.uri,
-        artists: track.artists.map((a) => artists[a]?.name || ""),
       });
 
       if (!streamInfo) {
@@ -196,7 +186,6 @@ export default function PlayerTab() {
               {
                 id: track.id,
                 duration: streamInfo.duration,
-                uri: streamInfo.from,
               },
             ],
           })
@@ -205,7 +194,7 @@ export default function PlayerTab() {
 
       return streamInfo;
     },
-    [albums, allTracks, artists, dispatch]
+    [albums, allTracks, dispatch]
   );
 
   const latestPlayRequest = useRef("");
@@ -279,26 +268,23 @@ export default function PlayerTab() {
           }
         }
       }
+    } else if (currentTrackId) {
+      dispatch(replaceRecentTracks([...recentTracks, currentTrackId]));
     }
+
     dispatch(setCurrentTrack(null));
-    player.src = "";
+    StreamManager.stopPlayer()
+
+    dispatch(setIsPaused(true))
 
     setTrackTiming({
       progress: 0,
       length: 0,
     });
+
     navigator.mediaSession.metadata = null;
     await window.bridge.clearDiscordPresence();
-  }, [
-    queuedTracks,
-    repeatState,
-    dispatch,
-    player,
-    currentTrackId,
-    recentTracks,
-    loadAndUpdateTrack,
-    loadAndPlayTrack,
-  ]);
+  }, [queuedTracks, repeatState, dispatch, currentTrackId, recentTracks, loadAndUpdateTrack, loadAndPlayTrack]);
 
   // handles switching to the previous track
   const onPreviousClicked = useCallback(async () => {
@@ -342,6 +328,29 @@ export default function PlayerTab() {
     loadAndPlayTrack,
     dispatch,
   ]);
+
+  const resumeTrack = useCallback(() => {
+    if (!currentTrackId) {
+      if(queuedTracks.length > 0){
+        onNextClicked()
+        return;
+      }
+
+      if(recentTracks.length > 0){
+        const newRecents = [...recentTracks]
+        const toPlay = newRecents.pop()
+        if(toPlay){
+          dispatch(replaceRecentTracks(newRecents))
+          loadAndPlayTrack(toPlay)
+          return;
+        }
+      }
+    }
+    else{
+      player.play();
+    }
+    
+  }, [currentTrackId, dispatch, loadAndPlayTrack, onNextClicked, player, queuedTracks.length, recentTracks]);
 
   // eslint-disable-next-line @typescript-eslint/no-empty-function
   const onToggleShuffleState = useCallback(() => {
@@ -513,7 +522,11 @@ export default function PlayerTab() {
 
     player.addEventListener("playing", onPlayerPlay);
 
-    player.addEventListener("ended", onCurrentTrackOver);
+    player.addEventListener("ended", () => {
+      if(player.src !== StreamManager.noTrackSrc){
+        onCurrentTrackOver()
+      }
+    });
 
     navigator.mediaSession.setActionHandler("previoustrack", onPreviousClicked);
 
@@ -626,6 +639,7 @@ export default function PlayerTab() {
                 src={currentAlbum?.cover}
                 className="player-cover"
                 onClick={navigateToCurrentAlbum}
+                alt="cover"
               ></img>
               <span className="player-title">
                 <h3>{currentTrack?.title || ""}</h3>

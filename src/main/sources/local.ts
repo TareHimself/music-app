@@ -1,8 +1,6 @@
 import { ITrackResource, TrackStreamInfo } from "@types";
 import MusiczMediaSource from "./source";
 import path from "path";
-import express from "express";
-import { BrowserWindow } from "electron";
 
 // async function getAudioDuration(audioFile: string): Promise<number> {
 //   const window = new BrowserWindow({
@@ -37,13 +35,14 @@ export default class LocalSource extends MusiczMediaSource {
     if (!filePath) return null;
 
     return {
-      uri: path.join("file:///", filePath),
+      uri: `${path.join(`${SERVER_ADDRESS}/file/`, filePath)}`,
       duration: 0, //await getAudioDurationInSeconds(filePath),
-      from: "",
+      from: this.id,
     };
   }
 
-  public async downloadTrack(trackId: string, streamInfo: TrackStreamInfo) {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public async downloadTrack(_trackId: string, _streamInfo: TrackStreamInfo) {
     return false;
   }
 }

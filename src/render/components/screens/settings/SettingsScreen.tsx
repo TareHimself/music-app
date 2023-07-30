@@ -1,12 +1,13 @@
 import { useEffect, useId, useState } from "react";
 import { importIntoLibrary, useAppDispatch } from "@redux/exports";
-import Dropdown from "react-dropdown";
+import Dropdown from "@components/input/Dropdown";
 import "react-dropdown/style.css";
 import SettingItem from "./SettingItem";
 
 export interface ISelectableAudioDevice {
   label: string;
   value: string;
+  key: React.Key;
 }
 
 export default function SettingsScreen() {
@@ -38,6 +39,7 @@ export default function SettingsScreen() {
               .map((a) => ({
                 label: a.label,
                 value: a.deviceId,
+                key: a.deviceId,
               })),
           };
         });
@@ -69,10 +71,24 @@ export default function SettingsScreen() {
                 })
               );
             }}
-          ></button>
+          >
+            Import
+          </button>
         </SettingItem>
-        <SettingItem title={"Output Device"}>
+        {/* <SettingItem title={"Output Device"}>
           <Dropdown
+            options={audioDeviceInfo.devices}
+            selected={[audioDeviceInfo.selected]}
+            onSelectedItemsUpdated={(i) => console.log(i)}
+          />
+          
+        </SettingItem> */}
+      </div>
+    </div>
+  );
+}
+
+/* <Dropdown
             options={audioDeviceInfo.devices}
             value={audioDeviceInfo.selected}
             onChange={(v) => {
@@ -81,9 +97,5 @@ export default function SettingsScreen() {
               });
               streamManager.setMediaDevice(v.value);
             }}
-          />
-        </SettingItem>
-      </div>
-    </div>
-  );
-}
+            className="settings-dropdown"
+          /> */

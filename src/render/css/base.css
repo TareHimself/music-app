@@ -351,10 +351,11 @@ p {
 }
 
 .nav-main .active {
-  color: var(--icon-fg)
+  color: var(--icon-fg);
+  cursor: pointer;
 }
 
-.nav-main svg:hover {
+.nav-main .active:hover {
   scale: 1.2;
 }
 
@@ -370,10 +371,17 @@ p {
   flex-direction: row;
   align-items: center;
   justify-content: flex-start;
-  transition: all 0.3s ease-in-out;
+  transition: color 0.3s ease-in-out;
   pointer-events: all;
   gap: 20px;
   cursor: pointer;
+}
+
+.nav-item-text {
+  height: 38px;
+  width: 100%;
+  overflow: hidden;
+  transition: inherit;
 }
 
 .nav-divider {
@@ -389,14 +397,15 @@ p {
 
 .nav-item svg {
   color: var(--icon-fg);
-  width: 23px;
-  height: 23px;
+  width: 30px;
+  height: 30px;
   transition: inherit;
 }
 
-.nav-item h3 {
+.nav-item .nav-item-text h3 {
   font-size: 15px;
   margin: 10px 0px;
+  width: max-content;
   transition: inherit;
 }
 
@@ -406,20 +415,23 @@ p {
   scrollbar-width: 0px;
 }
 
-.playlists .nav-item h3 {
+.playlists .nav-item .nav-item-text h3 {
   margin: 7px 0px;
   font-size: 17px;
 }
 
-.nav-item[data-active="false"] svg,
-.nav-item[data-active="false"] h3 {
+.nav-item[data-active="false"] .nav-item-text svg,
+.nav-item[data-active="false"] .nav-item-text h3 {
   color: var(--icon-fg-inactive);
 }
 
-.nav-item:hover svg,
-.nav-item:hover h3 {
+.nav-item:hover .nav-item-text svg,
+.nav-item:hover .nav-item-text h3 {
   color: var(--icon-fg);
 }
+
+
+
 
 #screens {
   background-color: var(--screens-bg);
@@ -523,12 +535,12 @@ p {
 
 .track-items {
   box-sizing: border-box;
+  flex: 1;
   padding-top: var(--main-border-size);
-  min-height: 100%;
+  max-height: 100%;
   display: flex;
   flex-direction: column;
   width: 100%;
-  gap: 10px;
 }
 
 .track-item {
@@ -542,6 +554,7 @@ p {
   box-sizing: border-box;
   padding-right: calc(var(--track-item-height) / 3);
   padding-left: var(--track-item-height);
+  margin: 5px 0;
 }
 
 .track-item:hover {
@@ -747,7 +760,8 @@ p {
 .row-input-content {
   display: flex;
   flex-direction: row;
-  height: 25px;
+  height: 50px;
+
 }
 
 .library-search {
@@ -797,6 +811,42 @@ p {
 
 .like-icon:hover svg {
   transform: scale(1.2);
+}
+
+.settings-dropdown {
+  width: 200px;
+}
+
+
+.dropdown-main {
+  display: flex;
+  position: relative;
+  background-color: green;
+  width: 300px;
+}
+
+.dropdown-main-selected {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  align-items: center;
+  justify-content: center;
+}
+
+.dropdown-main-list {
+  display: flex;
+  position: absolute;
+  top: 100%;
+  width: 100%;
+  background-color: white;
+  flex-direction: column;
+}
+
+.dropdown-item {
+  display: flex;
+  height: 50px;
+  align-items: center;
+  justify-content: center;
 }
 
 @media only screen and (max-width: 1580px) {

@@ -129,10 +129,7 @@ export type TrackStreamInfo = { uri: string; duration: number; from: string };
 
 export interface ITrackResource {
   id: string;
-  title: string;
-  album: string;
   uri: string;
-  artists: string[];
 }
 
 export type Awaitable<T> = T | Promise<T>;
@@ -154,10 +151,8 @@ export type IRendererToMainEvents = {
   windowMaximize: () => void;
   windowClose: () => void;
   getTrackStreamInfo: (
-    track: ITrackResource
+    resource: ITrackResource
   ) => Promise<TrackStreamInfo | null>;
-  toStreamUrl: (uri: string) => Promise<string>;
-  searchForStream: (search: string) => Promise<string>;
   getPlaylists: () => Promise<IPlaylist[]>;
   getAlbums: (albums?: string[]) => Promise<IAlbum[]>;
   getAlbumTracks: (album: string) => Promise<ITrack[]>;
@@ -177,20 +172,6 @@ export type IRendererToMainEvents = {
   getLikedTracks: () => Promise<ILikedTrack[]>;
   addLikedTracks: (tracks: ILikedTrack[]) => Promise<void>;
   removeLikedTracks: (tracks: string[]) => Promise<void>;
-  onFromMain: <T extends keyof IMainToRendererEvents>(
-    event: T,
-    callback: (...args: EventParams<IMainToRendererEvents, T>) => Awaitable<any>
-  ) => void;
-
-  onceFromMain: <T extends keyof IMainToRendererEvents>(
-    event: T,
-    callback: (...args: EventParams<IMainToRendererEvents, T>) => Awaitable<any>
-  ) => void;
-
-  offFromMain: <T extends keyof IMainToRendererEvents>(
-    event: T,
-    callback: (...args: EventParams<IMainToRendererEvents, T>) => Awaitable<any>
-  ) => void;
   updatePlaylists: (items: IPlaylistUpdate[]) => Promise<void>;
   updateTracks: (items: ITrackUpdate[]) => Promise<void>;
   removePlaylists: (items: string[]) => Promise<void>;
@@ -199,6 +180,7 @@ export type IRendererToMainEvents = {
     trackId: string,
     streamInfo: TrackStreamInfo
   ) => Promise<boolean>;
+  getServerAddress: () => string;
 };
 
 export type IMainToRendererEvents = {
@@ -396,7 +378,6 @@ interface IGlobalKeys {
 }
 declare global {
   interface Window {
-    bridge: IRendererToMainEvents;
     utils: IGlobalUtils;
   }
 
@@ -407,6 +388,9 @@ declare global {
 
   // eslint-disable-next-line no-var
   var keys: IGlobalKeys;
+
+  // eslint-disable-next-line no-var
+  var SERVER_ADDRESS: string;
 }
 
 export {};

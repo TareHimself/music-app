@@ -1,11 +1,39 @@
 import { useAppSelector } from "@redux/hooks";
 import TrackItem from "../common/tracks/TrackItem";
 import ScreenWithImage from "../common/ScreenWithImage";
+import { FixedSizeList as List, ListChildComponentProps } from "react-window";
+import { useMemo } from "react";
+import AutoSizer from "react-virtualized-auto-sizer";
 
 export type IQueuedItem = {
   track: string;
   index: number;
 };
+
+
+type QueuedListConainerProps = ListChildComponentProps<
+  IQueuedItem[]
+>;
+
+function QueuedTrackContainer(props: QueuedListConainerProps) {
+  const data = props.data[props.index];
+  if (!data) {
+    return null;
+  } else {
+    return (
+      <div style={props.style}>
+       <TrackItem
+              trackId={data.track}
+              key={props.index}
+              type={"queue"}
+              index={data.index}
+              activeOverride={props.index === 0}
+            />
+      </div>
+    );
+  }
+}
+
 export default function QueueScreen() {
   const [queuedTracks, currentTrack, album] = useAppSelector((s) => [
     s.player.data.queuedTracks,
@@ -15,6 +43,21 @@ export default function QueueScreen() {
     ],
   ]);
 
+
+  const itemData = useMemo(() => {
+    if(!currentTrack){
+      return []
+    }
+
+    return [
+       { track: currentTrack, index: -1 },
+       ...queuedTracks.map<IQueuedItem>((a, idx) => ({
+         track: a,
+         index: idx,
+       })),
+     ]
+   },[currentTrack, queuedTracks])
+
   if (!currentTrack) {
     return <div className="screen"></div>;
   }
@@ -22,23 +65,31 @@ export default function QueueScreen() {
   return (
     <ScreenWithImage cover={album?.cover || ""}>
       <div className="track-items">
-        {[
-          { track: currentTrack, index: -1 },
-          ...queuedTracks.map<IQueuedItem>((a, idx) => ({
-            track: a,
-            index: idx,
-          })),
-        ].map((a, idx) => {
-          return (
-            <TrackItem
-              trackId={a.track}
-              key={idx}
-              type={"queue"}
-              index={a.index}
-              activeOverride={idx === 0}
-            />
-          );
-        })}
+        <AutoSizer>
+          {({ height, width }) => {
+            console.log(height, width);
+            return (
+              <List
+                style={{
+                  ...({
+                    overflow: "overlay",
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                  } as React.CSSProperties),
+                }}
+                // className="track-items"
+                itemCount={itemData.length}
+                itemData={itemData}
+                itemSize={70}
+                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                height={height!}
+                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                width={width!}
+              >
+                {QueuedTrackContainer}
+              </List>
+            );
+          }}
+        </AutoSizer>
       </div>
     </ScreenWithImage>
   );

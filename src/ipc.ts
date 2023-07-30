@@ -2,293 +2,376 @@
  * This file exists because I can no longer handle the lack of generic typing in electrons ipcMain and ipcRenderer and as such have made wrappers to type them for me
  */
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import { v4 as uuidv4 } from "uuid";
 import {
   contextBridge,
   ipcMain as electronIpcMain,
   IpcMainEvent,
   ipcRenderer as electronIpcRenderer,
   IpcRendererEvent,
+  BrowserWindow,
 } from "electron";
-import { startStopProfile } from "@root/global-utils";
-import {
-  Awaitable,
-  EventParams,
-  EventReturnType,
-  IRendererToMainEvents,
-  IMainToRendererEvents,
-  IEventBase,
-} from "@types";
-// (...args: any) => any, (...args: any) => any
 
-export type IpcCallbackItem = Map<(...args: any) => any, (...args: any) => any>;
 
-export type EventsBase = {
-  [key: string]: (...args: any[]) => Awaitable<any>;
+let generatedIds = 0
+
+function makeId(){
+  generatedIds++;
+  const myId = generatedIds;
+  generatedIds++;
+
+  return `${Date.now()}|${myId}`
+}
+export type IEventBase = {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  [K in string]: (...args: any[]) => unknown;
 };
 
-export type EventReturnWithId<E extends IEventBase, T extends keyof E> = {
+export type EventReturnType<E extends IEventBase, T extends keyof E> = Awaited<
+  ReturnType<E[T]>
+>;
+
+export type EventParams<E extends IEventBase, T extends keyof E> = Parameters<
+  E[T]
+>;
+
+export type EventReturnTypeWithId<E extends IEventBase, T extends keyof E> = {
   data: EventReturnType<E, T>;
   id: string;
 };
 
-class IpcRendererWrapper<ToM extends IEventBase, FromM extends IEventBase> {
-  _callbacks: Map<keyof ToM | keyof FromM, IpcCallbackItem> = new Map();
-
-  exposeApi<T>(name: string, api: T) {
-    console.log("Exposing Api", name);
-    contextBridge.exposeInMainWorld(name, api);
-  }
-
-  on(
-    event: keyof ToM | keyof FromM,
-    callback: (...args: any[]) => Awaitable<any>
-  ): this {
-    if (!this._callbacks.get(event)) {
-      this._callbacks.set(event, new Map());
-    }
-
-    const midWay = (_: IpcRendererEvent, ...args: any[]) => callback(...args);
-
-    this._callbacks.get(event)?.set(callback, midWay);
-
-    electronIpcRenderer.on(event as any, midWay);
-
-    return this;
-  }
-
-  once(
-    event: keyof ToM | keyof FromM,
-    callback: (...args: any[]) => Awaitable<any>
-  ): this {
-    const midWay = (_: IpcRendererEvent, ...args: any[]) => callback(...args);
-
-    electronIpcRenderer.once(event as any, midWay);
-
-    return this;
-  }
-
-  off(
-    event: keyof ToM | keyof FromM,
-    callback: (...args: any[]) => Awaitable<any>
-  ): this {
-    if (!this._callbacks.get(event)) {
-      return this;
-    }
-
-    const boundMidway = this._callbacks.get(event)?.get(callback);
-
-    if (boundMidway) {
-      electronIpcRenderer.off(event as any, boundMidway);
-    }
-
-    return this;
-  }
-
-  onToMain<T extends keyof ToM>(
+export type IpcRendererListeners<EventsFromMain extends IEventBase> = {
+  on: <T extends keyof EventsFromMain>(
     event: T,
-    callback: (result: EventReturnWithId<ToM, T>) => Awaitable<any>
-  ): this {
-    this.on(event as any, callback);
-    return this;
-  }
-
-  onceToMain<T extends keyof ToM>(
+    callback: (
+      ...args: EventParams<EventsFromMain, T>
+    ) => EventReturnType<EventsFromMain, T>
+  ) => void;
+  once: <T extends keyof EventsFromMain>(
     event: T,
-    callback: (result: EventReturnWithId<ToM, T>) => Awaitable<any>
-  ): this {
-    this.once(event, callback);
-
-    return this;
-  }
-
-  offToMain<T extends keyof ToM>(
+    callback: (
+      ...args: EventParams<EventsFromMain, T>
+    ) => EventReturnType<EventsFromMain, T>
+  ) => void;
+  off: <T extends keyof EventsFromMain>(
     event: T,
-    callback: (result: EventReturnWithId<ToM, T>) => Awaitable<any>
-  ): this {
-    this.off(event, callback);
-
-    return this;
-  }
-
-  onFromMain<T extends keyof FromM>(
+    callback: (
+      ...args: EventParams<EventsFromMain, T>
+    ) => EventReturnType<EventsFromMain, T>
+  ) => void;
+  handle: <T extends keyof EventsFromMain>(
     event: T,
-    callback: (...args: EventParams<FromM, T>) => Awaitable<any>
-  ): this {
-    this.on(event, callback);
-    return this;
+    handler: EventsFromMain[T]
+  ) => void;
+};
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function isAsync(method: (...args: any[]) => unknown) {
+  return method.constructor.name === "AsyncFunction";
+}
+
+export class IpcRendererTyped<
+  EventsToMain extends IEventBase,
+  EventsFromMain extends IEventBase
+> {
+  private fromMainCallbacks: Map<
+    keyof EventsFromMain,
+    Map<
+      (
+        ...args: EventParams<EventsFromMain, keyof EventsFromMain>
+      ) => EventReturnType<EventsFromMain, keyof EventsFromMain>,
+      (
+        event: IpcRendererEvent,
+        instanceId: string,
+        ...args: EventParams<EventsFromMain, keyof EventsFromMain>
+      ) => void
+    >
+  > = new Map();
+
+  exposeApi(name: string, api: EventsToMain) {
+    // eslint-disable-next-line @typescript-eslint/no-this-alias
+    const apiFinal: EventsToMain & IpcRendererListeners<EventsFromMain> = {
+      ...api,
+      on: (...args) => this.on(...args),
+      once: (...args) => this.once(...args),
+      off: (...args) => this.off(...args),
+      handle: (...args) => this.handle(...args),
+    };
+
+    contextBridge.exposeInMainWorld(name, apiFinal);
+    return apiFinal;
   }
 
-  onceFromMain<T extends keyof FromM>(
+  toMainEventChannel<T extends keyof EventsToMain>(event: T) {
+    return `to-main-${event as string}`;
+  }
+
+  fromMainEventChannel<T extends keyof EventsFromMain>(event: T) {
+    return `from-main-${event as string}`;
+  }
+
+  send<T extends keyof EventsToMain>(
     event: T,
-    callback: (...args: EventParams<FromM, T>) => Awaitable<any>
-  ): this {
-    this.once(event, callback);
-
-    return this;
+    ...args: EventParams<EventsToMain, T>
+  ) {
+    electronIpcRenderer.send(this.toMainEventChannel(event), makeId(), ...args);
   }
 
-  offFromMain<T extends keyof FromM>(
+  sendSync<T extends keyof EventsToMain>(
     event: T,
-    callback: (...args: EventParams<FromM, T>) => Awaitable<any>
-  ): this {
-    this.off(event, callback);
-
-    return this;
+    ...args: EventParams<EventsToMain, T>
+  ): EventReturnType<EventsToMain, T> {
+    return electronIpcRenderer.sendSync(
+      this.toMainEventChannel(event),
+      makeId(),
+      ...args
+    );
   }
 
-  sendToMain<T extends keyof ToM>(
+  sendAsync<T extends keyof EventsToMain>(
     event: T,
-    messageId: string,
-    ...args: EventParams<ToM, T>
-  ): this {
-    console.log("Sent event to channel", event);
-    electronIpcRenderer.send(event as any, messageId, ...args);
-
-    return this;
-  }
-
-  sendToMainSync<T extends keyof ToM>(
-    event: T,
-    ...args: EventParams<ToM, T>
-  ): EventReturnType<ToM, T> {
-    return electronIpcRenderer.sendSync(event as any, uuidv4(), ...args);
-  }
-
-  sendToMainAsync<T extends keyof ToM>(event: T, ...args: EventParams<ToM, T>) {
-    const operationId = uuidv4();
-    return new Promise<EventReturnType<ToM, T>>((resolve) => {
-      const callback = ({ data, id }: EventReturnWithId<ToM, T>) => {
-        if (id === operationId) {
-          this.offToMain(event, callback);
-          resolve(data);
+    ...args: EventParams<EventsToMain, T>
+  ): Promise<EventReturnType<EventsToMain, T>> {
+    const channel = this.toMainEventChannel(event);
+    return new Promise<EventReturnType<EventsToMain, T>>((res) => {
+      const instanceId = makeId();
+      const callback = (
+        _: IpcRendererEvent,
+        result: EventReturnTypeWithId<EventsToMain, T>
+      ) => {
+        if (instanceId === result.id) {
+          electronIpcRenderer.off(channel, callback);
+          res(result.data);
         }
       };
-      this.onToMain(event, callback);
-      this.sendToMain(event, operationId, ...args);
-    });
-  }
-}
-
-export const ipcRenderer = new IpcRendererWrapper<
-  IRendererToMainEvents,
-  IMainToRendererEvents
->();
-
-class IpcMainEventWrapper<FromR extends IEventBase, T extends keyof FromR> {
-  channel: string;
-  ref: IpcMainEvent;
-  created: number = Date.now();
-  id: string;
-  constructor(channel: T, ref: IpcMainEvent, id: string) {
-    this.id = id;
-    this.channel = String(channel);
-    this.ref = ref;
-    startStopProfile(`${this.channel}-${this.ref.frameId}`, this.channel);
-  }
-
-  reply(data: EventReturnType<FromR, T>) {
-    startStopProfile(`${this.channel}-${this.ref.frameId}`);
-    this.ref.reply(this.channel, {
-      data,
-      id: this.id,
+      electronIpcRenderer.on(channel, callback);
+      electronIpcRenderer.send(channel, instanceId, ...args);
     });
   }
 
-  replySync(data: EventReturnType<FromR, T>) {
-    startStopProfile(`${this.channel}-${this.ref.frameId}`);
-    this.ref.returnValue = data;
-  }
-}
-
-class IpcMainWrapper<FromR extends IEventBase, ToR extends IEventBase> {
-  _callbacks: Map<keyof FromR | keyof ToR, IpcCallbackItem> = new Map();
-
-  onFromRenderer<T extends keyof FromR>(
+  on<T extends keyof EventsFromMain>(
     event: T,
     callback: (
-      event: IpcMainEventWrapper<FromR, T>,
-      ...args: EventParams<FromR, T>
-    ) => Awaitable<any>
-  ): this {
-    if (!this._callbacks.get(event)) {
-      this._callbacks.set(event, new Map());
+      ...args: EventParams<EventsFromMain, T>
+    ) => EventReturnType<EventsFromMain, T>
+  ) {
+    const channel = this.fromMainEventChannel(event);
+    let callbacks = this.fromMainCallbacks.get(channel);
+
+    if (!callbacks) {
+      callbacks = new Map();
+
+      this.fromMainCallbacks.set(channel, callbacks);
     }
 
-    const midWay = (
-      e: IpcMainEvent,
-      messageId: string,
-      ...args: EventParams<FromR, T>
-    ) =>
-      callback(new IpcMainEventWrapper<FromR, T>(event, e, messageId), ...args);
+    const callbackMiddleMan = (
+      _: IpcRendererEvent,
+      __: string,
+      ...args: unknown[]
+    ) => {
+      callback(...(args as EventParams<EventsFromMain, T>));
+    };
 
-    this._callbacks.get(event)?.set(callback, midWay);
+    callbacks.set(callback, callbackMiddleMan);
 
-    electronIpcMain.on(
-      event as any,
-      midWay as (event: Electron.IpcMainEvent, ...args: any[]) => void
+    electronIpcRenderer.on(this.fromMainEventChannel(event), callbackMiddleMan);
+  }
+
+  once<T extends keyof EventsFromMain>(
+    event: T,
+    callback: (
+      ...args: EventParams<EventsFromMain, T>
+    ) => EventReturnType<EventsFromMain, T>
+  ) {
+    const channel = this.fromMainEventChannel(event);
+    const callbackMiddleMan = (
+      _: IpcRendererEvent,
+      __: string,
+      ...args: unknown[]
+    ) => {
+      callback(...(args as EventParams<EventsFromMain, T>));
+    };
+
+    electronIpcRenderer.once(channel, callbackMiddleMan);
+  }
+
+  off<T extends keyof EventsFromMain>(
+    event: T,
+    callback: (
+      ...args: EventParams<EventsFromMain, T>
+    ) => EventReturnType<EventsFromMain, T>
+  ) {
+    const channel = this.fromMainEventChannel(event);
+
+    const callbackToRemove = this.fromMainCallbacks.get(channel)?.get(callback);
+
+    if (!callbackToRemove) return;
+
+    electronIpcRenderer.off(
+      channel,
+      callbackToRemove as (...args: unknown[]) => void
     );
+  }
+
+  handle<T extends keyof EventsFromMain>(event: T, handler: EventsFromMain[T]) {
+    const channel = this.fromMainEventChannel(event);
+    electronIpcRenderer.on(channel, async (_, instanceId: string, ...args) => {
+      const execArgs = args as EventParams<EventsFromMain, T>;
+      const result = isAsync(handler)
+        ? await handler(...execArgs)
+        : handler(...execArgs);
+
+      electronIpcRenderer.send(channel, {
+        id: instanceId,
+        data: result,
+      });
+    });
+    return this;
+  }
+}
+
+export class IpcMainTyped<
+  EventsFromRenderer extends IEventBase,
+  EventsToRenderer extends IEventBase
+> {
+  private fromRendererCallbacks: Map<
+    keyof EventsFromRenderer,
+    Map<
+      (
+        ...args: EventParams<EventsFromRenderer, keyof EventsFromRenderer>
+      ) => EventReturnType<EventsFromRenderer, keyof EventsFromRenderer>,
+      (
+        event: IpcMainEvent,
+        instanceId: string,
+        ...args: EventParams<EventsFromRenderer, keyof EventsFromRenderer>
+      ) => void
+    >
+  > = new Map();
+
+  fromRendererEventChannel<T extends keyof EventsFromRenderer>(event: T) {
+    return `to-main-${event as string}`;
+  }
+
+  toRendererEventChannel<T extends keyof EventsToRenderer>(event: T) {
+    return `from-main-${event as string}`;
+  }
+
+  send<T extends keyof EventsToRenderer>(
+    browserWindow: BrowserWindow,
+    event: T,
+    ...args: EventParams<EventsToRenderer, T>
+  ) {
+    browserWindow.webContents.send(this.toRendererEventChannel(event), ...args);
+  }
+
+  sendAsync<T extends keyof EventsToRenderer>(
+    browserWindow: BrowserWindow,
+    event: T,
+    ...args: EventParams<EventsToRenderer, T>
+  ): Promise<EventReturnType<EventsToRenderer, T>> {
+    const channel = this.toRendererEventChannel(event);
+
+    return new Promise<EventReturnType<EventsToRenderer, T>>((res) => {
+      const instanceId = makeId();
+      const callback = (
+        _: IpcMainEvent,
+        result: EventReturnTypeWithId<EventsToRenderer, T>
+      ) => {
+        if (instanceId === result.id) {
+          electronIpcMain.off(channel, callback);
+          res(result.data);
+        }
+      };
+      electronIpcMain.on(channel, callback);
+      browserWindow.webContents.send(channel, instanceId, ...args);
+    });
+  }
+
+  on<T extends keyof EventsFromRenderer>(
+    event: T,
+    callback: (
+      ...args: EventParams<EventsFromRenderer, T>
+    ) => EventReturnType<EventsFromRenderer, T>
+  ): this {
+    if (!this.fromRendererCallbacks.has(event))
+      this.fromRendererCallbacks.set(event, new Map());
+
+    const callbackMiddleMan = (
+      _: IpcMainEvent,
+      __: string,
+      ...args: unknown[]
+    ) => {
+      callback(...(args as EventParams<EventsFromRenderer, T>));
+    };
+
+    this.fromRendererCallbacks.get(event)?.set(callback, callbackMiddleMan);
+
+    electronIpcMain.on(this.fromRendererEventChannel(event), callbackMiddleMan);
 
     return this;
   }
 
-  onceFromRenderer<T extends keyof FromR>(
+  once<T extends keyof EventsFromRenderer>(
     event: T,
     callback: (
-      event: IpcMainEventWrapper<FromR, T>,
-      ...args: EventParams<FromR, T>
-    ) => Awaitable<any>
+      ...args: EventParams<EventsFromRenderer, T>
+    ) => EventReturnType<EventsFromRenderer, T>
   ): this {
-    const midWay = (
-      e: IpcMainEvent,
-      messageId: string,
-      ...args: EventParams<FromR, T>
-    ) =>
-      callback(new IpcMainEventWrapper<FromR, T>(event, e, messageId), ...args);
+    const callbackMiddleMan = (
+      _: IpcMainEvent,
+      __: string,
+      ...args: unknown[]
+    ) => {
+      callback(...(args as EventParams<EventsFromRenderer, T>));
+    };
 
     electronIpcMain.once(
-      event as any,
-      midWay as (event: Electron.IpcMainEvent, ...args: any[]) => void
+      this.fromRendererEventChannel(event),
+      callbackMiddleMan
     );
 
     return this;
   }
 
-  offFromRenderer<T extends keyof FromR>(
+  off<T extends keyof EventsFromRenderer>(
     event: T,
     callback: (
-      event: IpcMainEventWrapper<FromR, T>,
-      ...args: EventParams<FromR, T>
-    ) => Awaitable<any>
+      ...args: EventParams<EventsFromRenderer, T>
+    ) => EventReturnType<EventsFromRenderer, T>
   ): this {
-    if (!this._callbacks.get(event)) {
-      return this;
-    }
+    const callbackToRemove = this.fromRendererCallbacks
+      .get(this.fromRendererEventChannel(event))
+      ?.get(callback);
 
-    const boundMidway = this._callbacks.get(event)?.get(callback);
+    if (!callbackToRemove) return this;
 
-    if (boundMidway) {
-      electronIpcMain.off(event as any, boundMidway);
-    }
+    electronIpcMain.off(
+      this.fromRendererEventChannel(event),
+      callbackToRemove as (...args: unknown[]) => void
+    );
 
     return this;
   }
 
-  sendToRenderer<T extends keyof ToR>(
-    window: import("electron").BrowserWindow,
+  handle<T extends keyof EventsFromRenderer>(
     event: T,
-    ...args: EventParams<ToR, T>
-  ): void {
-    return window.webContents.send(event as any, ...args);
-  }
-
-  exposeApi<T>(name: string, api: T) {
-    contextBridge.exposeInMainWorld(name, api);
+    handler: EventsFromRenderer[T]
+  ) {
+    const channel = this.fromRendererEventChannel(event);
+    electronIpcMain.on(
+      channel,
+      async (mainEvent, instanceId: string, ...args) => {
+        const execArgs = args as EventParams<EventsFromRenderer, T>;
+        const isPromise = isAsync(handler);
+        if (isPromise) {
+          mainEvent.reply(channel, {
+            id: instanceId,
+            data: await handler(...execArgs),
+          });
+        } else {
+          mainEvent.returnValue = handler(...execArgs);
+        }
+      }
+    );
+    return this;
   }
 }
-
-export const ipcMain = new IpcMainWrapper<
-  IRendererToMainEvents,
-  IMainToRendererEvents
->();
