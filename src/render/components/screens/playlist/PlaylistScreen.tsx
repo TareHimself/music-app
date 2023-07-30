@@ -24,7 +24,7 @@ export default function PlaylistScreen() {
         tracks: s.library.data.likedTracks,
         id: "liked",
         title: "Liked",
-        cover: AppConstants.DEFAULT_COVER_ART,
+        cover: "",
         position: -1,
       };
       return fakePlaylist;
@@ -33,16 +33,23 @@ export default function PlaylistScreen() {
     return s.library.data.playlists[playlistId];
   });
 
-  const [playlistCover, setPlaylistCover] = useState(
-    playlist?.cover ?? getCachedCover(playlistId)
-  );
+
   const [isGeneratingCover, setIsGeneratingCover] = useState(false);
+
+  const playlistCover = useMemo(() => {
+    if(isGeneratingCover)
+    {
+      return AppConstants.DEFAULT_COVER_ART
+    }
+
+    return playlist?.cover || getCachedCover(playlistId)
+  },[playlist?.cover, playlistId,isGeneratingCover])
+
 
   useEffect(() => {
     if (!playlistCover && !isGeneratingCover) {
       setIsGeneratingCover(true);
-      generatePlaylistCover(playlistId).then((a) => {
-        setPlaylistCover(a ?? AppConstants.DEFAULT_COVER_ART);
+      generatePlaylistCover(playlistId).then(() => {
         setIsGeneratingCover(false);
       });
     }
@@ -61,8 +68,7 @@ export default function PlaylistScreen() {
         callback: (s) => {
           if (s === "regenerate") {
             setIsGeneratingCover(true);
-            generatePlaylistCover(playlistId,true).then((a) => {
-              setPlaylistCover(a ?? AppConstants.DEFAULT_COVER_ART);
+            generatePlaylistCover(playlistId,true).then(() => {
               setIsGeneratingCover(false);
             });
           }
@@ -74,7 +80,7 @@ export default function PlaylistScreen() {
 
   return (
     <ScreenWithImage
-      cover={playlistCover || AppConstants.DEFAULT_COVER_ART}
+      cover={playlistCover  || AppConstants.DEFAULT_COVER_ART}
       header={<h1>{playlist?.title}</h1>}
       onImageContextMenu={makeCoverContextMenu}
     >

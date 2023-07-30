@@ -97,6 +97,7 @@ export function arrayToIndex<T extends KeyValuePair<string, any>, K = T>(
 const COVERS_GENERATED: Record<string, string> = {};
 
 export function getCachedCover(playlistId: string){
+  console.log("Getting cover for id",playlistId)
   return COVERS_GENERATED[playlistId]
 }
 
