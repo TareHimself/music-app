@@ -28,6 +28,7 @@ SpotifyApi.interceptors.response.use(undefined, async (error) => {
     global.keys = {
       SPOTIFY_API_KEY: tokenResponse.data.accessToken,
     };
+    console.log(tokenResponse.data.accessToken)
     SpotifyApi.defaults.headers["Authorization"] =
       config.headers["Authorization"];
     return axios(config);

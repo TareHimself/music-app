@@ -6,7 +6,7 @@ import { generateContextMenu, toTimeString } from "@render/utils";
 import { HiPause, HiPlay } from "react-icons/hi2";
 import { StreamManager } from "@render/global";
 import { useLocation } from "react-router";
-import { toast } from "react-hot-toast";
+import { toast } from "react-toastify";
 import AppConstants from "@root/data";
 import useAppNavigation from "@hooks/useAppNavigation";
 import LikeButton from "./LikeButton";
@@ -158,7 +158,10 @@ export default function TrackItem(
           break;
 
         case "uri-edit":
-          toast.error(AppConstants.UNAVAILABLE_FEATURE_ERROR);
+          toast.error(AppConstants.UNAVAILABLE_FEATURE_ERROR, {
+            pauseOnFocusLoss: false,
+            pauseOnHover: false,
+          });
           break;
 
         case "uri-reset":
@@ -169,7 +172,6 @@ export default function TrackItem(
                 {
                   id: trackData.id,
                   duration: 0,
-                  uri: "",
                 },
               ],
             })
@@ -198,18 +200,18 @@ export default function TrackItem(
           id: "queue-later",
           name: "Play later",
         },
-        {
-          id: "uri-edit",
-          name: "Modify source",
-        },
-        ...((trackData?.uri.length || 0) > 0
-          ? [
-              {
-                id: "uri-reset",
-                name: "Reset source",
-              },
-            ]
-          : []),
+        // {
+        //   id: "uri-edit",
+        //   name: "Modify source",
+        // },
+        // ...((trackData?.uri.length || 0) > 0
+        //   ? [
+        //       {
+        //         id: "uri-reset",
+        //         name: "Reset source",
+        //       },
+        //     ]
+        //   : []),
       ];
 
       if (props.type === "playlist") {
@@ -246,7 +248,6 @@ export default function TrackItem(
       props.activeOverride,
       props.type,
       trackData?.id,
-      trackData?.uri.length,
     ]
   );
 
@@ -288,6 +289,7 @@ export default function TrackItem(
             onClick={openTrackAlbum}
             src={albumData?.cover || AppConstants.DEFAULT_COVER_ART}
             className="track-album-cover"
+            alt="cover"
           />
         )}
         <span data--info="text">

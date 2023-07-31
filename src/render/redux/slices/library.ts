@@ -1,5 +1,5 @@
 import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { toast } from "react-hot-toast";
+import { toast } from "react-toastify";
 import AppConstants from "@root/data";
 import {
   AppSliceState,
@@ -111,7 +111,7 @@ const initLibrary = createAsyncThunk<
               .map((a) => {
                 const update: IPlaylistUpdate = {
                   id: a.id,
-                  position: playlistsIndex[a.id]?.position || -1,
+                  position: playlistsIndex[a.id]?.position ?? -1,
                 };
 
                 return update;
@@ -134,11 +134,20 @@ const initLibrary = createAsyncThunk<
         }
       }),
       {
-        loading: "Loading Library",
-        success: (data) => {
-          return `Loaded ${Object.keys(data[0]).length} Playlists, and ${
-            Object.keys(data[2]).length
-          } Albums`;
+        pending: "Loading Library",
+        success: {
+          render(props) {
+            if (!props.data) {
+              return "Loading Error";
+            }
+            const data = props.data;
+
+            return `Loaded ${Object.keys(data[0]).length} Playlists, and ${
+              Object.keys(data[2]).length
+            } Albums`;
+          },
+          type: "success",
+          delay: 2000,
         },
         error: "Error Loading Library",
       }
@@ -336,11 +345,20 @@ const importIntoLibrary = createAsyncThunk<
         }
       ),
       {
-        loading: "Importing",
-        success: (data) => {
-          return `Imported ${
-            Object.keys(data.playlists).length
-          } Playlists, and ${Object.keys(data.albums).length} Albums`;
+        pending: "Importing",
+        success: {
+          render(props) {
+            if (!props.data) {
+              return "Loading Error";
+            }
+            const data = props.data;
+
+            return `Imported ${
+              Object.keys(data.playlists).length
+            } Playlists, and ${Object.keys(data.albums).length} Albums`;
+          },
+          type: "success",
+          delay: 2000,
         },
         error: "Import Error",
       }
@@ -526,7 +544,6 @@ export const LibarySlice = createSlice({
     builder.addCase(removeAlbums.fulfilled, (state, action) => {
       action.payload.forEach((item) => {
         if (state.data.albums[item]) {
-          
           delete state.data.albums[item];
         }
       });

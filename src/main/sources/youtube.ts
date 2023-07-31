@@ -1,16 +1,31 @@
-import { ITrackResource, TrackStreamInfo } from "@types";
-import MusiczMediaSource from "./source";
+import {
+  IAlbum,
+  IArtist,
+  ITrack,
+  ITrackResource,
+  KeyValuePair,
+  TrackStreamInfo,
+} from "@types";
+import MusiczMediaSource, { IResourceImportFromSource } from "./source";
 import YTMusic from "ytmusic-api";
-import axios from "axios";
-import { getInfo } from "ytdl-core";
-import { startStopProfile } from "../../global-utils";
+import { video_info } from "play-dl";
+import {
+  getTracks,
+  tCreateAlbums,
+  tCreateArtists,
+  tCreateTracks,
+} from "../sqlite";
 
-const MAX_URI_TRIES = 10;
+export interface IYoutubeImportCache {
+  tracks: KeyValuePair<string, ITrack>;
+  albums: KeyValuePair<string, IAlbum>;
+  artists: KeyValuePair<string, IArtist>;
+}
 
 export default class YoutubeSource extends MusiczMediaSource {
   ytMusicApi: YTMusic = new YTMusic();
   static YOUTUBE_URI_REGEX =
-    /https:\/\/(?:[a-z]+.)?youtube.[a-z]+\/watch\?v=.*/;
+    /https:\/\/(?:[a-z]+.)?youtube.[a-z]+\/watch\?v=([a-zA-Z0-9]+)/;
 
   override get id() {
     return "youtube";
@@ -20,78 +35,116 @@ export default class YoutubeSource extends MusiczMediaSource {
     return true;
   }
 
+  override get bSupportsImports() {
+    return true;
+  }
+
   override async load() {
     await this.ytMusicApi.initialize();
+    // console.log("Search result",await searchMusics('The Glory Days by Tia'))
   }
 
-  override canFetchStream(track: ITrackResource) {
-    return (
-      track.uri.length === 0 ||
-      track.uri.match(YoutubeSource.YOUTUBE_URI_REGEX) !== null
-    );
+  override canFetchStream(resource: ITrackResource) {
+    return YoutubeSource.YOUTUBE_URI_REGEX.test(resource.uri);
   }
 
-  override async fetchStream(
-    track: ITrackResource
-  ): Promise<TrackStreamInfo | null> {
-    if (track.uri.length === 0) {
-      console.log(track.uri);
-      startStopProfile("video uri search");
-      const searchTerm = `${track.title} ${track.artists.join(" ")}, ${
-        track.album
-      }`.trim();
+  public override async import(
+    items: string[]
+  ): Promise<IResourceImportFromSource> {
+    const remaining = [];
 
-      console.log(searchTerm);
+    const importCache: IYoutubeImportCache = {
+      albums: {},
+      artists: {},
+      tracks: {},
+    };
 
-      const results = await this.ytMusicApi.searchSongs(searchTerm);
-
-      track.uri = `https://youtube.com/watch?v=${results[0]?.videoId || ""}`;
-
-      console.info("Used", searchTerm, "To fetch", track.uri);
-
-      startStopProfile("video uri search");
-    }
-
-    console.info("Using uri", track.uri);
-
-    let tries = 0;
-    startStopProfile("uri stream fetch");
-    while (tries < MAX_URI_TRIES) {
+    for (const item of items) {
       try {
-        startStopProfile("uri stream info");
-        const urlInfo = await getInfo(track.uri);
-        startStopProfile("uri stream info");
+        if (YoutubeSource.YOUTUBE_URI_REGEX.test(item)) {
+          const match = item.match(YoutubeSource.YOUTUBE_URI_REGEX);
+          if (match) {
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            const [_, videoId] = match;
+            if (!videoId)
+              throw new Error(`Could not get video id from [${videoId}]`);
+            const result = await this.ytMusicApi.getSong(videoId);
 
-        startStopProfile("uri stream verification");
-        const possibleFormat = urlInfo.formats.filter(
-          (a) => a.hasAudio && a.audioQuality === "AUDIO_QUALITY_MEDIUM"
-        )[0];
+            const artists: IArtist[] = result.artists.map((a) => {
+              return {
+                name: a.name,
+                id: this.toSourceId(`artist-${a.artistId}`),
+              };
+            });
 
-        if (!possibleFormat?.url) {
-          throw new Error("Try again my guy");
+            const album: IAlbum = {
+              title: result.name,
+              cover: result.thumbnails[result.thumbnails.length - 1]?.url ?? "",
+              released: -1,
+              artists: artists.map((a) => a.id),
+              genre: "",
+              tracks: [this.toSourceId(`track-${videoId}`)],
+              id: this.toSourceId(`unknown-${videoId}`),
+            };
+
+            const track: ITrack = {
+              title: result.name,
+              album: album.id,
+              uri: `https://youtube.com/watch?v=${result.videoId}`,
+              artists: artists.map((a) => a.id),
+              duration: result.duration * 1000,
+              position: 0,
+              id: this.toSourceId(`track-${videoId}`),
+            };
+
+            importCache.tracks[track.id] = track;
+            artists.forEach((a) => {
+              importCache.artists[a.id] = a;
+            });
+
+            importCache.albums[album.id] = album;
+            continue;
+          }
         }
-
-        await axios.head(possibleFormat.url);
-        startStopProfile("uri stream verification");
-        startStopProfile("uri stream fetch");
-        return {
-          uri: possibleFormat.url,
-          duration: parseInt(possibleFormat.approxDurationMs || "0", 10),
-          from: track.uri,
-        };
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      } catch (error: any) {
-        console.log(`Error fetching stream for ${track.uri}:\n`, error.message);
-        console.log(
-          `Attempting to fetch new stream url. [${
-            tries + 1
-          }/${MAX_URI_TRIES} Attempts]`
-        );
-        startStopProfile("uri stream verification");
-        tries++;
+      } catch (error) {
+        console.error(error);
       }
+
+      remaining.push(item);
     }
 
-    return null;
+    tCreateArtists(Object.values(importCache.artists));
+    tCreateAlbums(Object.values(importCache.albums));
+    tCreateTracks(Object.values(importCache.tracks));
+
+    return { ...importCache, playlists: {}, remaining: remaining };
+  }
+
+  // private async fetchStreamInternal( resource: ITrackResource,maxTries: number,tries= 0): Promise<TrackStreamInfo | null> {
+
+  //   if(tries === maxTries){
+  //     return null
+  //   }
+  //   }
+  override async fetchStream(
+    resource: ITrackResource
+  ): Promise<TrackStreamInfo | null> {
+    const trackInfo = getTracks([resource.id])[0];
+
+    if (!trackInfo) return null;
+
+    const uri = trackInfo?.uri;
+
+    const i = await video_info(uri);
+
+    const selected = i.format[i.format.length - 1];
+
+    if (!(selected && selected.url && selected.approxDurationMs)) return null;
+
+    return {
+      uri: selected.url,
+      duration: i.video_details.durationInSec * 1000,
+      from: this.id,
+    };
   }
 }

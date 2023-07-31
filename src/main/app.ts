@@ -15,16 +15,29 @@ import {
   tUpdatePlaylists,
   tRemovePlaylists,
   tRemoveAlbums,
+  getRandomPlaylistCovers,
 } from "./sqlite";
-import { ipcMain } from "../ipc";
+import { ipcMain } from "../ipc-impl";
 import DiscordRichPrecenceClient from "discord-rich-presence";
-import { getLocalLibraryFilesPath, isDev } from "./utils";
+import {
+  getCoversPath,
+  getLocalLibraryFilesPath,
+  hash,
+  isDev,
+} from "./utils";
 import { platform } from "os";
+import path from "path";
 import YoutubeSource from "./sources/youtube";
 import SpotifySource from "./sources/spotify";
 import { SourceManager } from "./sources/source";
-import path from "path";
 import LocalSource from "./sources/local";
+// import multer from "multer";
+import express from "express";
+import { AddressInfo } from "net";
+import multer from "multer";
+import * as fsAsync from "fs/promises";
+import * as fsSync from "fs";
+import axios from "axios";
 
 declare const MAIN_WINDOW_WEBPACK_ENTRY: string;
 declare const MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY: string;
@@ -39,6 +52,102 @@ mediaSources.useSource(new YoutubeSource());
 if (require("electron-squirrel-startup")) {
   app.quit();
 }
+const upload = multer({ dest: "uploads/" });
+const expressApp = express();
+
+// const upload = multer();
+
+expressApp.get(/file\/(.*)/, async (req, res) => {
+  try {
+    res.sendFile(req.params["0"] as string);
+  } catch (error) {
+    res.sendStatus(404);
+  }
+});
+
+expressApp.get(/covers\/(.*)/, async (req, res) => {
+  const coverUrl = req.params["0"] as string;
+
+  const coverHash = hash(coverUrl);
+
+  const filePath = path.join(getCoversPath(), `${coverHash}.png`);
+
+  try {
+    await fsAsync.access(filePath);
+    res.sendFile(filePath);
+    console.log("Sending cached for", filePath, coverHash);
+    return;
+  } catch (error) {
+    console.error(`File not Cached`, coverUrl, coverHash);
+  }
+
+  try {
+    if (coverUrl.startsWith("http")) {
+      const stream = await axios
+        .get(coverUrl, {
+          responseType: "stream",
+        })
+        .then((a) => a.data);
+
+      if (stream) {
+        const fileStream = fsSync.createWriteStream(filePath);
+        res.setHeader("Content-Type", "image/png");
+        stream.pipe(fileStream);
+        stream.pipe(res);
+      } else {
+        res.sendStatus(404);
+      }
+    } else {
+      res.sendStatus(404);
+    }
+  } catch (error) {
+    console.error("FAILED TO PROXY DATA", error);
+    res.sendStatus(404);
+  }
+});
+
+expressApp.put(/covers/, upload.single("cover"), async (req, res) => {
+  try {
+    const file = req.file;
+
+    if (!file || !file.path) {
+      res.sendStatus(404);
+      return;
+    }
+
+    const coverHash = hash(file.originalname);
+
+    const filePath = path.join(getCoversPath(), `${coverHash}.png`);
+
+    await fsAsync.copyFile(path.resolve(file.path), filePath);
+
+    res.sendStatus(200)
+    return;
+  } catch (error) {
+    console.error(error);
+    res.sendStatus(500);
+  }
+});
+
+// expressApp.put(/bg\/(.*)/, upload.single("file"), async (req, res) => {
+//   const file = req.file;
+//   if (!file) {
+//     res.sendStatus(400);
+//     return;
+//   }
+
+//   try {
+//     await writeFile(
+//       path.join(cachedBackgroundsPath, `${req.params["0"]}.png`),
+//       file.buffer
+//     );
+
+//     res.sendStatus(200);
+//   } catch (error) {
+//     console.error(error);
+//     res.sendStatus(500);
+//   }
+// });
 
 let mainWindow: BrowserWindow | null = null;
 
@@ -79,22 +188,27 @@ const createWindow = (): void => {
     frame: platform() !== "win32",
   });
 
+  mainWindow.webContents.on("did-finish-load", () => {
+    if (mainWindow && isDev()) {
+      mainWindow.webContents.openDevTools();
+    }
+  });
   // and load the index.html of the app.
   mainWindow.loadURL(MAIN_WINDOW_WEBPACK_ENTRY);
-
-  if (isDev()) {
-    // Open the DevTools.
-    console.log("Opening dev tools");
-    mainWindow.webContents.openDevTools();
-  }
 };
 
 app.commandLine.appendSwitch("js-flags", "--max-old-space-size=8192");
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
-app.on("ready", createWindow);
-
+const server = expressApp.listen(() => {
+  app.whenReady().then(() => {
+    createWindow();
+  });
+  global.SERVER_ADDRESS = `http://localhost:${
+    (server.address() as AddressInfo).port
+  }`;
+});
 // Quit when all windows are closed, except on macOS. There, it's common
 // for applications and their menu bar to stay active until the user quits
 // explicitly with Cmd + Q.
@@ -121,7 +235,7 @@ async function onAppUrl(url: string) {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [_, type, payload] = match;
     if (type === "import") {
-      ipcMain.sendToRenderer(mainWindow, "onImport", payload || "");
+      ipcMain.send(mainWindow, "onImport", payload || "");
     }
     console.log("Recieved app url", type, payload);
   }
@@ -160,15 +274,15 @@ if (process.defaultApp) {
 // In this file you can include the rest of your app's specific main process
 // code. You can also put them in separate files and import them here.
 
-ipcMain.onFromRenderer("getPreloadPath", (e) => {
-  e.replySync(MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY);
+ipcMain.handle("getPreloadPath", () => {
+  return MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY;
 });
 
-ipcMain.onFromRenderer("getTrackStreamInfo", async (ev, track) => {
-  ev.reply(await mediaSources.getStream(track));
+ipcMain.handle("getTrackStreamInfo", async (track) => {
+  return await mediaSources.getStream(track);
 });
 
-ipcMain.onFromRenderer("windowMaximize", (ev) => {
+ipcMain.handle("windowMaximize", () => {
   if (mainWindow) {
     console.log(mainWindow.isMaximizable(), mainWindow.isMaximized());
     if (mainWindow.isMaximized()) {
@@ -177,29 +291,26 @@ ipcMain.onFromRenderer("windowMaximize", (ev) => {
       mainWindow.maximize();
     }
   }
-  ev.reply();
 });
 
-ipcMain.onFromRenderer("windowMinimize", (ev) => {
+ipcMain.handle("windowMinimize", () => {
   mainWindow?.minimize();
-  ev.reply();
 });
 
-ipcMain.onFromRenderer("windowClose", (ev) => {
+ipcMain.handle("windowClose", () => {
   mainWindow?.close();
-  ev.reply();
 });
 
-ipcMain.onFromRenderer("getAlbums", (e, ids) => {
-  e.reply(getAlbums(ids || []));
+ipcMain.handle("getAlbums", async (ids) => {
+  return getAlbums(ids || []);
 });
 
-ipcMain.onFromRenderer("getPlaylists", (ev) => {
+ipcMain.handle("getPlaylists", async () => {
   const playlists = getPlaylists();
-  ev.reply(playlists);
+  return playlists;
 });
 
-ipcMain.onFromRenderer("createPlaylists", (ev, data) => {
+ipcMain.handle("createPlaylists", async (data) => {
   const newData: IPlaylist[] = data.map((a) => ({
     ...a,
     id: a.id || makeLocalId("playlist"),
@@ -208,14 +319,14 @@ ipcMain.onFromRenderer("createPlaylists", (ev, data) => {
 
   tCreatePlaylists.deferred(newData);
 
-  ev.reply(newData.map((a) => ({ ...a, tracks: [] })));
+  return newData.map((a) => ({ ...a, tracks: [] }));
 });
 
-ipcMain.onFromRenderer("getAlbumTracks", (e, album) => {
-  e.reply(getAlbumTracks(album));
+ipcMain.handle("getAlbumTracks", async (album) => {
+  return getAlbumTracks(album);
 });
 
-ipcMain.onFromRenderer("updateDiscordPresence", async (ev, track) => {
+ipcMain.handle("updateDiscordPresence", async (track) => {
   if (!PRESENCE_CLIENT) PRESENCE_CLIENT = await connectRichPrecence();
 
   try {
@@ -232,79 +343,79 @@ ipcMain.onFromRenderer("updateDiscordPresence", async (ev, track) => {
   } catch (error) {
     console.error(error);
   }
-  ev.reply();
 });
 
-ipcMain.onFromRenderer("clearDiscordPresence", async (ev) => {
+ipcMain.handle("clearDiscordPresence", async () => {
   if (!PRESENCE_CLIENT) PRESENCE_CLIENT = await connectRichPrecence();
   PRESENCE_CLIENT?.updatePresence({});
-  ev.reply();
+  console.log("Returned");
 });
 
-ipcMain.onFromRenderer("getLibraryPath", (ev) => {
-  ev.reply(getLocalLibraryFilesPath());
+ipcMain.handle("getLibraryPath", async () => {
+  return getLocalLibraryFilesPath();
 });
 
-ipcMain.onFromRenderer("getTracks", (ev, ids) => {
-  ev.reply(getTracks(ids || []));
+ipcMain.handle("getTracks", async (ids) => {
+  return getTracks(ids || []);
 });
 
-ipcMain.onFromRenderer("getArtists", async (ev, ids) => {
-  ev.reply(getArtists(ids || []));
+ipcMain.handle("getArtists", async (ids) => {
+  return getArtists(ids || []);
 });
 
-ipcMain.onFromRenderer("getPlatform", (ev) => {
-  ev.replySync(platform());
+ipcMain.handle("getPlatform", () => {
+  return platform();
 });
 
-ipcMain.onFromRenderer("importItems", async (ev, uri) => {
-  ev.reply(await mediaSources.import(uri));
+ipcMain.handle("importItems", async (uri) => {
+  return await mediaSources.import(uri);
 });
 
-ipcMain.onFromRenderer("isDev", (ev) => {
-  ev.replySync(isDev());
+ipcMain.handle("isDev", () => {
+  return isDev();
 });
 
-ipcMain.onFromRenderer("getLikedTracks", (ev) => {
-  ev.reply(getLikedTracks());
+ipcMain.handle("getLikedTracks", async () => {
+  return getLikedTracks();
 });
 
-ipcMain.onFromRenderer("addLikedTracks", (ev, tracks) => {
+ipcMain.handle("addLikedTracks", async (tracks) => {
   tAddLikedTracks(tracks);
-  ev.reply();
 });
 
-ipcMain.onFromRenderer("removeLikedTracks", (ev, tracks) => {
+ipcMain.handle("removeLikedTracks", async (tracks) => {
   tRemoveLikedTracks(tracks);
-  ev.reply();
 });
 
-ipcMain.onFromRenderer("updatePlaylists", (ev, items) => {
+ipcMain.handle("updatePlaylists", async (items) => {
   tUpdatePlaylists(items);
-  ev.reply();
 });
 
-ipcMain.onFromRenderer("updateTracks", (ev, items) => {
+ipcMain.handle("updateTracks", async (items) => {
   tUpdateTracks(items);
-  ev.reply();
 });
 
-ipcMain.onFromRenderer("removePlaylists", (ev, items) => {
+ipcMain.handle("removePlaylists", async (items) => {
   tRemovePlaylists(items);
-  ev.reply();
 });
 
-ipcMain.onFromRenderer("removeAlbums", (ev, items) => {
+ipcMain.handle("removeAlbums", async (items) => {
   tRemoveAlbums(items);
-  ev.reply();
 });
 
-ipcMain.onFromRenderer("downloadTrack", async (ev, trackId, streamInfo) => {
+ipcMain.handle("downloadTrack", async (trackId, streamInfo) => {
   const localSource = mediaSources.getSource<LocalSource>("local");
   if (!localSource) {
-    ev.reply(false);
-    return;
+    return false;
   }
 
-  ev.reply(await localSource.downloadTrack(trackId, streamInfo));
+  return await localSource.downloadTrack(trackId, streamInfo);
+});
+
+ipcMain.handle("getServerAddress", () => {
+  return SERVER_ADDRESS;
+});
+
+ipcMain.handle("getRandomPlaylistCovers", async (playlistId) => {
+  return getRandomPlaylistCovers(playlistId);
 });

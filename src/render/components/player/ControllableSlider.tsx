@@ -73,6 +73,7 @@ export default function ControllableSlider(props: ControllableSliderProps) {
   const percentProgress = `${((actualCurrentValue / max) * 100).toFixed(2)}%`;
   return (
     <div
+      aria-label='slider'
       ref={(r) => {
         elementRef.current = r;
       }}

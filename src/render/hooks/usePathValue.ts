@@ -1,7 +1,9 @@
+import { useCallback } from "react";
 import useAppNavigation from "./useAppNavigation";
+import { getPathData } from "@redux/exports";
 
-export default function usePathValue<T = any>(key: string, defaultValue: T) {
-  const { pathData, setPathData } = useAppNavigation();
+export default function usePathValue<T = unknown>(key: string, defaultValue: T) {
+  const { setPathData } = useAppNavigation();
 
   //   const onWindowResize = useCallback(() => {
   //     STORED_SCROLL = {};
@@ -12,8 +14,16 @@ export default function usePathValue<T = any>(key: string, defaultValue: T) {
   //     return () => window.removeEventListener("resize", onWindowResize);
   //   }, [onWindowResize]);
 
+  const updateValue = useCallback((update: T)=>{
+    setPathData({ ...getPathData(), [key]: update })
+  },[key, setPathData])
+
+  const getValue = useCallback(()=>{
+    return (getPathData()[key] as T) || defaultValue
+  },[defaultValue, key])
+
   return {
-    updateValue: (update: T) => setPathData({ ...pathData, [key]: update }),
-    getValue: () => (pathData[key] as T) || defaultValue,
+    updateValue,
+    getValue,
   };
 }

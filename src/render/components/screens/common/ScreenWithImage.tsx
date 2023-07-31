@@ -1,24 +1,13 @@
-import React, { PropsWithChildren, useCallback, useEffect, useId } from "react";
+import React, { PropsWithChildren, useCallback } from "react";
 import { imageColor } from "@render/utils";
-import usePathValue from "@hooks/usePathValue";
 
 export type ScreenWithImageProps = PropsWithChildren<{
   cover: string;
   header?: React.ReactNode;
+  onImageContextMenu?: React.MouseEventHandler<HTMLImageElement>
+  onImageLoadError?: React.ReactEventHandler<HTMLImageElement>
 }>;
 export default function ScreenWithImage(props: ScreenWithImageProps) {
-  const { getValue: getScroll, updateValue: updateScroll } = usePathValue(
-    "scroll",
-    0
-  );
-
-  const scrollId = useId();
-
-  useEffect(() => {
-    document.getElementById(scrollId)?.scroll({
-      top: getScroll(),
-    });
-  }, [getScroll, scrollId]);
 
   const onImageLoaded = useCallback(
     (ev: React.SyntheticEvent<HTMLImageElement>) => {
@@ -46,19 +35,19 @@ export default function ScreenWithImage(props: ScreenWithImageProps) {
       </div>
       <div className="screen-fg">
         <div className="screen-top">
-          <img src={props.cover} onLoad={onImageLoaded} />
+          <img src={props.cover} onLoad={onImageLoaded} alt="Cover" onContextMenu={props.onImageContextMenu} onError={props.onImageLoadError}/>
           <span>{props.header}</span>
         </div>
-
-        <div
+        {props.children}
+        {/* <div
           id={scrollId}
           onScroll={(e) => {
             updateScroll(e.currentTarget.scrollTop);
           }}
           className="screen-content"
         >
-          {props.children}
-        </div>
+          
+        </div> */}
       </div>
     </div>
   );

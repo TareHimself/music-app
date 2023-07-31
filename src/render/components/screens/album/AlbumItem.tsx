@@ -7,7 +7,7 @@ import {
   useAppDispatch,
   useAppSelector,
 } from "@redux/exports";
-import { generateContextMenu } from "@render/utils";
+import { generateContextMenu, getCoverUrl } from "@render/utils";
 import { HiPlay } from "react-icons/hi2";
 import useAppNavigation from "@hooks/useAppNavigation";
 export default function AlbumItem({ data }: { data?: IAlbum }) {
@@ -106,9 +106,10 @@ export default function AlbumItem({ data }: { data?: IAlbum }) {
       <div className="album-item-image-wrapper">
         <HiPlay onClick={addAlbumToQueue} />
         <img
-          src={data.cover}
+          src={getCoverUrl(data.cover)}
           onClick={selectAlbum}
           onContextMenu={makeContextMenu}
+          alt={`album cover for ${data.title}`}
         />
       </div>
       <span>

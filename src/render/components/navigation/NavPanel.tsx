@@ -15,7 +15,7 @@ import NavItem from "./NavItem";
 import useAppNavigation from "@hooks/useAppNavigation";
 import { IoChevronBack, IoChevronForward } from "react-icons/io5";
 import { generateContextMenu } from "@render/utils";
-import { toast } from "react-hot-toast";
+import { toast } from "react-toastify";
 import { IPlaylist } from "@types";
 
 export default function NavPanel() {
@@ -178,12 +178,18 @@ export default function NavPanel() {
                         break;
                       case "rename":
                         {
-                          toast.error(AppConstants.UNAVAILABLE_FEATURE_ERROR);
+                          toast.error(AppConstants.UNAVAILABLE_FEATURE_ERROR, {
+                            pauseOnFocusLoss: false,
+                            pauseOnHover: false,
+                          });
                         }
                         break;
                       case "export":
                         {
-                          toast.error(AppConstants.UNAVAILABLE_FEATURE_ERROR);
+                          toast.error(AppConstants.UNAVAILABLE_FEATURE_ERROR, {
+                            pauseOnFocusLoss: false,
+                            pauseOnHover: false,
+                          });
                         }
                         break;
                     }

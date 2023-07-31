@@ -1,5 +1,6 @@
-import { toast } from "react-hot-toast";
+import { toast } from "react-toastify";
 import { ITrackResource, TrackStreamInfo } from "@types";
+
 const EXPIRE_AT_REGEX = /expire=([0-9]+)/;
 type StreamFetchCallback = (success: TrackStreamInfo | undefined) => void;
 
@@ -16,17 +17,32 @@ class StreamManagerClass {
   streamsBeingFetched: Set<string> = new Set();
   streamFetchCallbacks: Map<string, StreamFetchCallback[]> = new Map();
   context: AudioContext;
-
+  // https://stackoverflow.com/a/29589128
+  noTrackSrc =
+    "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAVFYAAFRWAAABAAgAZGF0YQAAAAA=";
   constructor() {
     this.player.volume = 0.1;
+    this.player.crossOrigin = "anonymous";
+    this.player.src = this.noTrackSrc;
     this.context = new AudioContext();
     this.context
       .createMediaElementSource(this.player)
       .connect(this.context.destination);
+    this.player.addEventListener("error", (err) => {
+      console.log(err.message);
+      window.utils.skipCurrentTrack();
+    });
   }
 
   get deviceId() {
     return this.context.sinkId;
+  }
+
+  stopPlayer() {
+    this.player.pause();
+    this.player.currentTime = 0;
+
+    this.player.src = this.noTrackSrc;
   }
 
   setMediaDevice(deviceId: string) {
@@ -57,51 +73,65 @@ class StreamManagerClass {
   }
 
   async getStreamInfo(track: ITrackResource, forceNew = false) {
-    this.streamsBeingFetched.add(track.id);
     if (!forceNew && this.cache.has(track.id)) {
       this.streamsBeingFetched.delete(track.id);
       return this.cache.get(track.id);
     }
-    const toastId = toast.loading(`Fetching Stream`);
-    const streamInfo = await window.bridge.getTrackStreamInfo(track);
 
-    if (!streamInfo) {
-      toast.error("Failed To Fetch Stream", {
-        id: toastId,
-      });
-      this.streamsBeingFetched.delete(track.id);
-      this.notifyStreamFetched(track.id, undefined);
-      return undefined;
-    }
+    return await toast.promise(
+      new Promise<undefined | TrackStreamInfo>((res) => {
+        this.streamsBeingFetched.add(track.id);
 
-    const expireAtStr = (streamInfo.uri.match(EXPIRE_AT_REGEX) || [])[1];
-    if (expireAtStr) {
-      const expire_in =
-        parseInt(expireAtStr) * 1000 - Date.now() - streamInfo.duration * -2;
-      this.cache.set(track.id, streamInfo);
+        window.bridge.getTrackStreamInfo(track).then((streamInfo) => {
+          if (!streamInfo) {
+            this.streamsBeingFetched.delete(track.id);
+            this.notifyStreamFetched(track.id, undefined);
+            res(undefined);
+            return;
+          }
 
-      setTimeout(
-        (cache: Map<string, TrackStreamInfo>) => {
-          cache.delete(track.id);
+          const expireAtStr = (streamInfo.uri.match(EXPIRE_AT_REGEX) || [])[1];
+          if (expireAtStr) {
+            const expire_in =
+              parseInt(expireAtStr) * 1000 -
+              Date.now() -
+              streamInfo.duration * -2;
+            this.cache.set(track.id, streamInfo);
+
+            setTimeout(
+              (cache: Map<string, TrackStreamInfo>) => {
+                cache.delete(track.id);
+              },
+              expire_in,
+              this.cache
+            );
+
+            this.streamsBeingFetched.delete(track.id);
+          }
+
+          this.notifyStreamFetched(track.id, streamInfo);
+          res(streamInfo);
+        });
+      }),
+      {
+        pending: "Fetching Stream",
+        success: {
+          render(props) {
+            if (!props.data) {
+              props.toastProps.type = 'error'
+              return "Failed To Fetch Stream";
+            }
+
+            props.toastProps.type = 'success'
+            return `Fetched Stream`;
+          },
         },
-        expire_in,
-        this.cache
-      );
-
-      this.streamsBeingFetched.delete(track.id);
-      toast.success("Fetched Stream", {
-        id: toastId,
-      });
-      this.notifyStreamFetched(track.id, streamInfo);
-      return streamInfo;
-    }
-
-    toast.error("Failed To Fetch Stream", {
-      id: toastId,
-    });
-
-    this.notifyStreamFetched(track.id, undefined);
-    return undefined;
+        error: {
+          render: "Error Fetching Stream",
+          type: 'error'
+        },
+      }
+    );
   }
 
   has(trackId: string) {
@@ -126,7 +156,13 @@ class StreamManagerClass {
     }
 
     this.player.setAttribute("track", trackId);
-    this.player.src = this.cache.get(trackId)?.uri || "";
+    const toPlay = this.cache.get(trackId)?.uri || "";
+
+    if (toPlay.trim().length <= 0) {
+      return false;
+    }
+
+    this.player.src = toPlay;
 
     try {
       await this.player.play();

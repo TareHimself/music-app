@@ -14,9 +14,9 @@ import { importIntoLibrary, initLibrary } from "@redux/exports";
 import { store } from "./redux/store";
 import { MemoryRouter } from "react-router-dom";
 import { ContextMenu } from "@components/context-menu/exports";
-import { Toaster } from "react-hot-toast";
 import AppConstants from "@root/data";
-
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 export function RootApp() {
   const dispatch = useAppDispatch();
 
@@ -37,9 +37,9 @@ export function RootApp() {
   }, [dispatch]);
 
   useEffect(() => {
-    window.bridge.onFromMain("onImport", onImportFromMain);
+    window.bridge.on("onImport", onImportFromMain);
     return () => {
-      window.bridge.offFromMain("onImport", onImportFromMain);
+      window.bridge.off("onImport", onImportFromMain);
     };
   }, [onImportFromMain]);
 
@@ -107,21 +107,22 @@ if (container) {
   root.render(
     <MemoryRouter>
       <Provider store={store}>
-        <Toaster
+        <ToastContainer
           position="bottom-center"
-          reverseOrder={true}
-          containerStyle={{
-            bottom: 100,
-          }}
-          toastOptions={{
-            style: {
-              borderRadius: "10px",
-              background: "#333",
-              color: "#fff",
-            },
+          autoClose={2000}
+          hideProgressBar={false}
+          newestOnTop
+          limit={5}
+          closeOnClick={false}
+          rtl={false}
+          pauseOnFocusLoss={false}
+          draggable={false}
+          pauseOnHover={false}
+          theme="dark"
+          style={{
+            bottom: "100px",
           }}
         />
-
         <RootApp />
       </Provider>
     </MemoryRouter>

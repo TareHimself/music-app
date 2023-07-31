@@ -1,12 +1,14 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { INavigationHistory, NavigationSliceState } from "@types";
 
+// To prevent state updates every time we set it
+let pathData: INavigationHistory["data"] = {}
+
 const initialState: NavigationSliceState = {
   status: "loaded",
   data: {
     backwardHistory: [],
     forwardHistory: [],
-    pathData: {},
     contextMenu: null,
   },
 };
@@ -25,9 +27,6 @@ export const NavigationSlice = createSlice({
     ) => {
       state.data.backwardHistory = action.payload;
     },
-    setPathData: (state, action: PayloadAction<INavigationHistory["data"]>) => {
-      state.data.pathData = action.payload;
-    },
     setContextMenu: (
       state,
       action: PayloadAction<NavigationSliceState["data"]["contextMenu"]>
@@ -37,10 +36,17 @@ export const NavigationSlice = createSlice({
   },
 });
 
+export function setPathData(data: INavigationHistory["data"]){
+  pathData = data
+}
+
+export function getPathData(){
+  return pathData
+}
+
 export const {
   setForwardHistory,
   setBackwardHistory,
   setContextMenu,
-  setPathData,
 } = NavigationSlice.actions;
 export default NavigationSlice.reducer;

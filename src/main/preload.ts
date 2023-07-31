@@ -1,96 +1,88 @@
 // See the Electron documentation for details on how to use preload scripts:
 // https://www.electronjs.org/docs/latest/tutorial/process-model#preload-scripts
-import { ipcRenderer } from "../ipc";
-import { IRendererToMainEvents, ITrack } from "@types";
+import { ipcRenderer } from "../ipc-impl";
 
-ipcRenderer.exposeApi<IRendererToMainEvents>("bridge", {
-  getPreloadPath: () => ipcRenderer.sendToMainSync("getPreloadPath"),
+const exposedApi = ipcRenderer.exposeApi("bridge", {
+  getPreloadPath: () => ipcRenderer.sendSync("getPreloadPath"),
   windowMinimize: () => {
-    ipcRenderer.sendToMainAsync("windowMinimize");
+    ipcRenderer.sendAsync("windowMinimize");
   },
   windowMaximize: () => {
-    ipcRenderer.sendToMainAsync("windowMaximize");
+    ipcRenderer.sendAsync("windowMaximize");
   },
   windowClose: () => {
-    ipcRenderer.sendToMainAsync("windowClose");
-  },
-  toStreamUrl: (uri: string) => {
-    return ipcRenderer.sendToMainAsync("toStreamUrl", uri);
-  },
-  searchForStream: (search: string) => {
-    return ipcRenderer.sendToMainAsync("searchForStream", search);
+    ipcRenderer.sendAsync("windowClose");
   },
   getPlaylists: () => {
-    return ipcRenderer.sendToMainAsync("getPlaylists");
+    return ipcRenderer.sendAsync("getPlaylists");
   },
   getAlbums: (albums) => {
-    return ipcRenderer.sendToMainAsync("getAlbums", albums);
+    return ipcRenderer.sendAsync("getAlbums", albums);
   },
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  getTracks: (trackIds): Promise<ITrack[]> => {
-    return ipcRenderer.sendToMainAsync("getTracks", trackIds);
+  getTracks: (trackIds) => {
+    return ipcRenderer.sendAsync("getTracks", trackIds);
   },
   createPlaylists(data) {
-    return ipcRenderer.sendToMainAsync("createPlaylists", data);
+    return ipcRenderer.sendAsync("createPlaylists", data);
   },
-  getTrackStreamInfo: (track) => {
-    return ipcRenderer.sendToMainAsync("getTrackStreamInfo", track);
-  },
+  getTrackStreamInfo: (...args) =>
+    ipcRenderer.sendAsync("getTrackStreamInfo", ...args),
   getAlbumTracks: (album) => {
-    return ipcRenderer.sendToMainAsync("getAlbumTracks", album);
+    return ipcRenderer.sendAsync("getAlbumTracks", album);
   },
   updateDiscordPresence: (data) => {
-    return ipcRenderer.sendToMainAsync("updateDiscordPresence", data);
+    return ipcRenderer.sendAsync("updateDiscordPresence", data);
   },
   clearDiscordPresence: () => {
-    return ipcRenderer.sendToMainAsync("clearDiscordPresence");
+    return ipcRenderer.sendAsync("clearDiscordPresence");
   },
   getLibraryPath: () => {
-    return ipcRenderer.sendToMainAsync("getLibraryPath");
+    return ipcRenderer.sendAsync("getLibraryPath");
   },
   importItems: (uris) => {
-    return ipcRenderer.sendToMainAsync("importItems", uris);
+    return ipcRenderer.sendAsync("importItems", uris);
   },
   getArtists: (ids) => {
-    return ipcRenderer.sendToMainAsync("getArtists", ids);
+    return ipcRenderer.sendAsync("getArtists", ids);
   },
   getPlatform: () => {
-    return ipcRenderer.sendToMainSync("getPlatform");
+    return ipcRenderer.sendSync("getPlatform");
   },
   isDev: () => {
-    return ipcRenderer.sendToMainSync("isDev");
+    return ipcRenderer.sendSync("isDev");
   },
   getLikedTracks: () => {
-    return ipcRenderer.sendToMainAsync("getLikedTracks");
+    return ipcRenderer.sendAsync("getLikedTracks");
   },
   addLikedTracks: (tracks) => {
-    return ipcRenderer.sendToMainAsync("addLikedTracks", tracks);
+    return ipcRenderer.sendAsync("addLikedTracks", tracks);
   },
   removeLikedTracks: (tracks) => {
-    return ipcRenderer.sendToMainAsync("removeLikedTracks", tracks);
-  },
-  onFromMain: (event, callback) => {
-    ipcRenderer.onFromMain(event, callback);
-  },
-  onceFromMain: (event, callback) => {
-    ipcRenderer.onceFromMain(event, callback);
-  },
-  offFromMain: (event, callback) => {
-    ipcRenderer.offFromMain(event, callback);
+    return ipcRenderer.sendAsync("removeLikedTracks", tracks);
   },
   updatePlaylists: (items) => {
-    return ipcRenderer.sendToMainAsync("updatePlaylists", items);
+    return ipcRenderer.sendAsync("updatePlaylists", items);
   },
   updateTracks: (items) => {
-    return ipcRenderer.sendToMainAsync("updateTracks", items);
+    return ipcRenderer.sendAsync("updateTracks", items);
   },
   removePlaylists: (items) => {
-    return ipcRenderer.sendToMainAsync("removePlaylists", items);
+    return ipcRenderer.sendAsync("removePlaylists", items);
   },
   removeAlbums: (items) => {
-    return ipcRenderer.sendToMainAsync("removeAlbums", items);
+    return ipcRenderer.sendAsync("removeAlbums", items);
   },
   downloadTrack: (...args) => {
-    return ipcRenderer.sendToMainAsync("downloadTrack", ...args);
+    return ipcRenderer.sendAsync("downloadTrack", ...args);
   },
+  getServerAddress: (...args) =>
+    ipcRenderer.sendSync("getServerAddress", ...args),
+  getRandomPlaylistCovers: (...args) =>
+    ipcRenderer.sendAsync("getRandomPlaylistCovers", ...args),
 });
+
+declare global {
+  interface Window {
+    bridge: typeof exposedApi;
+  }
+}

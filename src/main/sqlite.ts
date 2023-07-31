@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
+// eslint-disable-next-line import/no-named-as-default
 import Database from "better-sqlite3";
 import {
   IAlbum,
@@ -234,6 +235,9 @@ const RemoveAlbumStatement = db.prepare<{
   id: string;
 }>("DELETE FROM albums WHERE id=@id");
 
+const GetRandomPlaylistCoversStatement = db.prepare<{id: string;}>(`SELECT cover from albums WHERE id in (Select DISTINCT album FROM tracks WHERE id in (SELECT track FROM playlist_tracks WHERE playlist=@id)) ORDER BY RANDOM() LIMIT 4`)
+const GetRandomLikedCoversStatement = db.prepare(`SELECT cover from albums WHERE id in (Select DISTINCT album FROM tracks WHERE id in (SELECT track FROM liked_tracks)) ORDER BY RANDOM() LIMIT 4`)
+
 // const tInsertArtists = db.transaction((artists: ILocalArtist[]) => {});
 
 // const tInsertTracks = db.transaction((artists: ILocalTrack[]) => {});
@@ -352,9 +356,7 @@ export const tRemovePlaylists: Database.Transaction<(items: string[]) => void> =
 
 export const tRemoveAlbums: Database.Transaction<(items: string[]) => void> =
   db.transaction((items: string[]) => {
-    for (let i = 0; i < items.length; i++) {
-      const current = items[i];
-      if (!current) continue;
+    for (const current of items) {
       RemoveAlbumTracksInPlaylistsStatement.run({
         id: current,
       });
@@ -383,7 +385,6 @@ export const tRemoveAlbums: Database.Transaction<(items: string[]) => void> =
 
 export function getPlaylists(): IPlaylist[] {
   const playlists = GetPlaylistsStatement.all() as IPlaylistRaw[];
-
   return playlists.map((p) => {
     const tracks = GetPlaylistsTracksStatement.all({
       id: p.id,
@@ -487,4 +488,14 @@ export function getTracks(ids: string[] = []): ITrack[] {
 
 export function getLikedTracks(): ILikedTrack[] {
   return GetLikedTracksStatement.all() as ILikedTrack[];
+}
+
+export function getRandomPlaylistCovers(playlistId?: string){
+  if(playlistId){
+    return (GetRandomPlaylistCoversStatement.all({
+      id: playlistId
+    }) as {cover: string}[]).map(a => a.cover) as string[]
+  }
+
+  return (GetRandomLikedCoversStatement.all() as {cover: string}[]).map(a => a.cover) as string[]
 }
