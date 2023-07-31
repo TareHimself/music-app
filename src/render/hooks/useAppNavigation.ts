@@ -7,25 +7,24 @@ import {
   useAppDispatch,
   useAppSelector,
   setPathData as reduxSetPathData,
+  getPathData,
 } from "@redux/exports";
 
 export default function useAppNavigation() {
   const location = useLocation().pathname;
   const naviagteOriginal = useNavigate();
-
-  const [forwardHistory, backwardHistory, pathData] = useAppSelector((s) => [
+  const [forwardHistory, backwardHistory] = useAppSelector((s) => [
     s.navigation.data.forwardHistory,
     s.navigation.data.backwardHistory,
-    s.navigation.data.pathData,
   ]);
 
   const dispatch = useAppDispatch();
 
   const setPathData = useCallback(
     (data: INavigationHistory["data"]) => {
-      dispatch(reduxSetPathData(data));
+      reduxSetPathData(data);
     },
-    [dispatch]
+    []
   );
   const navigateToHistory = useCallback(
     (data: INavigationHistory) => {
@@ -44,7 +43,7 @@ export default function useAppNavigation() {
       dispatch(
         setBackwardHistory([
           ...backwardHistory,
-          { path: location, data: pathData },
+          { path: location, data: getPathData() },
         ])
       );
 
@@ -53,21 +52,14 @@ export default function useAppNavigation() {
         data: {},
       });
     },
-    [
-      backwardHistory,
-      dispatch,
-      forwardHistory,
-      location,
-      navigateToHistory,
-      pathData,
-    ]
+    [backwardHistory, dispatch, forwardHistory, location, navigateToHistory]
   );
 
   const navigateBackward = useCallback(() => {
     if (backwardHistory.length) {
       dispatch(
         setForwardHistory([
-          { path: location, data: pathData },
+          { path: location, data: getPathData() },
           ...forwardHistory,
         ])
       );
@@ -77,21 +69,14 @@ export default function useAppNavigation() {
 
       dispatch(setBackwardHistory(newBackward));
     }
-  }, [
-    backwardHistory,
-    dispatch,
-    forwardHistory,
-    location,
-    navigateToHistory,
-    pathData,
-  ]);
+  }, [backwardHistory, dispatch, forwardHistory, location, navigateToHistory]);
 
   const navigateForward = useCallback(() => {
     if (forwardHistory.length) {
       dispatch(
         setBackwardHistory([
           ...backwardHistory,
-          { path: location, data: pathData },
+          { path: location, data: getPathData() },
         ])
       );
       const newForward = [...forwardHistory];
@@ -99,21 +84,13 @@ export default function useAppNavigation() {
       if (to) navigateToHistory(to);
       dispatch(setForwardHistory(newForward));
     }
-  }, [
-    backwardHistory,
-    dispatch,
-    forwardHistory,
-    location,
-    navigateToHistory,
-    pathData,
-  ]);
+  }, [backwardHistory, dispatch, forwardHistory, location, navigateToHistory]);
   return {
     navigate,
     navigateBackward,
     navigateForward,
     backwardHistory,
     forwardHistory,
-    setPathData,
-    pathData,
+    setPathData
   };
 }

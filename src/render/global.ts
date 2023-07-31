@@ -118,12 +118,13 @@ class StreamManagerClass {
         success: {
           render(props) {
             if (!props.data) {
+              props.toastProps.type = 'error'
               return "Failed To Fetch Stream";
             }
 
+            props.toastProps.type = 'success'
             return `Fetched Stream`;
           },
-          type: "success",
         },
         error: {
           render: "Error Fetching Stream",

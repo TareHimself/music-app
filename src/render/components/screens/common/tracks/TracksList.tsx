@@ -2,6 +2,8 @@ import { IPlaylistTrack } from "@types";
 import TrackItem from "./TrackItem";
 import { FixedSizeList as List, ListChildComponentProps } from "react-window";
 import AutoSizer from "react-virtualized-auto-sizer";
+import usePathValue from "@hooks/usePathValue";
+import { useRef } from "react";
 
 type TrackListConainerProps = ListChildComponentProps<
   string[] | IPlaylistTrack[]
@@ -30,6 +32,14 @@ function TrackContainer(props: TrackListConainerProps) {
 export default function TracksList(props: {
   data: string[] | IPlaylistTrack[];
 }) {
+
+  const { getValue: getScroll, updateValue: updateScroll } = usePathValue(
+    "scroll",
+    0
+  );
+
+  const scrollElementRef = useRef<List | null>(null);
+  
   if (props.data.length === 0) {
     return <div className="track-items"></div>;
   } else {
@@ -39,6 +49,17 @@ export default function TracksList(props: {
           {({ height, width }) => {
             return (
               <List
+              ref={(r)=>{
+                if(!scrollElementRef.current && r){
+                  r.scrollTo(getScroll())
+                }
+                scrollElementRef.current = r
+              }}
+              onScroll={(p) => {
+                if (scrollElementRef.current) {
+                  updateScroll(p.scrollOffset);
+                }
+              }}
                 style={{
                   ...({
                     overflow: "overlay",

@@ -546,7 +546,6 @@ p {
 .track-item {
   display: flex;
   position: relative;
-  width: 100%;
   height: var(--track-item-height);
   border-radius: 20px;
   transition: all 0.5s ease-in-out;
@@ -555,6 +554,8 @@ p {
   padding-right: calc(var(--track-item-height) / 3);
   padding-left: var(--track-item-height);
   margin: 5px 0;
+  width: calc(100% - 20px);
+  margin-right: 20px;
 }
 
 .track-item:hover {
@@ -637,14 +638,11 @@ p {
 }
 
 .library-content {
-  --item-width: 200px;
-  --item-gap: 20px;
-  --row-width: 400px;
   display: flex;
-  flex-wrap: wrap;
-  gap: var(--item-gap);
-  justify-content: center;
-  align-content: flex-start;
+  flex: 1 1 0%;
+  width: calc(100% - (var(--main-border-size) * 2));
+  box-sizing: border-box;
+  margin: 0px var(--main-border-size);
 }
 
 .library-content-row {

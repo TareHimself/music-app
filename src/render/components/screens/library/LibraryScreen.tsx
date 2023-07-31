@@ -1,6 +1,5 @@
 import React, {
   useCallback,
-  useEffect,
   useMemo,
   useRef,
   useState,
@@ -14,15 +13,13 @@ import { BiSearchAlt } from "react-icons/bi";
 import { FixedSizeList as List, ListChildComponentProps } from "react-window";
 import AlbumItem from "../album/AlbumItem";
 import usePathValue from "@hooks/usePathValue";
+import AutoSizer from "react-virtualized-auto-sizer";
 
 const itemWidth = 200;
 const itemGap = 40;
 const ALBUM_ITEM_HEIGHT = 248;
 const NAV_PANEL_WIDTH = 210;
-const SCREEN_PADDING = 30;
-const SEARCH_BAR_HEIGHT = 40;
-const SEARCH_BAR_PADDING = 30;
-const PLAYER_FRAME_HEIGHT = 85;
+
 type AlbumListProps = {
   items: IAlbum[];
   expected: number;
@@ -102,12 +99,14 @@ export default function LibraryScreen() {
 
   const [currentSearch, setCurrentSearch] = useState(getSearchValue());
 
-  const { width, height } = useWindowDimensions();
+  const { width } = useWindowDimensions();
 
   const scrollElementRef = useRef<List | null>(null);
 
+  const cssContentMargin = useMemo(() => 20,[])
+
   const maxPerRow =
-    Math.floor((width - NAV_PANEL_WIDTH) / (itemWidth + itemGap)) || 1;
+    Math.floor(((width - NAV_PANEL_WIDTH) - (cssContentMargin * 2)) / (itemWidth + itemGap)) || 1;
 
   const buildRows = useCallback(
     (items: IAlbum[], maxPerRow: number, query = "") => {
@@ -159,10 +158,7 @@ export default function LibraryScreen() {
     ""
   );
 
-  useEffect(() => {
-    scrollElementRef.current?.scrollTo(getScroll());
-  }, [getScroll]);
-
+  
   return (
     <div className="screen" id="library">
       <div className="library-search">
@@ -174,8 +170,18 @@ export default function LibraryScreen() {
           onChange={(c) => updateSearch(c.currentTarget.value)}
         />
       </div>
-      <List
-        ref={(r) => (scrollElementRef.current = r)}
+      <div className="library-content">
+      <AutoSizer>
+          {({ height, width }) => {
+            return (
+              <List
+        ref={(r) => {
+
+          if(!scrollElementRef.current && r){
+            r.scrollTo(getScroll())
+          }
+          scrollElementRef.current = r
+        }}
         onScroll={(p) => {
           if (scrollElementRef.current) {
             updateScroll(p.scrollOffset);
@@ -186,22 +192,25 @@ export default function LibraryScreen() {
             "--row-width": `${maxPerRow * (itemWidth + itemGap)}px`,
             "--item-width": `${itemWidth}px`,
             "--item-gap": `${itemGap}px`,
-            overflow: "overlay",
+            overflowY: "overlay" as string,
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
           } as React.CSSProperties),
         }}
         itemCount={rowsData.length}
         itemSize={ALBUM_ITEM_HEIGHT + 40}
-        height={
-          height -
-          PLAYER_FRAME_HEIGHT -
-          (SCREEN_PADDING * 2 + SEARCH_BAR_HEIGHT + SEARCH_BAR_PADDING)
-        }
-        width={"100%"}
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        height={height!}
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        width={width!}
         itemData={rowsData}
       >
         {AlbumListContainer}
       </List>
+            );
+          }}
+        </AutoSizer>
+      </div>
+      
       {/* <div
         
         id={scrollId}

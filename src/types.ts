@@ -344,7 +344,6 @@ export interface INavigationHistory {
 export type NavigationSliceState = GenericSliceData<{
   backwardHistory: INavigationHistory[];
   forwardHistory: INavigationHistory[];
-  pathData: INavigationHistory["data"];
   contextMenu: IActiveContextMenu | null;
 }>;
 
