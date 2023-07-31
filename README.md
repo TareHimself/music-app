@@ -8,7 +8,7 @@ Was bored and wanted to try making one
 
 - Electron for cross-platform development
 - React for front-end
-- youtubedl for track streaming
+- play-dl for track streaming
 - Spotify for metadata
 - Sqlite3 to store library data
 
