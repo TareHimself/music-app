@@ -96,13 +96,12 @@ export function arrayToIndex<T extends KeyValuePair<string, any>, K = T>(
 
 const COVERS_GENERATED: Record<string, string> = {};
 
-export function getCachedCover(playlistId: string){
-  console.log("Getting cover for id",playlistId)
-  return COVERS_GENERATED[playlistId]
+export function getCachedCover(playlistId: string) {
+  console.log("Getting cover for id", playlistId);
+  return COVERS_GENERATED[playlistId];
 }
 
-export async function generateNewCover(covers: string[]){
-
+export async function generateNewCover(filename: string, covers: string[]) {
   if (covers.length < 4) {
     while (covers.length < 4) {
       covers.push(...covers.slice(0, 1));
@@ -110,12 +109,13 @@ export async function generateNewCover(covers: string[]){
   }
 
   const canvas = document.createElement("canvas");
-  canvas.width = 2000;
-  canvas.height = 2000;
+  const coverSize = 1024;
+  canvas.width = coverSize;
+  canvas.height = coverSize;
   const canvasCtx = canvas.getContext("2d");
   if (!canvasCtx) {
     canvas.remove();
-    return undefined;
+    return;
   }
 
   const canvasHalfWidth = canvas.width / 2;
@@ -124,7 +124,7 @@ export async function generateNewCover(covers: string[]){
     const targetCover = covers[i];
     if (!targetCover) {
       canvas.remove();
-      return undefined;
+      return;
     }
 
     const imageToDraw = await new Promise<HTMLImageElement>((res) => {
@@ -142,60 +142,78 @@ export async function generateNewCover(covers: string[]){
       y: canvasHalfHeight * (i < 2 ? 0 : 1),
     };
 
-    const imageWidth = imageToDraw.naturalWidth
-    const imageHeight = imageToDraw.naturalHeight
+    const imageWidth = imageToDraw.naturalWidth;
+    const imageHeight = imageToDraw.naturalHeight;
 
-    const imageMinDim = Math.min(imageHeight,imageWidth)
+    const imageMinDim = Math.min(imageHeight, imageWidth);
 
-    const imageDrawDx = imageWidth === imageMinDim ? 0 : (imageWidth - imageMinDim) / 2
-    const imageDrawDy = imageHeight === imageMinDim ? 0 : (imageHeight - imageMinDim) / 2
+    const imageDrawDx =
+      imageWidth === imageMinDim ? 0 : (imageWidth - imageMinDim) / 2;
+    const imageDrawDy =
+      imageHeight === imageMinDim ? 0 : (imageHeight - imageMinDim) / 2;
 
-    canvasCtx.drawImage(imageToDraw,imageDrawDx,imageDrawDy,imageMinDim,imageMinDim,canvasDrawLocation.x,canvasDrawLocation.y,canvasHalfWidth,canvasHalfHeight)
+    canvasCtx.drawImage(
+      imageToDraw,
+      imageDrawDx,
+      imageDrawDy,
+      imageMinDim,
+      imageMinDim,
+      canvasDrawLocation.x,
+      canvasDrawLocation.y,
+      canvasHalfWidth,
+      canvasHalfHeight
+    );
   }
 
-  const result = await new Promise<string | undefined>((res)=>{
-    canvas.toBlob((data)=> {
-      if(data){
-        res(URL.createObjectURL(data))
+  await new Promise<number | undefined>((res) => {
+    canvas.toBlob((data) => {
+      if (data) {
+        const form = new FormData();
+        form.append("cover", data, filename);
+        fetch(`${window.bridge.getServerAddress()}/covers`, {
+          method: "PUT",
+          body: form,
+        })
+          .then((a) => a.status)
+          .then(res);
+      } else {
+        res(undefined);
       }
-      else
-      {
-        res(undefined)
-      }
-    })
-  })
+    });
+  });
 
   canvas.remove();
 
-  return result;
+  return
 }
 export async function generatePlaylistCover(
-  playlistId: string,forceNew = false
+  playlistId: string
 ): Promise<string | undefined> {
-  if (!forceNew && COVERS_GENERATED[playlistId]) {
-    return COVERS_GENERATED[playlistId];
-  }
-
   const covers = await window.bridge.getRandomPlaylistCovers(
     playlistId === "liked" ? undefined : playlistId
   );
 
   if (covers.length === 0) {
-    return undefined;
+    return ;
   }
 
-  const generated = await toast.promise(generateNewCover(covers),{
+  await toast.promise(generateNewCover(playlistId, covers), {
     pending: "Generating Cover",
     success: "Cover Generated",
     error: {
-      type: 'error',
-      render: "Failed To Generate Cover"
-    }
-  })
+      type: "error",
+      render: "Failed To Generate Cover",
+    },
+  });
 
-  if(generated){
-    COVERS_GENERATED[playlistId] = generated
+  return;
+}
+
+
+export function getCoverUrl(cover?: string,useFallback = true){
+  if (!cover && useFallback) {
+    return AppConstants.DEFAULT_COVER_ART;
   }
 
-  return generated
+  return `${window.bridge.getServerAddress()}/covers/${cover}`;
 }

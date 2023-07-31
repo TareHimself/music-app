@@ -4,6 +4,7 @@ import ScreenWithImage from "../common/ScreenWithImage";
 import { FixedSizeList as List, ListChildComponentProps } from "react-window";
 import { useMemo } from "react";
 import AutoSizer from "react-virtualized-auto-sizer";
+import { getCoverUrl } from "@render/utils";
 
 export type IQueuedItem = {
   track: string;
@@ -63,7 +64,7 @@ export default function QueueScreen() {
   }
 
   return (
-    <ScreenWithImage cover={album?.cover || ""}>
+    <ScreenWithImage cover={ getCoverUrl(album?.cover)}>
       <div className="track-items">
         <AutoSizer>
           {({ height, width }) => {

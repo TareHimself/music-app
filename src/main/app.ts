@@ -19,7 +19,12 @@ import {
 } from "./sqlite";
 import { ipcMain } from "../ipc-impl";
 import DiscordRichPrecenceClient from "discord-rich-presence";
-import { getLocalLibraryFilesPath, isDev } from "./utils";
+import {
+  getCoversPath,
+  getLocalLibraryFilesPath,
+  hash,
+  isDev,
+} from "./utils";
 import { platform } from "os";
 import path from "path";
 import YoutubeSource from "./sources/youtube";
@@ -29,6 +34,10 @@ import LocalSource from "./sources/local";
 // import multer from "multer";
 import express from "express";
 import { AddressInfo } from "net";
+import multer from "multer";
+import * as fsAsync from "fs/promises";
+import * as fsSync from "fs";
+import axios from "axios";
 
 declare const MAIN_WINDOW_WEBPACK_ENTRY: string;
 declare const MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY: string;
@@ -43,7 +52,7 @@ mediaSources.useSource(new YoutubeSource());
 if (require("electron-squirrel-startup")) {
   app.quit();
 }
-
+const upload = multer({ dest: "uploads/" });
 const expressApp = express();
 
 // const upload = multer();
@@ -53,6 +62,70 @@ expressApp.get(/file\/(.*)/, async (req, res) => {
     res.sendFile(req.params["0"] as string);
   } catch (error) {
     res.sendStatus(404);
+  }
+});
+
+expressApp.get(/covers\/(.*)/, async (req, res) => {
+  const coverUrl = req.params["0"] as string;
+
+  const coverHash = hash(coverUrl);
+
+  const filePath = path.join(getCoversPath(), `${coverHash}.png`);
+
+  try {
+    await fsAsync.access(filePath);
+    res.sendFile(filePath);
+    console.log("Sending cached for", filePath, coverHash);
+    return;
+  } catch (error) {
+    console.error(`File not Cached`, coverUrl, coverHash);
+  }
+
+  try {
+    if (coverUrl.startsWith("http")) {
+      const stream = await axios
+        .get(coverUrl, {
+          responseType: "stream",
+        })
+        .then((a) => a.data);
+
+      if (stream) {
+        const fileStream = fsSync.createWriteStream(filePath);
+        res.setHeader("Content-Type", "image/png");
+        stream.pipe(fileStream);
+        stream.pipe(res);
+      } else {
+        res.sendStatus(404);
+      }
+    } else {
+      res.sendStatus(404);
+    }
+  } catch (error) {
+    console.error("FAILED TO PROXY DATA", error);
+    res.sendStatus(404);
+  }
+});
+
+expressApp.put(/covers/, upload.single("cover"), async (req, res) => {
+  try {
+    const file = req.file;
+
+    if (!file || !file.path) {
+      res.sendStatus(404);
+      return;
+    }
+
+    const coverHash = hash(file.originalname);
+
+    const filePath = path.join(getCoversPath(), `${coverHash}.png`);
+
+    await fsAsync.copyFile(path.resolve(file.path), filePath);
+
+    res.sendStatus(200)
+    return;
+  } catch (error) {
+    console.error(error);
+    res.sendStatus(500);
   }
 });
 
@@ -275,7 +348,7 @@ ipcMain.handle("updateDiscordPresence", async (track) => {
 ipcMain.handle("clearDiscordPresence", async () => {
   if (!PRESENCE_CLIENT) PRESENCE_CLIENT = await connectRichPrecence();
   PRESENCE_CLIENT?.updatePresence({});
-  console.log("Returned")
+  console.log("Returned");
 });
 
 ipcMain.handle("getLibraryPath", async () => {

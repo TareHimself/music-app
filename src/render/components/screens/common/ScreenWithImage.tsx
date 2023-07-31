@@ -6,6 +6,7 @@ export type ScreenWithImageProps = PropsWithChildren<{
   cover: string;
   header?: React.ReactNode;
   onImageContextMenu?: React.MouseEventHandler<HTMLImageElement>
+  onImageLoadError?: React.ReactEventHandler<HTMLImageElement>
 }>;
 export default function ScreenWithImage(props: ScreenWithImageProps) {
   const { getValue: getScroll, updateValue: updateScroll } = usePathValue(
@@ -47,7 +48,7 @@ export default function ScreenWithImage(props: ScreenWithImageProps) {
       </div>
       <div className="screen-fg">
         <div className="screen-top">
-          <img src={props.cover} onLoad={onImageLoaded} alt="Cover" onContextMenu={props.onImageContextMenu}/>
+          <img src={props.cover} onLoad={onImageLoaded} alt="Cover" onContextMenu={props.onImageContextMenu} onError={props.onImageLoadError}/>
           <span>{props.header}</span>
         </div>
 

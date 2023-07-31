@@ -8,7 +8,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   generateContextMenu,
   generatePlaylistCover,
-  getCachedCover,
+  getCoverUrl,
 } from "@render/utils";
 
 export default function PlaylistScreen() {
@@ -17,6 +17,8 @@ export default function PlaylistScreen() {
   const playlistId = useMemo(() => {
     return location.pathname.split("/")[2] || "";
   }, [location.pathname]);
+
+  
 
   const playlist = useAppSelector((s) => {
     if (playlistId === "liked") {
@@ -30,30 +32,28 @@ export default function PlaylistScreen() {
       return fakePlaylist;
     }
 
-    return s.library.data.playlists[playlistId];
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    return s.library.data.playlists[playlistId]!;
   });
-
 
   const [isGeneratingCover, setIsGeneratingCover] = useState(false);
 
-  const playlistCover = useMemo(() => {
-    if(isGeneratingCover)
-    {
-      return AppConstants.DEFAULT_COVER_ART
-    }
+  const [playlistCover,setPlaylistCover] = useState(getCoverUrl(playlist.cover || playlist.id,false))
 
-    return playlist?.cover || getCachedCover(playlistId)
-  },[playlist?.cover, playlistId,isGeneratingCover])
+  const generateCover = useCallback(async ()=>{
+    setIsGeneratingCover(true);
+    setPlaylistCover(AppConstants.DEFAULT_COVER_ART)
+    generatePlaylistCover(playlistId).then(() => {
+      setPlaylistCover(getCoverUrl(playlist.id,false) + `?timestamp=${Date.now()}`)
+      setIsGeneratingCover(false);
+    });
+  },[playlist.id, playlistId])
 
 
-  useEffect(() => {
-    if (!playlistCover && !isGeneratingCover) {
-      setIsGeneratingCover(true);
-      generatePlaylistCover(playlistId).then(() => {
-        setIsGeneratingCover(false);
-      });
-    }
-  }, [isGeneratingCover, playlistCover, playlistId]);
+  useEffect(()=>{
+    const newCover = getCoverUrl(playlist.cover || playlist.id,false)
+    setPlaylistCover(newCover)
+  },[playlist.cover, playlist.id, playlistId])
 
   const makeCoverContextMenu = useCallback(
     (e: React.MouseEvent) => {
@@ -67,22 +67,24 @@ export default function PlaylistScreen() {
         ],
         callback: (s) => {
           if (s === "regenerate") {
-            setIsGeneratingCover(true);
-            generatePlaylistCover(playlistId,true).then(() => {
-              setIsGeneratingCover(false);
-            });
+            generateCover()
           }
         },
       });
     },
-    [playlistId]
+    [generateCover]
   );
 
   return (
     <ScreenWithImage
-      cover={playlistCover  || AppConstants.DEFAULT_COVER_ART}
+      cover={playlistCover ?? AppConstants.DEFAULT_COVER_ART}
       header={<h1>{playlist?.title}</h1>}
       onImageContextMenu={makeCoverContextMenu}
+      onImageLoadError={() => {
+        if(!isGeneratingCover){
+          generateCover()
+        }
+      }}
     >
       <TracksList data={playlist?.tracks || []} />
     </ScreenWithImage>
