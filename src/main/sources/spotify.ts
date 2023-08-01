@@ -28,6 +28,7 @@ import MusiczMediaSource from "./source";
 import YTMusic from "ytmusic-api";
 import { video_info } from "play-dl";
 import axios from "axios";
+import { searchForTrackUsingBrowserWindow } from "../utils";
 // import leven from "leven";
 
 const SPOTIFY_URI_REGEX = /open.spotify.com\/([a-z]+)\/([a-zA-Z0-9]+)/;
@@ -441,6 +442,9 @@ export default class SpotifySource extends MusiczMediaSource {
     return { ...cache, remaining: remaining };
   }
 
+  
+
+
   public override async fetchStream(
     resource: ITrackResource
   ): Promise<TrackStreamInfo | null> {
@@ -460,16 +464,9 @@ export default class SpotifySource extends MusiczMediaSource {
 
     const searchTerm =
       `${trackInfo.title} ${artistsString}`.trim();
-    const result = await this.ytMusicApi
-      .searchVideos(searchTerm)
-      .then((a) => a[0]);
 
-    if(!result?.videoId)
-    {
-      throw new Error("Track could not be found on youtube music using term:" + searchTerm)
-    }
+    const uri = `https://youtube.com/watch?v=${await searchForTrackUsingBrowserWindow(searchTerm)}`;
 
-    const uri = `https://youtube.com/watch?v=${result.videoId || ""}`;
     console.info("Used", searchTerm, "To fetch", uri);
 
     const i = await video_info(uri);
