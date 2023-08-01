@@ -1,4 +1,5 @@
-import { toast } from "react-toastify";
+// import { toast } from "react-toastify";
+import { toast } from '@render/react-basic-toast'
 import { ITrackResource, TrackStreamInfo } from "@types";
 
 const EXPIRE_AT_REGEX = /expire=([0-9]+)/;
@@ -115,21 +116,14 @@ class StreamManagerClass {
       }),
       {
         pending: "Fetching Stream",
-        success: {
-          render(props) {
-            if (!props.data) {
-              props.toastProps.type = 'error'
-              return "Failed To Fetch Stream";
-            }
+        success:(props) => {
+          if (!props.data) {
+            return "Failed To Fetch Stream";
+          }
 
-            props.toastProps.type = 'success'
-            return `Fetched Stream`;
-          },
+          return `Fetched Stream`;
         },
-        error: {
-          render: "Error Fetching Stream",
-          type: 'error'
-        },
+        error: () => "Error Fetching Stream",
       }
     );
   }

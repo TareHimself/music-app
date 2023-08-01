@@ -15,8 +15,10 @@ import { store } from "./redux/store";
 import { MemoryRouter } from "react-router-dom";
 import { ContextMenu } from "@components/context-menu/exports";
 import AppConstants from "@root/data";
-import { ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+// import { ToastContainer } from "react-toastify";
+import { ToastContainer, toast} from './react-basic-toast'
+import './react-basic-toast/styles.css'
+// import "react-toastify/dist/ReactToastify.css";
 export function RootApp() {
   const dispatch = useAppDispatch();
 
@@ -102,12 +104,14 @@ if (container) {
         })
       );
     },
+    toast: toast
   };
 
   root.render(
     <MemoryRouter>
       <Provider store={store}>
-        <ToastContainer
+        
+        {/* <ToastContainer
           position="bottom-center"
           autoClose={2000}
           hideProgressBar={false}
@@ -120,10 +124,11 @@ if (container) {
           pauseOnHover={false}
           theme="dark"
           style={{
-            bottom: "100px",
+            
           }}
-        />
+        /> */}
         <RootApp />
+        <ToastContainer style={{bottom: "100px"}}/>
       </Provider>
     </MemoryRouter>
   );

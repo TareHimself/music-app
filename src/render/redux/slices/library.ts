@@ -1,5 +1,6 @@
 import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { toast } from "react-toastify";
+// import { toast } from "react-toastify";
+import { toast } from '@render/react-basic-toast'
 import AppConstants from "@root/data";
 import {
   AppSliceState,
@@ -135,8 +136,7 @@ const initLibrary = createAsyncThunk<
       }),
       {
         pending: "Loading Library",
-        success: {
-          render(props) {
+        success: (props) => {
             if (!props.data) {
               return "Loading Error";
             }
@@ -145,9 +145,6 @@ const initLibrary = createAsyncThunk<
             return `Loaded ${Object.keys(data[0]).length} Playlists, and ${
               Object.keys(data[2]).length
             } Albums`;
-          },
-          type: "success",
-          delay: 2000,
         },
         error: "Error Loading Library",
       }
@@ -346,21 +343,18 @@ const importIntoLibrary = createAsyncThunk<
       ),
       {
         pending: "Importing",
-        success: {
-          render(props) {
-            if (!props.data) {
-              return "Loading Error";
-            }
-            const data = props.data;
+        success: (props) => {
+          if (!props.data) {
+            return "Loading Error";
+          }
+          const data = props.data;
 
-            return `Imported ${
-              Object.keys(data.playlists).length
-            } Playlists, and ${Object.keys(data.albums).length} Albums`;
-          },
-          type: "success",
-          delay: 2000,
+          return `Imported ${
+            Object.keys(data.playlists).length
+          } Playlists, and ${Object.keys(data.albums).length} Albums`;
         },
         error: "Import Error",
+        
       }
     );
 

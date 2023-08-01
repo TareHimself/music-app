@@ -215,6 +215,7 @@ export interface IGlobalUtils {
   queueTracks: (data: IQueueTracksEventDataWithReplace) => void;
   skipToQueueIndex: (data: number) => void;
   skipCurrentTrack: () => void;
+  toast: typeof import('@render/react-basic-toast').toast
 }
 
 export type SearchReturnType<T extends ESearchFilter> =

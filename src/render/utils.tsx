@@ -6,7 +6,7 @@ import {
   Vector2,
 } from "@types";
 import ColorThief from "colorthief";
-import { toast } from "react-toastify";
+import { toast } from "@render/react-basic-toast";
 
 export const imageColor = new ColorThief();
 
@@ -200,10 +200,7 @@ export async function generatePlaylistCover(
   await toast.promise(generateNewCover(playlistId, covers), {
     pending: "Generating Cover",
     success: "Cover Generated",
-    error: {
-      type: "error",
-      render: "Failed To Generate Cover",
-    },
+    error: "Failed To Generate Cover",
   });
 
   return;
