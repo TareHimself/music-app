@@ -248,7 +248,7 @@ export interface ISpotifyAlbumNoTracks {
   artists: ISpotifyArtist[];
   images: ISpotifyAlbumCovers[];
   name: string;
-  release_date: string;
+  release_date?: string;
   release_date_precision: string;
 }
 

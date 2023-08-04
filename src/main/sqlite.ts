@@ -35,7 +35,8 @@ const DATABASE_DIR = getDatabasePath();
 
 export const SQLITE_ARRAY_SEPERATOR = ",";
 
-const db = Database(DATABASE_DIR);
+export const db = Database(DATABASE_DIR);
+
 console.log("Using Database At:", DATABASE_DIR);
 const TABLE_STATEMENTS = [
   `
@@ -160,7 +161,7 @@ const GetPlaylistsStatement = db.prepare(
 );
 
 const GetPlaylistsTracksStatement = db.prepare<{ id: string }>(
-  "SELECT track, timestamp FROM playlist_tracks WHERE playlist=@id ORDER BY timestamp DESC"
+  "SELECT track, timestamp FROM playlist_tracks WHERE playlist=@id ORDER BY timestamp ASC" // ASC for parity with spotify
 );
 
 const GetArtistsStatement = db.prepare("SELECT * FROM artists");
@@ -186,7 +187,7 @@ const GetTrackArtistsStatement = db.prepare<{ track: string }>(
 );
 
 const GetLikedTracksStatement = db.prepare(
-  "SELECT * FROM liked_tracks ORDER BY timestamp DESC"
+  "SELECT * FROM liked_tracks ORDER BY timestamp ASC" // ASC for parity with spotify
 );
 
 const InsertLikedTrackStatement = db.prepare<ILikedTrack>(

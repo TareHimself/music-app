@@ -23,8 +23,8 @@ export default function Screens() {
         element={<VisualizerScreen />}
       />
       <Route path={AppConstants.NAV_ID_QUEUE} element={<QueueScreen />} />
-      <Route path={"/playlist/*"} element={<PlaylistScreen />} />
-      <Route path={"/album/*"} element={<AlbumScreen />} />
+      <Route path={"/playlist/:playlistId"} element={<PlaylistScreen />} />
+      <Route path={"/album/:albumId"} element={<AlbumScreen />} />
     </Routes>
   );
 }

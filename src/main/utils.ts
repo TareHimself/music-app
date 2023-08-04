@@ -4,6 +4,10 @@ import { existsSync, mkdirSync } from "fs";
 import { xxh64 } from "@node-rs/xxhash";
 
 export function isDev() {
+  if (getTestId() !== undefined) {
+    return false;
+  }
+
   return !app.isPackaged;
 }
 
@@ -12,10 +16,42 @@ export const importDynamic = new Function(
   "return import(modulePath)"
 );
 
+let testId: string | undefined = undefined;
+let hasCheckedForTestId = false;
+export function getTestId() {
+  if (hasCheckedForTestId) {
+    return testId;
+  }
+
+  hasCheckedForTestId = true;
+  testId = process.argv
+    .find((a) => a.includes("--testId="))
+    ?.replace("--testId=", "")
+    .replaceAll("-", "");
+  return testId;
+}
+
 export function getLibraryDataPath() {
-  return path.resolve(isDev()
-  ? path.join("./", "debug", "data")
-  : path.join(app.getPath("music"), "musicz", "data"))
+  const testId = getTestId();
+
+  if (testId !== undefined) {
+    return path.join("./", "testing", testId);
+  }
+
+  return path.resolve(
+    isDev()
+      ? path.join("./", "debug", "data")
+      : path.join(app.getPath("music"), "musicz", "data")
+  );
+}
+
+export function getLogDir() {
+  const testId = getTestId();
+  if (testId) {
+    return path.join(getLibraryDataPath(), "logs");
+  }
+
+  return path.resolve("./", "logs");
 }
 
 export function getCoversPath() {
@@ -46,8 +82,7 @@ export function hash(data: string) {
   return newHash;
 }
 
-export async function searchForTrackUsingBrowserWindow(term: string){
-
+export async function searchForTrackUsingBrowserWindow(term: string) {
   //https://stackoverflow.com/questions/5525071/how-to-wait-until-an-element-exists
   const waitForElementScript = `function waitForElm(selector) {
     return new Promise(resolve => {
@@ -67,43 +102,45 @@ export async function searchForTrackUsingBrowserWindow(term: string){
             subtree: true
         });
     });
-}`
+}`;
 
-  const browserWindow = await new Promise<BrowserWindow>((res)=>{
-    const isDebug = false
+  const browserWindow = await new Promise<BrowserWindow>((res) => {
+    const isDebug = isDev();
     const browser = new BrowserWindow({
-      show: isDebug
-    })
+      show: isDebug,
+    });
 
-    browser.webContents.once('did-navigate',()=>{
-      res(browser)
-    })
+    browser.webContents.once("did-navigate", () => {
+      res(browser);
+    });
 
-    browser.webContents.setAudioMuted(!isDebug)
-    browser.loadURL(`https://music.youtube.com/search?q=${term}`)
-  })
+    browser.webContents.setAudioMuted(!isDebug);
+    browser.loadURL(`https://music.youtube.com/search?q=${term}`);
+  });
 
-
-  const nextPageUrl: string = await browserWindow.webContents.executeJavaScript(`${waitForElementScript}\nwaitForElm('.metadata-container.style-scope.ytmusic-card-shelf-renderer a').then(a => a.href)`)
-  if(nextPageUrl.includes('v=')){
-    browserWindow.close()
-    return nextPageUrl.split('v=')[1]?.split('&')[0]
+  const nextPageUrl: string = await browserWindow.webContents.executeJavaScript(
+    `${waitForElementScript}\nwaitForElm('.metadata-container.style-scope.ytmusic-card-shelf-renderer a').then(a => a.href)`
+  );
+  if (nextPageUrl.includes("v=")) {
+    browserWindow.close();
+    return nextPageUrl.split("v=")[1]?.split("&")[0];
   }
-  
 
-  await new Promise<void>((res)=>{
-    browserWindow.webContents.once('did-navigate',()=>{
-      res()
-    })
+  await new Promise<void>((res) => {
+    browserWindow.webContents.once("did-navigate", () => {
+      res();
+    });
 
-    browserWindow.loadURL(nextPageUrl)
-  })
+    browserWindow.loadURL(nextPageUrl);
+  });
 
-  const videoId = await browserWindow.webContents.executeJavaScript(`${waitForElementScript}\nwaitForElm('ytmusic-responsive-list-item-renderer .yt-simple-endpoint.style-scope.yt-formatted-string').then(a => a.href.split('v=')[1].split('&')[0])`)
+  const videoId = await browserWindow.webContents.executeJavaScript(
+    `${waitForElementScript}\nwaitForElm('ytmusic-responsive-list-item-renderer .yt-simple-endpoint.style-scope.yt-formatted-string').then(a => a.href.split('v=')[1].split('&')[0])`
+  );
 
-  browserWindow.close()
+  browserWindow.close();
 
-  return videoId
+  return videoId;
 }
 
 if (!existsSync(getLocalLibraryFilesPath())) {

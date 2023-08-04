@@ -94,6 +94,14 @@ export function arrayToIndex<T extends KeyValuePair<string, any>, K = T>(
   }, {} as KeyValuePair<string, K>);
 }
 
+export function getCoverUrl(cover?: string,useFallback = true){
+  if (!cover && useFallback) {
+    return AppConstants.DEFAULT_COVER_ART;
+  }
+
+  return `${window.bridge.getServerAddress()}/covers/${cover}`;
+}
+
 const COVERS_GENERATED: Record<string, string> = {};
 
 export function getCachedCover(playlistId: string) {
@@ -134,7 +142,7 @@ export async function generateNewCover(filename: string, covers: string[]) {
         res(pending);
       });
 
-      pending.src = targetCover;
+      pending.src = getCoverUrl(targetCover);
     });
 
     const canvasDrawLocation: Vector2 = {
@@ -207,10 +215,4 @@ export async function generatePlaylistCover(
 }
 
 
-export function getCoverUrl(cover?: string,useFallback = true){
-  if (!cover && useFallback) {
-    return AppConstants.DEFAULT_COVER_ART;
-  }
 
-  return `${window.bridge.getServerAddress()}/covers/${cover}`;
-}

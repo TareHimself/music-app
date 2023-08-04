@@ -102,7 +102,7 @@ export default function AlbumItem({ data }: { data?: IAlbum }) {
   }
 
   return (
-    <div className="album-item">
+    <div className="album-item" data-id={data.id}>
       <div className="album-item-image-wrapper">
         <HiPlay onClick={addAlbumToQueue} />
         <img
@@ -110,6 +110,7 @@ export default function AlbumItem({ data }: { data?: IAlbum }) {
           onClick={selectAlbum}
           onContextMenu={makeContextMenu}
           alt={`album cover for ${data.title}`}
+          className="cover"
         />
       </div>
       <span>

@@ -23,7 +23,6 @@ import {
   getAlbums,
   getArtists,
 } from "../sqlite";
-import { v4 as uuidv4 } from "uuid";
 import MusiczMediaSource from "./source";
 import YTMusic from "ytmusic-api";
 import { video_info } from "play-dl";
@@ -90,7 +89,7 @@ export default class SpotifySource extends MusiczMediaSource {
             title: track.album.name,
             cover: track.album.images[0]?.url || "",
             released: parseInt(
-              track.album.release_date.split("-")[0] || "2000"
+              track.album.release_date?.split("-")[0] || "2000"
             ),
             tracks: [trackId],
             artists: Array.from(
@@ -179,7 +178,7 @@ export default class SpotifySource extends MusiczMediaSource {
           id: albumId,
           title: album.name,
           cover: album.images[0]?.url || "",
-          released: parseInt(album.release_date.split("-")[0] || "2000"),
+          released: parseInt(album.release_date?.split("-")[0] || "2000"),
           artists: Array.from(
             new Set(
               album.artists
@@ -272,7 +271,7 @@ export default class SpotifySource extends MusiczMediaSource {
     for (let i = 0; i < items.length; i++) {
       const currentPlaylistId = items[0];
       const newPlaylistId = this.toSourceId(
-        `playlist-${uuidv4().replaceAll("-", "")}`
+        `playlist-${currentPlaylistId}`
       );
       if (!cache.playlists[newPlaylistId]) {
         try {
@@ -310,7 +309,7 @@ export default class SpotifySource extends MusiczMediaSource {
                       title: track.album.name,
                       cover: track.album.images[0]?.url || "",
                       released: parseInt(
-                        track.album.release_date.split("-")[0] || "2000"
+                        track.album.release_date?.split("-")[0] || "2000"
                       ),
                       tracks: [trackId],
                       artists: Array.from(

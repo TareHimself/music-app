@@ -16,6 +16,7 @@ import {
   tRemovePlaylists,
   tRemoveAlbums,
   getRandomPlaylistCovers,
+  db,
 } from "./sqlite";
 import { ipcMain } from "../ipc-impl";
 import DiscordRichPrecenceClient from "discord-rich-presence";
@@ -24,6 +25,8 @@ import {
   getLocalLibraryFilesPath,
   hash,
   isDev,
+  getTestId,
+  getLibraryDataPath,
 } from "./utils";
 import { platform } from "os";
 import path from "path";
@@ -41,7 +44,7 @@ import axios from "axios";
 
 declare const MAIN_WINDOW_WEBPACK_ENTRY: string;
 declare const MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY: string;
-console.log("DEFAULT APP");
+
 const mediaSources = new SourceManager();
 
 mediaSources.useSource(new LocalSource());
@@ -189,19 +192,38 @@ const createWindow = (): void => {
   });
 
   mainWindow.webContents.on("did-finish-load", () => {
-    if (mainWindow && isDev()) {
-      mainWindow.webContents.openDevTools();
+    if (mainWindow && isDev() && getTestId() === undefined) {
+      mainWindow.webContents.openDevTools({
+        mode: 'right'
+      });
     }
   });
   // and load the index.html of the app.
   mainWindow.loadURL(MAIN_WINDOW_WEBPACK_ENTRY);
+  
 };
 
-app.commandLine.appendSwitch("js-flags", "--max-old-space-size=8192");
+if(getTestId() !== undefined){
+  app.on('quit',()=> {
+    db.close()
+    fsSync.rmSync(getLibraryDataPath(),{
+      recursive: true,
+      force: true
+    })
+  })
+}
+
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
-const server = expressApp.listen(() => {
+const server = isDev() ? expressApp.listen(9200,() => {
+  app.whenReady().then(() => {
+    createWindow();
+  });
+  global.SERVER_ADDRESS = `http://localhost:${
+    (server.address() as AddressInfo).port
+  }`;
+}) : expressApp.listen(() => {
   app.whenReady().then(() => {
     createWindow();
   });

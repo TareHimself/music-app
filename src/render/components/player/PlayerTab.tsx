@@ -640,7 +640,7 @@ export default function PlayerTab() {
             >
               <img
                 src={currentAlbum?.cover}
-                className="player-cover"
+                className="cover player-cover"
                 onClick={navigateToCurrentAlbum}
                 alt="cover"
               ></img>
@@ -748,7 +748,7 @@ export default function PlayerTab() {
             maxWidth: "100px",
           }}
           min={0}
-          max={1}
+          max={0.3}
           defaultValue={player.volume}
           step={0.001}
           onUserUpdate={onVolumeSliderChanged}

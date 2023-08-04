@@ -291,7 +291,7 @@ const importIntoLibrary = createAsyncThunk<
               const newData = await window.bridge.importItems(items);
               const existingPlaylists = thunk.getState().library.data.playlists;
               console.log(
-                `Immported ${
+                `Imported ${
                   Object.keys(newData.playlists).length
                 } Playlists, ${Object.keys(newData.albums).length} Albums and ${
                   Object.keys(newData.artists).length

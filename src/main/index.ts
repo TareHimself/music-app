@@ -17,12 +17,12 @@ global.keys = {
   SPOTIFY_API_KEY: "",
 };
 
+import "./logging";
 import { app } from "electron";
 import { existsSync, mkdirSync } from "fs";
-import { getLocalLibraryFilesPath } from "./utils";
-const gotTheLock = app.requestSingleInstanceLock();
+import { getLocalLibraryFilesPath, getTestId } from "./utils";
 
-if (gotTheLock) {
+function runApp() {
   const libraryPath = getLocalLibraryFilesPath();
 
   if (!existsSync(libraryPath)) {
@@ -32,6 +32,21 @@ if (gotTheLock) {
   }
 
   require("./app");
-} else {
+}
+
+function quitApp() {
   app.quit();
+}
+const testId = getTestId();
+
+if (testId) {
+  runApp();
+} else {
+  const gotTheLock = app.requestSingleInstanceLock();
+
+  if (gotTheLock) {
+    runApp();
+  } else {
+    quitApp();
+  }
 }

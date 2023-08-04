@@ -1,15 +1,22 @@
-import { useLocation } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { useAppSelector } from "@redux/hooks";
 import TracksView from "../common/tracks/TracksList";
 import ScreenWithImage from "../common/ScreenWithImage";
 import { getCoverUrl } from "@render/utils";
+import useAppNavigation from "@hooks/useAppNavigation";
 
 export default function AlbumScreen() {
-  const location = useLocation();
+
+  const { albumId } = useParams();
+  const { navigate } = useAppNavigation()
+  
   const album = useAppSelector(
-    (s) => s.library.data.albums[location.pathname.split("/")[2] || ""]
+    (s) => s.library.data.albums[albumId ?? '']
   );
 
+  if(!album){
+    navigate('/library')
+  }
   return (
     <ScreenWithImage
       cover={getCoverUrl(album?.cover)}

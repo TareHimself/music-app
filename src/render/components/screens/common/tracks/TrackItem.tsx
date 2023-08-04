@@ -2,7 +2,7 @@ import { useCallback } from "react";
 import { IContextMenuOption, IPlaylistTrack } from "@types";
 import { useAppDispatch, useAppSelector } from "@redux/hooks";
 import { loadTracksForAlbum, updateTracks } from "@redux/slices/library";
-import { generateContextMenu, toTimeString } from "@render/utils";
+import { generateContextMenu, getCoverUrl, toTimeString } from "@render/utils";
 import { HiPause, HiPlay } from "react-icons/hi2";
 import { StreamManager } from "@render/global";
 import { useLocation } from "react-router";
@@ -12,13 +12,12 @@ import useAppNavigation from "@hooks/useAppNavigation";
 import LikeButton from "./LikeButton";
 import { replaceQueuedTracks } from "@redux/exports";
 
-export type TrackItemProps =
-  | { type: "playlist"; playlistInfo: IPlaylistTrack; index?: number }
+export type TrackItemProps = (
+  | { type: "playlist"; playlistInfo: IPlaylistTrack }
   | { type: "queue"; trackId: string; index: number }
-  | { type: "album"; trackId: string; index?: number };
-export default function TrackItem(
-  props: TrackItemProps & { activeOverride?: boolean }
-) {
+  | { type: "album"; trackId: string }
+) & { activeOverride?: boolean };
+export default function TrackItem(props: TrackItemProps) {
   const trackId =
     props.type === "playlist" ? props.playlistInfo.track : props.trackId;
 
@@ -149,10 +148,13 @@ export default function TrackItem(
           break;
 
         case "remove":
-          if (props.type !== "queue") break;
+          if (props.type !== "queue" || queueIndex === null) {
+            break;
+          }
+
           {
             const newQueued = [...queuedTracks];
-            newQueued.splice(props.index, 1);
+            newQueued.splice(queueIndex, 1);
             dispatch(replaceQueuedTracks(newQueued));
           }
           break;
@@ -182,7 +184,7 @@ export default function TrackItem(
           break;
       }
     },
-    [dispatch, props.index, props.type, queuedTracks, trackData]
+    [dispatch, props.type, queueIndex, queuedTracks, trackData]
   );
 
   const makeContextMenu = useCallback(
@@ -272,8 +274,8 @@ export default function TrackItem(
     <div
       className={isActiveTrack ? "track-item active" : "track-item"}
       onContextMenu={makeContextMenu}
-      data--id={trackId}
-      data--index={props.type === "queue" ? props.index : "none"}
+      data-id={trackId}
+      data-index={props.type === "queue" ? props.index : "none"}
     >
       <span className="track-icon">
         {isActiveTrack && !isPaused ? (
@@ -287,12 +289,12 @@ export default function TrackItem(
         {props.type !== "album" && (
           <img
             onClick={openTrackAlbum}
-            src={albumData?.cover || AppConstants.DEFAULT_COVER_ART}
-            className="track-album-cover"
+            src={getCoverUrl(albumData?.cover)}
+            className="cover track-album-cover"
             alt="cover"
           />
         )}
-        <span data--info="text">
+        <span data-info="text">
           <h2>{title}</h2>
           <p>
             {artists
