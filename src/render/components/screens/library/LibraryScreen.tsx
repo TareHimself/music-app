@@ -13,7 +13,7 @@ import { BiSearchAlt } from "react-icons/bi";
 import { FixedSizeList as List, ListChildComponentProps } from "react-window";
 import AlbumItem from "../album/AlbumItem";
 import usePathValue from "@hooks/usePathValue";
-import AutoSizer from "react-virtualized-auto-sizer";
+import AutoSizer ,{ Size as AutoSizerState } from "react-virtualized-auto-sizer";
 
 const itemWidth = 200;
 const itemGap = 40;
@@ -172,7 +172,7 @@ export default function LibraryScreen() {
       </div>
       <div className="library-content">
       <AutoSizer>
-          {({ height, width }) => {
+          {({ height, width }: AutoSizerState) => {
             return (
               <List
         ref={(r) => {

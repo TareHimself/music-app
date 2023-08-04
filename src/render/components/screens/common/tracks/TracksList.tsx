@@ -1,7 +1,7 @@
 import { IPlaylistTrack } from "@types";
 import TrackItem from "./TrackItem";
 import { FixedSizeList as List, ListChildComponentProps } from "react-window";
-import AutoSizer from "react-virtualized-auto-sizer";
+import AutoSizer, { Size as AutoSizerState } from "react-virtualized-auto-sizer";
 import usePathValue from "@hooks/usePathValue";
 import { useMemo, useRef, useState } from "react";
 import { BiSearchAlt } from "react-icons/bi";
@@ -93,7 +93,7 @@ export default function TracksList(props: {
         />
       </div>
         <AutoSizer>
-          {({ height, width }) => {
+          {({ height, width }: AutoSizerState) => {
             return (
               <List
               ref={(r)=>{
