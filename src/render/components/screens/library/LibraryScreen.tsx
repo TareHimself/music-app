@@ -114,7 +114,7 @@ export default function LibraryScreen() {
         query.length > 0
           ? items.filter((a) => {
               return (
-                a.title.toLowerCase().includes(query) ||
+                a.id.toLowerCase() === query || a.title.toLowerCase().includes(query) ||
                 a.artists.some((art) =>
                   artists[art]?.name.toLowerCase().includes(query)
                 )
