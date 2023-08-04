@@ -62,13 +62,15 @@ export async function screenshotWindow(
   // Get a unique place for the screenshot.
   const screenshotPath = testInfo.outputPath(`${filename}.png`);
   // Add it to the report.
+  
+  // Take the screenshot itself.
+  await window.screenshot({ path: screenshotPath, timeout: 5000 });
+
   testInfo.attachments.push({
     name: "screenshot",
     path: screenshotPath,
     contentType: "image/png",
   });
-  // Take the screenshot itself.
-  await window.screenshot({ path: screenshotPath, timeout: 5000 });
 }
 
 export async function screenshotOnError<T>(
@@ -95,16 +97,17 @@ export async function copyLogOnError<T>(
   } catch (error) {
     const logPath = testInfo.outputPath(`main.log`);
     // Add it to the report.
-    testInfo.attachments.push({
-      name: "main.log",
-      path: logPath,
-      contentType: "text",
-    });
-
+    
     fs.promises.copyFile(
-      path.join("./testing", testId, "logs", "main.log"),
+      path.resolve(path.join("./testing", testId, "logs", "main.log")),
       logPath
     );
+
+    testInfo.attachments.push({
+        name: "main log",
+        path: logPath,
+        contentType: "text",
+      });
     throw error;
   }
 }
