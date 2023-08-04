@@ -35,7 +35,7 @@ export default function ScreenWithImage(props: ScreenWithImageProps) {
       </div>
       <div className="screen-fg">
         <div className="screen-top">
-          <img src={props.cover} onLoad={onImageLoaded} alt="Cover" onContextMenu={props.onImageContextMenu} onError={props.onImageLoadError}/>
+          <img src={props.cover} onLoad={onImageLoaded} alt="Cover" onContextMenu={props.onImageContextMenu} onError={props.onImageLoadError} className="cover"/>
           <span>{props.header}</span>
         </div>
         {props.children}

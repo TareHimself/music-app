@@ -23,11 +23,11 @@ import {
   getAlbums,
   getArtists,
 } from "../sqlite";
-import { v4 as uuidv4 } from "uuid";
 import MusiczMediaSource from "./source";
 import YTMusic from "ytmusic-api";
 import { video_info } from "play-dl";
 import axios from "axios";
+import { searchForTrackUsingBrowserWindow } from "../utils";
 // import leven from "leven";
 
 const SPOTIFY_URI_REGEX = /open.spotify.com\/([a-z]+)\/([a-zA-Z0-9]+)/;
@@ -89,7 +89,7 @@ export default class SpotifySource extends MusiczMediaSource {
             title: track.album.name,
             cover: track.album.images[0]?.url || "",
             released: parseInt(
-              track.album.release_date.split("-")[0] || "2000"
+              track.album.release_date?.split("-")[0] || "2000"
             ),
             tracks: [trackId],
             artists: Array.from(
@@ -178,7 +178,7 @@ export default class SpotifySource extends MusiczMediaSource {
           id: albumId,
           title: album.name,
           cover: album.images[0]?.url || "",
-          released: parseInt(album.release_date.split("-")[0] || "2000"),
+          released: parseInt(album.release_date?.split("-")[0] || "2000"),
           artists: Array.from(
             new Set(
               album.artists
@@ -271,7 +271,7 @@ export default class SpotifySource extends MusiczMediaSource {
     for (let i = 0; i < items.length; i++) {
       const currentPlaylistId = items[0];
       const newPlaylistId = this.toSourceId(
-        `playlist-${uuidv4().replaceAll("-", "")}`
+        `playlist-${currentPlaylistId}`
       );
       if (!cache.playlists[newPlaylistId]) {
         try {
@@ -309,7 +309,7 @@ export default class SpotifySource extends MusiczMediaSource {
                       title: track.album.name,
                       cover: track.album.images[0]?.url || "",
                       released: parseInt(
-                        track.album.release_date.split("-")[0] || "2000"
+                        track.album.release_date?.split("-")[0] || "2000"
                       ),
                       tracks: [trackId],
                       artists: Array.from(
@@ -441,6 +441,9 @@ export default class SpotifySource extends MusiczMediaSource {
     return { ...cache, remaining: remaining };
   }
 
+  
+
+
   public override async fetchStream(
     resource: ITrackResource
   ): Promise<TrackStreamInfo | null> {
@@ -460,16 +463,9 @@ export default class SpotifySource extends MusiczMediaSource {
 
     const searchTerm =
       `${trackInfo.title} ${artistsString}`.trim();
-    const result = await this.ytMusicApi
-      .searchVideos(searchTerm)
-      .then((a) => a[0]);
 
-    if(!result?.videoId)
-    {
-      throw new Error("Track could not be found on youtube music using term:" + searchTerm)
-    }
+    const uri = `https://youtube.com/watch?v=${await searchForTrackUsingBrowserWindow(searchTerm)}`;
 
-    const uri = `https://youtube.com/watch?v=${result.videoId || ""}`;
     console.info("Used", searchTerm, "To fetch", uri);
 
     const i = await video_info(uri);

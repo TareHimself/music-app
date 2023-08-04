@@ -3,7 +3,7 @@ import TrackItem from "../common/tracks/TrackItem";
 import ScreenWithImage from "../common/ScreenWithImage";
 import { FixedSizeList as List, ListChildComponentProps } from "react-window";
 import { useMemo } from "react";
-import AutoSizer from "react-virtualized-auto-sizer";
+import AutoSizer ,{ Size as AutoSizerState } from "react-virtualized-auto-sizer";
 import { getCoverUrl } from "@render/utils";
 
 export type IQueuedItem = {
@@ -67,8 +67,8 @@ export default function QueueScreen() {
     <ScreenWithImage cover={ getCoverUrl(album?.cover)}>
       <div className="track-items">
         <AutoSizer>
-          {({ height, width }) => {
-            console.log(height, width);
+          {({ height, width }: AutoSizerState) => {
+
             return (
               <List
                 style={{

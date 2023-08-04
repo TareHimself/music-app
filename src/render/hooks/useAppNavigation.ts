@@ -36,6 +36,10 @@ export default function useAppNavigation() {
 
   const navigate = useCallback(
     (path: string) => {
+      if(path === location){
+        return false
+      }
+
       if (forwardHistory) {
         dispatch(setForwardHistory([]));
       }
@@ -51,40 +55,47 @@ export default function useAppNavigation() {
         path: path,
         data: {},
       });
+
+      return true
     },
     [backwardHistory, dispatch, forwardHistory, location, navigateToHistory]
   );
 
-  const navigateBackward = useCallback(() => {
-    if (backwardHistory.length) {
-      dispatch(
-        setForwardHistory([
-          { path: location, data: getPathData() },
-          ...forwardHistory,
-        ])
-      );
-      const newBackward = [...backwardHistory];
-      const to = newBackward.pop();
-      if (to) navigateToHistory(to);
-
+  const navigateBackward = useCallback((delta = 1) => {
+    if (backwardHistory.length >= delta) {
+      const thisHistory: INavigationHistory = { path: location, data: getPathData() }
+      const newBackward = [...backwardHistory]
+      const newForward = [thisHistory,...forwardHistory]
+      const itemsRemoved = newBackward.splice(newBackward.length - delta,delta)
+      
+      const to = itemsRemoved.shift();
+      dispatch(setForwardHistory([...itemsRemoved,...newForward]))
       dispatch(setBackwardHistory(newBackward));
+
+      if (to) navigateToHistory(to);
     }
   }, [backwardHistory, dispatch, forwardHistory, location, navigateToHistory]);
 
-  const navigateForward = useCallback(() => {
-    if (forwardHistory.length) {
+  const navigateForward = useCallback((delta = 1) => {
+    if (forwardHistory.length >= delta) {
+      const thisHistory: INavigationHistory = { path: location, data: getPathData() }
+      const newBackward = [...backwardHistory,thisHistory]
+      const newForward = [...forwardHistory]
+
+      const itemsRemoved = newForward.splice(0,delta)
+
+      const to = itemsRemoved.pop();
+      
       dispatch(
-        setBackwardHistory([
-          ...backwardHistory,
-          { path: location, data: getPathData() },
-        ])
+        setBackwardHistory([...newBackward,...itemsRemoved])
       );
-      const newForward = [...forwardHistory];
-      const to = newForward.shift();
+
+      dispatch(setForwardHistory([...newForward]))
+
       if (to) navigateToHistory(to);
-      dispatch(setForwardHistory(newForward));
     }
   }, [backwardHistory, dispatch, forwardHistory, location, navigateToHistory]);
+  console.log(backwardHistory,forwardHistory)
   return {
     navigate,
     navigateBackward,

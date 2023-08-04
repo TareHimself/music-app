@@ -119,6 +119,7 @@ export default function NavItem({
       onClick={() => onSelected(navId)}
       onKeyDown={() => false}
       tabIndex={0}
+      data-target={navId}
     >
       <GetNavIcon
         isActive={navId === activeItem}

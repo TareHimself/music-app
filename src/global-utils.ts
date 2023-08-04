@@ -22,3 +22,8 @@ export function startStopProfile(
     PENDING_PROFILES.set(targetId, [performance.now(), targetDispayName]);
   }
 }
+
+export async function wait(timeout: number)
+{
+  return new Promise<void>((res) => setTimeout(res,timeout))
+}

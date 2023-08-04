@@ -8,7 +8,7 @@ import {
 } from "@types";
 import MusiczMediaSource, { IResourceImportFromSource } from "./source";
 import YTMusic from "ytmusic-api";
-import { video_info } from "play-dl";
+import { video_info} from "play-dl";
 import {
   getTracks,
   tCreateAlbums,
@@ -141,10 +141,12 @@ export default class YoutubeSource extends MusiczMediaSource {
 
     if (!(selected && selected.url && selected.approxDurationMs)) return null;
 
+    
     return {
       uri: selected.url,
       duration: i.video_details.durationInSec * 1000,
       from: this.id,
     };
+    
   }
 }

@@ -1,24 +1,22 @@
-import { useLocation } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import AppConstants from "@root/data";
 import { IPlaylist } from "@types";
 import { useAppSelector } from "@redux/hooks";
 import TracksList from "../common/tracks/TracksList";
 import ScreenWithImage from "../common/ScreenWithImage";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   generateContextMenu,
   generatePlaylistCover,
   getCoverUrl,
 } from "@render/utils";
+import useAppNavigation from "@hooks/useAppNavigation";
 
 export default function PlaylistScreen() {
-  const location = useLocation();
 
-  const playlistId = useMemo(() => {
-    return location.pathname.split("/")[2] || "";
-  }, [location.pathname]);
+  const { playlistId } = useParams();
 
-  
+  const { navigate } = useAppNavigation()
 
   const playlist = useAppSelector((s) => {
     if (playlistId === "liked") {
@@ -32,8 +30,20 @@ export default function PlaylistScreen() {
       return fakePlaylist;
     }
 
+    const target = s.library.data.playlists[playlistId ?? '']
+
+    if(!target){
+      const dummyBeforeReRoute: IPlaylist = {
+        tracks: [],
+        id: "UNDEFINED",
+        title: "",
+        cover: "",
+        position: -1,
+      };
+      return dummyBeforeReRoute
+    }
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    return s.library.data.playlists[playlistId]!;
+    return target
   });
 
   const [isGeneratingCover, setIsGeneratingCover] = useState(false);
@@ -41,13 +51,15 @@ export default function PlaylistScreen() {
   const [playlistCover,setPlaylistCover] = useState(getCoverUrl(playlist.cover || playlist.id,false))
 
   const generateCover = useCallback(async ()=>{
-    setIsGeneratingCover(true);
+    if(playlistId && playlist.tracks.length > 0){
+      setIsGeneratingCover(true);
     setPlaylistCover(AppConstants.DEFAULT_COVER_ART)
     generatePlaylistCover(playlistId).then(() => {
       setPlaylistCover(getCoverUrl(playlist.id,false) + `?timestamp=${Date.now()}`)
       setIsGeneratingCover(false);
     });
-  },[playlist.id, playlistId])
+    }
+  },[playlist.id, playlist.tracks.length, playlistId])
 
 
   useEffect(()=>{
@@ -74,6 +86,10 @@ export default function PlaylistScreen() {
     },
     [generateCover]
   );
+
+  if(playlist.id === "UNDEFINED"){
+    navigate('/library')
+  }
 
   return (
     <ScreenWithImage

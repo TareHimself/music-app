@@ -656,6 +656,11 @@ p {
   height: 100%;
 }
 
+
+.cover {
+  object-fit: cover;
+}
+
 .album-item {
   display: flex;
   max-width: var(--item-width);
@@ -758,13 +763,12 @@ p {
 .row-input-content {
   display: flex;
   flex-direction: row;
-  height: 50px;
-
+  height: 30px;
 }
 
 .library-search {
   display: flex;
-  width: 200px;
+  width: 300px;
   height: 40px;
   background-color: var(--library-search-bg);
   align-items: center;
@@ -772,6 +776,7 @@ p {
   border-radius: 20px;
   padding-right: 20px;
   margin-bottom: var(--top-frame-height);
+  box-sizing: border-box;
 }
 
 .library-search input {
@@ -781,11 +786,23 @@ p {
   border: none;
   width: 100%;
   font-size: 15px;
+  text-align: center;
 }
 
 .library-search svg {
   font-size: 30px;
   padding-left: 10px;
+}
+
+.library-search.track-list {
+  margin-bottom: 0px;
+  height: 30px;
+  width: 300px;
+  margin: 0px auto;
+}
+
+.library-search.track-list svg {
+  font-size: 20px;
 }
 
 .like-icon {

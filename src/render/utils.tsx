@@ -6,7 +6,7 @@ import {
   Vector2,
 } from "@types";
 import ColorThief from "colorthief";
-import { toast } from "react-toastify";
+import { toast } from "@render/react-basic-toast";
 
 export const imageColor = new ColorThief();
 
@@ -94,6 +94,14 @@ export function arrayToIndex<T extends KeyValuePair<string, any>, K = T>(
   }, {} as KeyValuePair<string, K>);
 }
 
+export function getCoverUrl(cover?: string,useFallback = true){
+  if (!cover && useFallback) {
+    return AppConstants.DEFAULT_COVER_ART;
+  }
+
+  return `${window.bridge.getServerAddress()}/covers/${cover}`;
+}
+
 const COVERS_GENERATED: Record<string, string> = {};
 
 export function getCachedCover(playlistId: string) {
@@ -134,7 +142,7 @@ export async function generateNewCover(filename: string, covers: string[]) {
         res(pending);
       });
 
-      pending.src = targetCover;
+      pending.src = getCoverUrl(targetCover);
     });
 
     const canvasDrawLocation: Vector2 = {
@@ -200,20 +208,11 @@ export async function generatePlaylistCover(
   await toast.promise(generateNewCover(playlistId, covers), {
     pending: "Generating Cover",
     success: "Cover Generated",
-    error: {
-      type: "error",
-      render: "Failed To Generate Cover",
-    },
+    error: "Failed To Generate Cover",
   });
 
   return;
 }
 
 
-export function getCoverUrl(cover?: string,useFallback = true){
-  if (!cover && useFallback) {
-    return AppConstants.DEFAULT_COVER_ART;
-  }
 
-  return `${window.bridge.getServerAddress()}/covers/${cover}`;
-}
