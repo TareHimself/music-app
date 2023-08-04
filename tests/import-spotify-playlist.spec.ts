@@ -1,5 +1,6 @@
 import { test, _electron } from "@playwright/test";
 import {
+  copyLogOnError,
   getRandomAndExtract,
   getTestArguments,
   importIntoLibrary,
@@ -12,7 +13,8 @@ const spotifyExtractionRegex =
 test.setTimeout(0);
 // eslint-disable-next-line no-empty-pattern
 test("App Imports Spotify Playlist", async ({}, testInfo) => {
-  const app = await _electron.launch({ args: getTestArguments() });
+  const { testId, args } = getTestArguments();
+  const app = await _electron.launch({ args: args });
   const window = await app.firstWindow();
 
   const [itemUrl, itemId] = getRandomAndExtract(
@@ -35,12 +37,14 @@ test("App Imports Spotify Playlist", async ({}, testInfo) => {
   await importIntoLibrary(window, itemUrl);
 
   await screenshotOnError(window, testInfo, "failure", async () => {
-    await window.waitForSelector(
-      `.nav-item[data-target="/playlist/spotify-playlist-${itemId}"]`,
-      {
-        timeout: 50 * 1000,
-      }
-    );
+    await copyLogOnError(testInfo, testId, async () => {
+      await window.waitForSelector(
+        `.nav-item[data-target="/playlist/spotify-playlist-${itemId}"]`,
+        {
+          timeout: 50 * 1000,
+        }
+      );
+    });
   });
 
   await app.close();

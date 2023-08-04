@@ -145,7 +145,7 @@ export default function LibraryScreen() {
   );
 
   const rowsData = useMemo(
-    () => buildRows(albums, maxPerRow, currentSearch.toLowerCase()),
+    () => buildRows(albums, maxPerRow, currentSearch.trim().toLowerCase()),
     [albums, buildRows, currentSearch, maxPerRow]
   );
 

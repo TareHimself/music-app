@@ -104,6 +104,7 @@ export class SourceManager {
           if (!result) {
             continue;
           }
+          console.log("Used source",item.id,"to get stream for",resource)
           return result;
         }
       }
@@ -115,6 +116,7 @@ export class SourceManager {
   }
 
   public async import(resources: string[]): Promise<IResourceImport> {
+    console.log("Attempting to import",resources)
     const result: IResourceImport = {
       albums: {},
       artists: {},
@@ -135,6 +137,7 @@ export class SourceManager {
         result.artists = { ...result.artists, ...artists };
         result.playlists = { ...result.playlists, ...playlists };
         itemsNotImported = remaining;
+        console.log("Imported using source",currentItem.id,"Items Remaining",remaining)
         if (itemsNotImported.length === 0) {
           break;
         }
@@ -154,7 +157,7 @@ export class SourceManager {
 
     const source = this.sources.get(sourceId);
     if (!source) return undefined;
-
+    
     return await source.search(query, type);
   }
 }
