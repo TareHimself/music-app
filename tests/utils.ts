@@ -1,4 +1,4 @@
-import { Page } from "@playwright/test";
+import { Page, TestInfo } from "@playwright/test";
 import path from "path";
 import { v4 as uuidv4 } from "uuid";
 export function getTestArguments() {
@@ -42,4 +42,24 @@ export async function importIntoLibrary(window: Page,item: string){
     await window
       .$(".row-input-content .row-input-confirm")
       .then((a) => a?.click());
+  }
+
+  
+  export async function screenshotWindow(window: Page, testInfo: TestInfo,filename: string) {
+    // Get a unique place for the screenshot.
+   const screenshotPath = testInfo.outputPath(`${filename}.png`);
+   // Add it to the report.
+   testInfo.attachments.push({ name: 'screenshot', path: screenshotPath, contentType: 'image/png' });
+   // Take the screenshot itself.
+   await window.screenshot({ path: screenshotPath, timeout: 5000 });
+  }
+
+  export async function screenshotOnError<T>(window: Page,testInfo: TestInfo,filename: string,exec: () => Promise<T>){
+    try {
+        
+        return await exec()
+    } catch (error) {
+        await screenshotWindow(window,testInfo,filename)
+        throw error
+    }
   }
