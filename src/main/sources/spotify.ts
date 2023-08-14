@@ -18,10 +18,7 @@ import {
   tCreateArtists,
   tCreateAlbums,
   tCreateTracks,
-  tCreatePlaylists,
-  getTracks,
-  getAlbums,
-  getArtists,
+  tCreatePlaylists
 } from "../sqlite";
 import MusiczMediaSource from "./source";
 import YTMusic from "ytmusic-api";
@@ -447,22 +444,8 @@ export default class SpotifySource extends MusiczMediaSource {
   public override async fetchStream(
     resource: ITrackResource
   ): Promise<TrackStreamInfo | null> {
-    const trackInfo = getTracks([resource.id])[0];
-
-    if (!trackInfo) return null;
-
-    const artistsInfo = getArtists(trackInfo.artists);
-
-    if (!artistsInfo) return null;
-
-    const albumInfo = getAlbums([trackInfo.album])[0];
-
-    if (!albumInfo) return null;
-
-    const artistsString = artistsInfo.map((a) => a.name).join(" ");
-
     const searchTerm =
-      `${trackInfo.title} ${artistsString}`.trim();
+      `${resource.title} ${resource.artists.join(" ")}`.trim();
 
     const uri = `https://youtube.com/watch?v=${await searchForTrackUsingBrowserWindow(searchTerm)}`;
 

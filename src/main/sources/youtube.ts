@@ -10,7 +10,6 @@ import MusiczMediaSource, { IResourceImportFromSource } from "./source";
 import YTMusic from "ytmusic-api";
 import { video_info} from "play-dl";
 import {
-  getTracks,
   tCreateAlbums,
   tCreateArtists,
   tCreateTracks,
@@ -129,11 +128,8 @@ export default class YoutubeSource extends MusiczMediaSource {
   override async fetchStream(
     resource: ITrackResource
   ): Promise<TrackStreamInfo | null> {
-    const trackInfo = getTracks([resource.id])[0];
 
-    if (!trackInfo) return null;
-
-    const uri = trackInfo?.uri;
+    const uri = resource.uri;
 
     const i = await video_info(uri);
 

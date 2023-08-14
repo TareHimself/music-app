@@ -1,7 +1,6 @@
 import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
 // import { toast } from "react-toastify";
 import { toast } from '@render/react-basic-toast'
-import AppConstants from "@root/data";
 import {
   AppSliceState,
   IAlbum,
@@ -20,7 +19,6 @@ import { arrayToIndex, ensureBridge } from "@render/utils";
 const initialState: LibrarySliceState = {
   status: "loading",
   data: {
-    screenId: AppConstants.MAIN_NAV_IDS[1] || "",
     tracks: {},
     albums: {},
     playlists: {},
@@ -445,9 +443,7 @@ export const LibarySlice = createSlice({
   // `createSlice` will infer the state type from the `initialState` argument
   initialState,
   reducers: {
-    setScreenId: (state, action: PayloadAction<string>) => {
-      state.data.screenId = action.payload;
-    },
+    
     updateTrackSync: (state, action: PayloadAction<ITrackUpdate>) => {
       if (state.data.tracks[action.payload.id]) {
         state.data.tracks[action.payload.id] = {
@@ -551,8 +547,6 @@ export const LibarySlice = createSlice({
     });
   },
 });
-
-export const { setScreenId } = LibarySlice.actions;
 export {
   initLibrary,
   loadTracks,

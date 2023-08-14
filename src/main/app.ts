@@ -16,7 +16,6 @@ import {
   tRemovePlaylists,
   tRemoveAlbums,
   getRandomPlaylistCovers,
-  db,
 } from "./sqlite";
 import { ipcMain } from "../ipc-impl";
 import DiscordRichPrecenceClient from "discord-rich-presence";
@@ -26,7 +25,6 @@ import {
   hash,
   isDev,
   getTestId,
-  getLibraryDataPath,
 } from "./utils";
 import { platform } from "os";
 import path from "path";
@@ -202,16 +200,6 @@ const createWindow = (): void => {
   mainWindow.loadURL(MAIN_WINDOW_WEBPACK_ENTRY);
   
 };
-
-if(getTestId() !== undefined){
-  app.on('quit',()=> {
-    db.close()
-    fsSync.rmSync(getLibraryDataPath(),{
-      recursive: true,
-      force: true
-    })
-  })
-}
 
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.

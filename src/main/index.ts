@@ -39,7 +39,7 @@ function quitApp() {
 }
 const testId = getTestId();
 
-if (testId) {
+if (testId !== undefined) {
   runApp();
 } else {
   const gotTheLock = app.requestSingleInstanceLock();
