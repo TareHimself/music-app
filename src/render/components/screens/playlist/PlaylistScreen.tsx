@@ -13,10 +13,9 @@ import {
 import useAppNavigation from "@hooks/useAppNavigation";
 
 export default function PlaylistScreen() {
-
   const { playlistId } = useParams();
 
-  const { navigate } = useAppNavigation()
+  const { navigate } = useAppNavigation();
 
   const playlist = useAppSelector((s) => {
     if (playlistId === "liked") {
@@ -30,9 +29,9 @@ export default function PlaylistScreen() {
       return fakePlaylist;
     }
 
-    const target = s.library.data.playlists[playlistId ?? '']
+    const target = s.library.data.playlists[playlistId ?? ""];
 
-    if(!target){
+    if (!target) {
       const dummyBeforeReRoute: IPlaylist = {
         tracks: [],
         id: "UNDEFINED",
@@ -40,32 +39,37 @@ export default function PlaylistScreen() {
         cover: "",
         position: -1,
       };
-      return dummyBeforeReRoute
+      return dummyBeforeReRoute;
     }
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    return target
+    return target;
   });
 
   const [isGeneratingCover, setIsGeneratingCover] = useState(false);
 
-  const [playlistCover,setPlaylistCover] = useState(getCoverUrl(playlist.cover || playlist.id,false))
+  const [playlistCover, setPlaylistCover] = useState(
+    getCoverUrl(playlist.cover ||playlist.id, false)
+  );
 
-  const generateCover = useCallback(async ()=>{
-    if(playlistId && playlist.tracks.length > 0){
+  const generateCover = useCallback(async () => {
+    if (playlistId) {
       setIsGeneratingCover(true);
-    setPlaylistCover(AppConstants.DEFAULT_COVER_ART)
-    generatePlaylistCover(playlistId).then(() => {
-      setPlaylistCover(getCoverUrl(playlist.id,false) + `?timestamp=${Date.now()}`)
-      setIsGeneratingCover(false);
-    });
+      setPlaylistCover(AppConstants.DEFAULT_COVER_ART);
+      generatePlaylistCover(playlistId).then((wasGenerated) => {
+        if (wasGenerated) {
+          setPlaylistCover(
+            getCoverUrl(playlist.id, false) + `?timestamp=${Date.now()}`
+          );
+        }
+        setIsGeneratingCover(false);
+      });
     }
-  },[playlist.id, playlist.tracks.length, playlistId])
+  }, [playlist.id, playlistId]);
 
-
-  useEffect(()=>{
-    const newCover = getCoverUrl(playlist.cover || playlist.id,false)
-    setPlaylistCover(newCover)
-  },[playlist.cover, playlist.id, playlistId])
+  useEffect(() => {
+    const newCover = getCoverUrl(playlist.cover || playlist.id, false);
+    setPlaylistCover(newCover);
+  }, [playlist.cover, playlist.id, playlistId]);
 
   const makeCoverContextMenu = useCallback(
     (e: React.MouseEvent) => {
@@ -79,7 +83,7 @@ export default function PlaylistScreen() {
         ],
         callback: (s) => {
           if (s === "regenerate") {
-            generateCover()
+            generateCover();
           }
         },
       });
@@ -87,8 +91,8 @@ export default function PlaylistScreen() {
     [generateCover]
   );
 
-  if(playlist.id === "UNDEFINED"){
-    navigate('/library')
+  if (playlist.id === "UNDEFINED") {
+    navigate("/library");
   }
 
   return (
@@ -97,8 +101,8 @@ export default function PlaylistScreen() {
       header={<h1>{playlist?.title}</h1>}
       onImageContextMenu={makeCoverContextMenu}
       onImageLoadError={() => {
-        if(!isGeneratingCover){
-          generateCover()
+        if (!isGeneratingCover) {
+          generateCover();
         }
       }}
     >

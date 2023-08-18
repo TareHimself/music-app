@@ -109,7 +109,7 @@ export function getCachedCover(playlistId: string) {
   return COVERS_GENERATED[playlistId];
 }
 
-export async function generateNewCover(filename: string, covers: string[]) {
+export async function generateNewCover(filename: string, covers: string[]): Promise<boolean> {
   if (covers.length < 4) {
     while (covers.length < 4) {
       covers.push(...covers.slice(0, 1));
@@ -123,7 +123,7 @@ export async function generateNewCover(filename: string, covers: string[]) {
   const canvasCtx = canvas.getContext("2d");
   if (!canvasCtx) {
     canvas.remove();
-    return;
+    return false;
   }
 
   const canvasHalfWidth = canvas.width / 2;
@@ -132,7 +132,7 @@ export async function generateNewCover(filename: string, covers: string[]) {
     const targetCover = covers[i];
     if (!targetCover) {
       canvas.remove();
-      return;
+      return false;
     }
 
     const imageToDraw = await new Promise<HTMLImageElement>((res) => {
@@ -192,26 +192,24 @@ export async function generateNewCover(filename: string, covers: string[]) {
 
   canvas.remove();
 
-  return
+  return true
 }
 export async function generatePlaylistCover(
   playlistId: string
-): Promise<string | undefined> {
+): Promise<boolean> {
   const covers = await window.bridge.getRandomPlaylistCovers(
     playlistId === "liked" ? undefined : playlistId
   );
 
   if (covers.length === 0) {
-    return ;
+    return false;
   }
 
-  await toast.promise(generateNewCover(playlistId, covers), {
+  return await toast.promise(generateNewCover(playlistId, covers), {
     pending: "Generating Cover",
     success: "Cover Generated",
     error: "Failed To Generate Cover",
   });
-
-  return;
 }
 
 

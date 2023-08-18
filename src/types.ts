@@ -129,6 +129,9 @@ export type TrackStreamInfo = { uri: string; duration: number; from: string };
 
 export interface ITrackResource {
   id: string;
+  title: string;
+  artists: string[]
+  album: string
   uri: string;
 }
 
@@ -327,12 +330,15 @@ export interface GenericSliceData<T> {
   data: T;
 }
 
-export type LibrarySliceState = GenericSliceData<{
-  screenId: string;
+
+export type VirtualLibrary = GenericSliceData<{
   tracks: KeyValuePair<string, ITrack>;
   albums: KeyValuePair<string, IAlbum>;
   playlists: KeyValuePair<string, IPlaylist>;
   artists: KeyValuePair<string, IArtist>;
+}>;
+
+export type LibrarySliceState = VirtualLibrary & GenericSliceData<{
   likedTracks: ILikedTrack[];
   likedTracksLookup: KeyValuePair<string, boolean>;
   googleDriveApiKey: string;
@@ -343,6 +349,7 @@ export interface INavigationHistory {
   data: { [key: string]: any };
 }
 export type NavigationSliceState = GenericSliceData<{
+  screenId: string;
   backwardHistory: INavigationHistory[];
   forwardHistory: INavigationHistory[];
   contextMenu: IActiveContextMenu | null;

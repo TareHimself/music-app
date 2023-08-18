@@ -44,6 +44,7 @@ export default abstract class MusiczMediaSource {
     throw new Error("Method not implemented");
   }
 
+  
   public async fetchStream(
     _resource: ITrackResource
   ): Promise<TrackStreamInfo | null> {

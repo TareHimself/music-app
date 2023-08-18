@@ -75,7 +75,7 @@ class StreamManagerClass {
 
   async getStreamInfo(track: ITrackResource, forceNew = false) {
     if (!forceNew && this.cache.has(track.id)) {
-      this.streamsBeingFetched.delete(track.id);
+      this.notifyStreamFetched(track.id,this.cache.get(track.id))
       return this.cache.get(track.id);
     }
 

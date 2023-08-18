@@ -95,7 +95,6 @@ export default function useAppNavigation() {
       if (to) navigateToHistory(to);
     }
   }, [backwardHistory, dispatch, forwardHistory, location, navigateToHistory]);
-  console.log(backwardHistory,forwardHistory)
   return {
     navigate,
     navigateBackward,

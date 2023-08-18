@@ -173,6 +173,9 @@ export default function PlayerTab() {
       const streamInfo = await StreamManager.getStreamInfo({
         id: track.id,
         uri: track.uri,
+        title: track.title,
+        artists: track.artists.map(c => artists[c]?.name ?? ''),
+        album: albums[track.album]?.title ?? ''
       });
 
       if (!streamInfo) {
@@ -194,7 +197,7 @@ export default function PlayerTab() {
 
       return streamInfo;
     },
-    [albums, allTracks, dispatch]
+    [albums, allTracks, artists, dispatch]
   );
 
   const latestPlayRequest = useRef("");
