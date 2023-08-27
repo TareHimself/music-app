@@ -518,7 +518,7 @@ export const LibarySlice = createSlice({
     });
     builder.addCase(likeTrack.fulfilled, (state, action) => {
       if (action.payload) {
-        state.data.likedTracks.unshift(action.payload);
+        state.data.likedTracks.push(action.payload);
         state.data.likedTracksLookup[action.payload.track] = true;
       }
     });
