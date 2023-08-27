@@ -541,6 +541,9 @@ p {
   display: flex;
   flex-direction: column;
   width: 100%;
+  box-sizing: border-box;
+  padding-bottom: 20px;
+  gap: 20px;
 }
 
 .track-item {
