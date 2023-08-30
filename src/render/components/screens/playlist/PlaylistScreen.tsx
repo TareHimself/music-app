@@ -2,8 +2,8 @@ import { useParams } from "react-router-dom";
 import AppConstants from "@root/data";
 import { IPlaylist } from "@types";
 import { useAppSelector } from "@redux/hooks";
-import TracksList from "../common/tracks/TracksList";
-import ScreenWithImage from "../common/ScreenWithImage";
+import TracksList from "../tracks/TracksList";
+import ScreenWithImage from "../ScreenWithImage";
 import { useCallback, useEffect, useState } from "react";
 import {
   generateContextMenu,

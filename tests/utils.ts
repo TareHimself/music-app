@@ -1,10 +1,9 @@
-import { Page, TestInfo } from "@playwright/test";
+import { Page, TestInfo, _electron} from "@playwright/test";
 import path from "path";
 import { v4 as uuidv4 } from "uuid";
 import * as fs from "fs";
-
 export function getTestArguments() {
-  const testId = uuidv4();
+  const testId = uuidv4().replace(/-/g,'');
   return {
     testId,
     args: [
@@ -62,7 +61,7 @@ export async function screenshotWindow(
   // Get a unique place for the screenshot.
   const screenshotPath = testInfo.outputPath(`${filename}.png`);
   // Add it to the report.
-  
+
   // Take the screenshot itself.
   await window.screenshot({ path: screenshotPath, timeout: 5000 });
 
@@ -97,17 +96,51 @@ export async function copyLogOnError<T>(
   } catch (error) {
     const logPath = testInfo.outputPath(`main.log`);
     // Add it to the report.
-    
-    fs.promises.copyFile(
+
+    await fs.promises.copyFile(
       path.resolve(path.join("./testing", testId, "logs", "main.log")),
       logPath
     );
 
     testInfo.attachments.push({
-        name: "main log",
-        path: logPath,
-        contentType: "text",
-      });
+      name: "main log",
+      path: logPath,
+      contentType: "text",
+    });
     throw error;
   }
+}
+
+
+async function cleanupTest(testId: string){
+  try{
+    await fs.promises.rm(path.resolve(path.join("./testing", testId)),{
+      recursive: true
+    })
+  }catch(e){ /* empty */ console.log("Cleanup error",e)}
+}
+export async function testAppInstance(
+  testInfo: TestInfo,
+  doTest: (app: Page) => Promise<void>,
+  timeout = 60 * 1000
+) {
+  testInfo.setTimeout(timeout);
+
+    const { testId, args: launchArgs } = getTestArguments();
+    const app = await _electron.launch({ args: launchArgs });
+    const window = await app.firstWindow();
+
+    try {
+      await screenshotOnError(window, testInfo, "error", async () => {
+        await copyLogOnError(testInfo, testId, async () => {
+          await doTest(window);
+          await app.close();
+          await cleanupTest(testId)
+        });
+      });
+    } catch (error) {
+      await app.close();
+      await cleanupTest(testId)
+      throw error;
+    }
 }

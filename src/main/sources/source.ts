@@ -127,6 +127,7 @@ export class SourceManager {
     let itemsNotImported = resources;
     for (const sourceId of this.importSources) {
       try {
+        console.info(`Trying Source ${sourceId}`)
         const currentItem = this.sources.get(sourceId);
 
         if (!currentItem) continue;
@@ -134,11 +135,13 @@ export class SourceManager {
         const { remaining, albums, artists, playlists } =
           await currentItem.import(itemsNotImported);
 
+          
         result.albums = { ...result.albums, ...albums };
         result.artists = { ...result.artists, ...artists };
         result.playlists = { ...result.playlists, ...playlists };
+        console.info(`Imported ${itemsNotImported.length - remaining.length} items using source ${currentItem.id} , ${remaining.length} Items remaining`)
         itemsNotImported = remaining;
-        console.log("Imported using source",currentItem.id,"Items Remaining",remaining)
+        
         if (itemsNotImported.length === 0) {
           break;
         }

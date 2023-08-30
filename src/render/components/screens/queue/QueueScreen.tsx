@@ -1,6 +1,6 @@
 import { useAppSelector } from "@redux/hooks";
-import TrackItem from "../common/tracks/TrackItem";
-import ScreenWithImage from "../common/ScreenWithImage";
+import TrackItem from "../tracks/TrackItem";
+import ScreenWithImage from "../ScreenWithImage";
 import { FixedSizeList as List, ListChildComponentProps } from "react-window";
 import { useMemo } from "react";
 import AutoSizer ,{ Size as AutoSizerState } from "react-virtualized-auto-sizer";

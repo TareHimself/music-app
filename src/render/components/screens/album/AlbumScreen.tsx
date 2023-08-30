@@ -1,7 +1,7 @@
 import { useParams } from "react-router-dom";
 import { useAppSelector } from "@redux/hooks";
-import TracksView from "../common/tracks/TracksList";
-import ScreenWithImage from "../common/ScreenWithImage";
+import TracksView from "../tracks/TracksList";
+import ScreenWithImage from "../ScreenWithImage";
 import { getCoverUrl } from "@render/utils";
 import useAppNavigation from "@hooks/useAppNavigation";
 

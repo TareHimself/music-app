@@ -26,8 +26,7 @@ export function getTestId() {
   hasCheckedForTestId = true;
   testId = process.argv
     .find((a) => a.includes("--testId="))
-    ?.replace("--testId=", "")
-    .replaceAll("-", "");
+    ?.replace("--testId=", "");
   return testId;
 }
 
