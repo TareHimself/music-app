@@ -23,7 +23,6 @@ const initialState: LibrarySliceState = {
     albums: {},
     playlists: {},
     artists: {},
-    googleDriveApiKey: "",
     likedTracks: [],
     likedTracksLookup: {},
   },

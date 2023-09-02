@@ -11,6 +11,7 @@ import AppConstants from "@root/data";
 import useAppNavigation from "@hooks/useAppNavigation";
 import LikeButton from "./LikeButton";
 import { replaceQueuedTracks } from "@redux/exports";
+import { useIsVirtual } from "@hooks/useIsVirtual";
 
 export type TrackItemProps = (
   | { type: "playlist"; playlistInfo: IPlaylistTrack }
@@ -29,6 +30,8 @@ export default function TrackItem(props: TrackItemProps) {
 
   const isLikedPlaylist = location[1] === "playlist" && contextId === "liked";
 
+  const isVirtual = useIsVirtual(trackId,'track')
+
   const [
     trackData,
     currentTrack,
@@ -37,7 +40,7 @@ export default function TrackItem(props: TrackItemProps) {
     playlistsIndex,
     queuedTracks,
   ] = useAppSelector((s) => [
-    s.library.data.tracks[trackId],
+    s.library.data.tracks[trackId] ?? s.virtualLibrary.data.tracks[trackId],
     s.player.data.currentTrack,
     s.player.data.isPaused,
     s.library.data.likedTracks,
@@ -48,10 +51,15 @@ export default function TrackItem(props: TrackItemProps) {
   const dispatch = useAppDispatch();
 
   const albumData = useAppSelector(
-    (s) => s.library.data.albums[trackData?.album || ""]
+    (s) =>
+      s.library.data.albums[trackData?.album ?? ""] ??
+      s.virtualLibrary.data.albums[trackData?.album ?? ""]
   );
 
-  const allArtists = useAppSelector((s) => s.library.data.artists || {});
+  const allArtists = useAppSelector((s) => ({
+    ...s.virtualLibrary.data.artists,
+    ...s.library.data.artists,
+  }));
 
   const queueIndex = props.type === "queue" ? props.index : null;
 
@@ -216,18 +224,20 @@ export default function TrackItem(props: TrackItemProps) {
         //   : []),
       ];
 
-      if (props.type === "playlist") {
-        if (!isLikedPlaylist) {
+      if(!isVirtual){
+        if (props.type === "playlist") {
+          if (!isLikedPlaylist) {
+            contextOptions.push({
+              id: `playlist-remove`,
+              name: "Remove from playlist",
+            });
+          }
+        } else {
           contextOptions.push({
-            id: `playlist-remove`,
-            name: "Remove from playlist",
+            id: `playlist-add`,
+            name: "Add to playlist",
           });
         }
-      } else {
-        contextOptions.push({
-          id: `playlist-add`,
-          name: "Add to playlist",
-        });
       }
 
       if (props.type === "queue" && !isActiveTrack) {
@@ -243,14 +253,7 @@ export default function TrackItem(props: TrackItemProps) {
         callback: onContextMenuItemSelected,
       });
     },
-    [
-      currentTrack,
-      isLikedPlaylist,
-      onContextMenuItemSelected,
-      props.activeOverride,
-      props.type,
-      trackData?.id,
-    ]
+    [currentTrack, isLikedPlaylist, isVirtual, onContextMenuItemSelected, props.activeOverride, props.type, trackData?.id]
   );
 
   const openTrackAlbum = useCallback(() => {

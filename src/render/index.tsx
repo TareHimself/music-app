@@ -3,8 +3,10 @@ import { useCallback, useEffect } from "react";
 import { createRoot } from "react-dom/client";
 import { Provider } from "react-redux";
 import {
+  IAlbum,
   IQueueTracksEventData,
   IQueueTracksEventDataWithReplace,
+  ITrack,
 } from "@types";
 import App from "./App";
 import { PlayerTab } from "@components/player/exports";
@@ -19,6 +21,7 @@ import AppConstants from "@root/data";
 // import { ToastContainer } from "react-toastify";
 import { ToastContainer, toast} from './react-basic-toast'
 import './react-basic-toast/styles.css'
+import { addVirtualAlbums, addVirtualArtists, addVirtualTracks } from "@redux/slices/virtualLibrary";
 // import "react-toastify/dist/ReactToastify.css";
 export function RootApp() {
   const dispatch = useAppDispatch();
@@ -37,6 +40,40 @@ export function RootApp() {
   useEffect(() => {
     console.log("Loading App inital Data");
     dispatch(initLibrary());
+    window.utils.virtualTrackTest = () => {
+      console.log("Adding virtual data")
+      dispatch(addVirtualArtists([{
+        id: "xyz",
+        name: "Oyintare Ebelo"
+      }]))
+      
+      dispatch(addVirtualAlbums([{
+        id: "xyzxyz",
+        tracks: ["ttyt"],
+        title: "Virtual Album Test",
+        cover: "https://c4.wallpaperflare.com/wallpaper/760/955/638/artwork-landscape-sky-mountains-wallpaper-preview.jpg",
+        released: 2020,
+        artists: ["xyz"],
+        genre: "Rege"
+      }]))
+      
+      dispatch(addVirtualTracks([{
+        id: "ttyt",
+        title: "Ashniko Daisy",
+        album: "xyzxyz",
+        uri: "https://www.youtube.com/watch?v=32R3MHhW1sQ",
+        artists: ["xyz"],
+        duration: 0,
+        position: 0
+      }]))
+
+      console.log("Adding track to play next")
+      setTimeout(()=>{
+        window.utils.playNext({
+          tracks: ['ttyt']
+        })
+      },1000)
+    }
   }, [dispatch]);
 
   useEffect(() => {
@@ -105,7 +142,10 @@ if (container) {
         })
       );
     },
-    toast: toast
+    toast: toast,
+    virtualTrackTest: () => {
+      console.log("hello")
+    },
   };
 
   root.render(

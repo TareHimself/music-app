@@ -90,21 +90,25 @@ export default function PlayerTab() {
     isPaused,
     currentAlbum,
     currentTrack,
-  ] = useAppSelector((s) => [
-    s.library.data.albums,
-    s.library.data.artists,
+  ] = useAppSelector((s) =>{
+    const currentTrack = s.player.data.currentTrack
+
+    const currentTrackInfo = s.library.data.tracks[currentTrack ?? ""] ?? s.virtualLibrary.data.tracks[currentTrack ?? ""] ?? undefined
+    const currentTrackAlbumInfo = currentTrackInfo ? s.library.data.albums[currentTrackInfo.album] ?? s.virtualLibrary.data.albums[currentTrackInfo.album] : undefined
+    return [
+      {...s.virtualLibrary.data.albums,...s.library.data.albums},
+    {...s.virtualLibrary.data.artists,...s.library.data.artists},
     s.player.data.repeatState,
     s.player.data.shuffleState,
     s.player.data.currentTrack,
-    s.library.data.tracks,
+    {...s.virtualLibrary.data.tracks,...s.library.data.tracks},
     s.player.data.recentTracks,
     s.player.data.queuedTracks,
     s.player.data.isPaused,
-    s.library.data.albums[
-      s.library.data.tracks[s.player.data.currentTrack || ""]?.album || ""
-    ],
-    s.library.data.tracks[s.player.data.currentTrack || ""],
-  ]);
+    currentTrackAlbumInfo,
+    currentTrackInfo,
+    ]
+  });
 
   const dispatch = useAppDispatch();
 
@@ -204,10 +208,13 @@ export default function PlayerTab() {
   // Just loads and plays a track
   const loadAndPlayTrack = useCallback(
     async (trackId: string) => {
+      console.log("Trying to load",trackId)
       latestPlayRequest.current = trackId;
       const track = allTracks[trackId];
+      console.log("Track found",track)
       if (!track) return;
       const album = albums[track.album];
+      console.log("Album Found",album)
       if (!album) return;
 
       await loadAndUpdateTrack(trackId);

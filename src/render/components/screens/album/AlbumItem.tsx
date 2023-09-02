@@ -14,7 +14,7 @@ export default function AlbumItem({ data }: { data?: IAlbum }) {
   const dispatch = useAppDispatch();
 
   const artists = useAppSelector((s) =>
-    (data?.artists || []).map((a) => s.library.data.artists[a]?.name || a)
+    (data?.artists || []).map((a) => s.library.data.artists[a]?.name ?? s.virtualLibrary.data.artists[a]?.name ?? a)
   );
 
   const { navigate } = useAppNavigation();

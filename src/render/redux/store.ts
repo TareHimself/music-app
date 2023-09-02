@@ -3,11 +3,13 @@ import { configureStore } from "@reduxjs/toolkit";
 import LibarySlice from "./slices/library";
 import PlayerSlice from "./slices/player";
 import NavigationSlice from "./slices/navigation";
+import VirtualLibarySlice from "./slices/virtualLibrary";
 export const store = configureStore({
   reducer: {
     library: LibarySlice,
     player: PlayerSlice,
     navigation: NavigationSlice,
+    virtualLibrary: VirtualLibarySlice
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

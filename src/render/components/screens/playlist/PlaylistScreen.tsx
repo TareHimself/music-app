@@ -29,7 +29,7 @@ export default function PlaylistScreen() {
       return fakePlaylist;
     }
 
-    const target = s.library.data.playlists[playlistId ?? ""];
+    const target = s.library.data.playlists[playlistId ?? ""] ?? s.virtualLibrary.data.playlists[playlistId ?? ''];
 
     if (!target) {
       const dummyBeforeReRoute: IPlaylist = {

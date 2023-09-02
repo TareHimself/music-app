@@ -218,7 +218,8 @@ export interface IGlobalUtils {
   queueTracks: (data: IQueueTracksEventDataWithReplace) => void;
   skipToQueueIndex: (data: number) => void;
   skipCurrentTrack: () => void;
-  toast: typeof import('@render/react-basic-toast').toast
+  toast: typeof import('@render/react-basic-toast').toast,
+  virtualTrackTest: () => void;
 }
 
 export type SearchReturnType<T extends ESearchFilter> =
@@ -331,17 +332,16 @@ export interface GenericSliceData<T> {
 }
 
 
-export type VirtualLibrary = GenericSliceData<{
+export type VirtualLibraryState = GenericSliceData<{
   tracks: KeyValuePair<string, ITrack>;
   albums: KeyValuePair<string, IAlbum>;
   playlists: KeyValuePair<string, IPlaylist>;
   artists: KeyValuePair<string, IArtist>;
 }>;
 
-export type LibrarySliceState = VirtualLibrary & GenericSliceData<{
+export type LibrarySliceState = VirtualLibraryState & GenericSliceData<{
   likedTracks: ILikedTrack[];
   likedTracksLookup: KeyValuePair<string, boolean>;
-  googleDriveApiKey: string;
 }>;
 
 export interface INavigationHistory {
@@ -378,6 +378,7 @@ export type AppSliceState = {
     library: LibrarySliceState;
     player: PlayerSliceState;
     navigation: NavigationSliceState;
+    virtualLibrary: VirtualLibraryState;
   };
 };
 

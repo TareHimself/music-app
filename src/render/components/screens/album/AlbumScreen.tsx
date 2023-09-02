@@ -11,7 +11,7 @@ export default function AlbumScreen() {
   const { navigate } = useAppNavigation()
   
   const album = useAppSelector(
-    (s) => s.library.data.albums[albumId ?? '']
+    (s) => s.library.data.albums[albumId ?? ''] ?? s.virtualLibrary.data.albums[albumId ?? '']
   );
 
   if(!album){

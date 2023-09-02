@@ -6,6 +6,7 @@ import {
   likeTrack,
   removeLikedTrack,
 } from "@redux/exports";
+import { useIsVirtual } from "@hooks/useIsVirtual";
 
 export default function LikeButton({ trackId }: { trackId: string }) {
   const isLiked = useAppSelector(
@@ -13,6 +14,8 @@ export default function LikeButton({ trackId }: { trackId: string }) {
   );
 
   const dispatch = useAppDispatch();
+
+  const isVirtual = useIsVirtual(trackId,'track')
 
   const toggleState = useCallback(() => {
     if (isLiked) {
@@ -29,6 +32,10 @@ export default function LikeButton({ trackId }: { trackId: string }) {
       );
     }
   }, [dispatch, isLiked, trackId]);
+
+  if(isVirtual){
+    return null
+  }
 
   return (
     <div className="like-icon" data-value={isLiked} onClick={toggleState}>

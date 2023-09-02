@@ -44,6 +44,7 @@ export default class YoutubeSource extends MusiczMediaSource {
 
   override async load() {
     await this.ytMusicApi.initialize();
+    
     // console.log("Search result",await searchMusics('The Glory Days by Tia'))
   }
 
@@ -53,6 +54,7 @@ export default class YoutubeSource extends MusiczMediaSource {
   
   private async importVideo(videoId: string,importCache: IYoutubeImportCache){
     const result = await this.ytMusicApi.getSong(videoId);
+    
 
     const artists: IArtist[] = result.artists.map((a) => {
       return {
@@ -80,6 +82,8 @@ export default class YoutubeSource extends MusiczMediaSource {
       position: 0,
       id: this.toSourceId(`track-${videoId}`),
     };
+    
+
 
     importCache.tracks[track.id] = track;
     artists.forEach((a) => {

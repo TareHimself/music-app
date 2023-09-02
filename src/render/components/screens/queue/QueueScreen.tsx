@@ -36,13 +36,17 @@ function QueuedTrackContainer(props: QueuedListConainerProps) {
 }
 
 export default function QueueScreen() {
-  const [queuedTracks, currentTrack, album] = useAppSelector((s) => [
-    s.player.data.queuedTracks,
-    s.player.data.currentTrack,
-    s.library.data.albums[
-      s.library.data.tracks[s.player.data.currentTrack || ""]?.album || ""
-    ],
-  ]);
+  const [queuedTracks, currentTrack, album] = useAppSelector((s) => {
+    const currentTrackInfo = s.library.data.tracks[s.player.data.currentTrack ?? ""] ?? s.virtualLibrary.data.tracks[s.player.data.currentTrack ?? ""]
+
+    const currentTrackAlbum = currentTrackInfo ? s.library.data.albums[currentTrackInfo.album] ?? s.virtualLibrary.data.albums[currentTrackInfo.album] : undefined 
+
+    return [
+      s.player.data.queuedTracks,
+      s.player.data.currentTrack,
+      currentTrackAlbum,
+    ]
+  });
 
 
   const itemData = useMemo(() => {

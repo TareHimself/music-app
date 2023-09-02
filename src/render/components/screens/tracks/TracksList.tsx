@@ -36,9 +36,9 @@ export default function TracksList(props: {
   data: string[] | IPlaylistTrack[];
 }) {
 
-  const trackData = useAppSelector((a) => a.library.data.tracks)
+  const trackData = useAppSelector((a) => ({...a.virtualLibrary.data.tracks,...a.library.data.tracks}))
 
-  const artistsData = useAppSelector((a) => a.library.data.artists)
+  const artistsData = useAppSelector((a) => ({...a.virtualLibrary.data.artists,...a.library.data.artists}))
 
   const { getValue: getScroll, updateValue: updateScroll } = usePathValue(
     "scroll",
