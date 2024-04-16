@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { BsPauseFill, BsPlayFill } from "react-icons/bs";
 import {
   TbArrowsShuffle,
@@ -79,36 +79,53 @@ export default function PlayerTab() {
   const player = StreamManager.player;
 
   const [
-    albums,
-    artists,
     repeatState,
     shuffleState,
     currentTrackId,
-    allTracks,
     recentTracks,
     queuedTracks,
     isPaused,
-    currentAlbum,
-    currentTrack,
-  ] = useAppSelector((s) =>{
-    const currentTrack = s.player.data.currentTrack
-
-    const currentTrackInfo = s.library.data.tracks[currentTrack ?? ""] ?? s.virtualLibrary.data.tracks[currentTrack ?? ""] ?? undefined
-    const currentTrackAlbumInfo = currentTrackInfo ? s.library.data.albums[currentTrackInfo.album] ?? s.virtualLibrary.data.albums[currentTrackInfo.album] : undefined
-    return [
-      {...s.virtualLibrary.data.albums,...s.library.data.albums},
-    {...s.virtualLibrary.data.artists,...s.library.data.artists},
+  ] = useAppSelector((s) => [
     s.player.data.repeatState,
     s.player.data.shuffleState,
     s.player.data.currentTrack,
-    {...s.virtualLibrary.data.tracks,...s.library.data.tracks},
     s.player.data.recentTracks,
     s.player.data.queuedTracks,
     s.player.data.isPaused,
-    currentTrackAlbumInfo,
-    currentTrackInfo,
-    ]
-  });
+  ]);
+
+  const libraryData = useAppSelector((s) => s.library.data);
+  const virtualLibraryData = useAppSelector((s) => s.virtualLibrary.data);
+
+  const [albums, artists, allTracks, currentAlbum, currentTrack] =
+    useMemo(() => {
+      const currentTrack = currentTrackId;
+
+      const currentTrackInfo =
+        libraryData.tracks[currentTrack ?? ""] ??
+        virtualLibraryData.tracks[currentTrack ?? ""] ??
+        undefined;
+      const currentTrackAlbumInfo = currentTrackInfo
+        ? libraryData.albums[currentTrackInfo.album] ??
+          virtualLibraryData.albums[currentTrackInfo.album]
+        : undefined;
+      return [
+        { ...virtualLibraryData.albums, ...libraryData.albums },
+        { ...virtualLibraryData.artists, ...libraryData.artists },
+
+        { ...virtualLibraryData.tracks, ...libraryData.tracks },
+        currentTrackAlbumInfo,
+        currentTrackInfo,
+      ];
+    }, [
+      currentTrackId,
+      libraryData.albums,
+      libraryData.artists,
+      libraryData.tracks,
+      virtualLibraryData.albums,
+      virtualLibraryData.artists,
+      virtualLibraryData.tracks,
+    ]);
 
   const dispatch = useAppDispatch();
 
@@ -178,8 +195,8 @@ export default function PlayerTab() {
         id: track.id,
         uri: track.uri,
         title: track.title,
-        artists: track.artists.map(c => artists[c]?.name ?? ''),
-        album: albums[track.album]?.title ?? ''
+        artists: track.artists.map((c) => artists[c]?.name ?? ""),
+        album: albums[track.album]?.title ?? "",
       });
 
       if (!streamInfo) {
@@ -208,13 +225,13 @@ export default function PlayerTab() {
   // Just loads and plays a track
   const loadAndPlayTrack = useCallback(
     async (trackId: string) => {
-      console.log("Trying to load",trackId)
+      console.log("Trying to load", trackId);
       latestPlayRequest.current = trackId;
       const track = allTracks[trackId];
-      console.log("Track found",track)
+      console.log("Track found", track);
       if (!track) return;
       const album = albums[track.album];
-      console.log("Album Found",album)
+      console.log("Album Found", album);
       if (!album) return;
 
       await loadAndUpdateTrack(trackId);
@@ -246,7 +263,7 @@ export default function PlayerTab() {
   // handles switching to the next track and pre-loading the one after that
   const onNextClicked = useCallback(async () => {
     if (queuedTracks.length > 0 || repeatState !== ERepeatState.OFF) {
-      console.log("Resolving next track")
+      console.log("Resolving next track");
       if (repeatState === ERepeatState.OFF && queuedTracks.length) {
         const newQueued = [...queuedTracks];
         const newRecents = [...recentTracks];
@@ -284,9 +301,9 @@ export default function PlayerTab() {
     }
 
     dispatch(setCurrentTrack(null));
-    StreamManager.stopPlayer()
+    StreamManager.stopPlayer();
 
-    dispatch(setIsPaused(true))
+    dispatch(setIsPaused(true));
 
     setTrackTiming({
       progress: 0,
@@ -295,7 +312,15 @@ export default function PlayerTab() {
 
     navigator.mediaSession.metadata = null;
     await window.bridge.clearDiscordPresence();
-  }, [queuedTracks, repeatState, dispatch, currentTrackId, recentTracks, loadAndUpdateTrack, loadAndPlayTrack]);
+  }, [
+    queuedTracks,
+    repeatState,
+    dispatch,
+    currentTrackId,
+    recentTracks,
+    loadAndUpdateTrack,
+    loadAndPlayTrack,
+  ]);
 
   // handles switching to the previous track
   const onPreviousClicked = useCallback(async () => {
@@ -342,26 +367,32 @@ export default function PlayerTab() {
 
   const resumeTrack = useCallback(() => {
     if (!currentTrackId) {
-      if(queuedTracks.length > 0){
-        onNextClicked()
+      if (queuedTracks.length > 0) {
+        onNextClicked();
         return;
       }
 
-      if(recentTracks.length > 0){
-        const newRecents = [...recentTracks]
-        const toPlay = newRecents.pop()
-        if(toPlay){
-          dispatch(replaceRecentTracks(newRecents))
-          loadAndPlayTrack(toPlay)
+      if (recentTracks.length > 0) {
+        const newRecents = [...recentTracks];
+        const toPlay = newRecents.pop();
+        if (toPlay) {
+          dispatch(replaceRecentTracks(newRecents));
+          loadAndPlayTrack(toPlay);
           return;
         }
       }
-    }
-    else{
+    } else {
       player.play();
     }
-    
-  }, [currentTrackId, dispatch, loadAndPlayTrack, onNextClicked, player, queuedTracks.length, recentTracks]);
+  }, [
+    currentTrackId,
+    dispatch,
+    loadAndPlayTrack,
+    onNextClicked,
+    player,
+    queuedTracks.length,
+    recentTracks,
+  ]);
 
   // eslint-disable-next-line @typescript-eslint/no-empty-function
   const onToggleShuffleState = useCallback(() => {
@@ -534,12 +565,12 @@ export default function PlayerTab() {
     player.addEventListener("playing", onPlayerPlay);
 
     const currenTrackOverCallback = () => {
-      if(player.src !== StreamManager.noTrackSrc){
-        onCurrentTrackOver()
+      if (player.src !== StreamManager.noTrackSrc) {
+        onCurrentTrackOver();
       }
-    }
+    };
 
-    player.addEventListener("ended",currenTrackOverCallback);
+    player.addEventListener("ended", currenTrackOverCallback);
 
     navigator.mediaSession.setActionHandler("previoustrack", onPreviousClicked);
 

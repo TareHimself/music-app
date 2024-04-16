@@ -18,7 +18,7 @@ import {
   tCreateArtists,
   tCreateAlbums,
   tCreateTracks,
-  tCreatePlaylists
+  tCreatePlaylists,
 } from "../sqlite";
 import MusiczMediaSource from "./source";
 import YTMusic from "ytmusic-api";
@@ -240,15 +240,17 @@ export default class SpotifySource extends MusiczMediaSource {
     }
   }
 
-  async getRemainingPlaylistTracks(target: string | null): Promise<ISpotifyPlaylistResponse['tracks']['items']> {
-    if(!target){
-      return []
+  async getRemainingPlaylistTracks(
+    target: string | null
+  ): Promise<ISpotifyPlaylistResponse["tracks"]["items"]> {
+    if (!target) {
+      return [];
     }
 
-    console.log(`playlists/${target.split('playlists/').slice(1).join('/')}`)
+    console.log(`playlists/${target.split("playlists/").slice(1).join("/")}`);
 
-    const response = await SpotifyApi.get<ISpotifyPlaylistResponse['tracks']>(
-      `playlists/${target.split('playlists/').slice(1).join('/')}`,
+    const response = await SpotifyApi.get<ISpotifyPlaylistResponse["tracks"]>(
+      `playlists/${target.split("playlists/").slice(1).join("/")}`,
       {
         params: {
           fields:
@@ -257,19 +259,20 @@ export default class SpotifySource extends MusiczMediaSource {
       }
     );
 
-    if(response.data){
-      return [...response.data.items,...(await this.getRemainingPlaylistTracks(response.data.next))]
+    if (response.data) {
+      return [
+        ...response.data.items,
+        ...(await this.getRemainingPlaylistTracks(response.data.next)),
+      ];
     }
-    return []
+    return [];
   }
   async importPlaylists(cache: ISpotifyImportCache, items: string[]) {
     items = Array.from(new Set(items));
 
     for (let i = 0; i < items.length; i++) {
       const currentPlaylistId = items[0];
-      const newPlaylistId = this.toSourceId(
-        `playlist-${currentPlaylistId}`
-      );
+      const newPlaylistId = this.toSourceId(`playlist-${currentPlaylistId}`);
       if (!cache.playlists[newPlaylistId]) {
         try {
           const response = await SpotifyApi.get<ISpotifyPlaylistResponse>(
@@ -284,7 +287,11 @@ export default class SpotifySource extends MusiczMediaSource {
           if (response.data) {
             const spotifyData = response.data;
 
-            spotifyData.tracks.items.push(...await this.getRemainingPlaylistTracks(spotifyData.tracks.next))
+            spotifyData.tracks.items.push(
+              ...(await this.getRemainingPlaylistTracks(
+                spotifyData.tracks.next
+              ))
+            );
 
             const newPlaylist: IPlaylist = {
               tracks: spotifyData.tracks.items.map((item) => {
@@ -438,16 +445,16 @@ export default class SpotifySource extends MusiczMediaSource {
     return { ...cache, remaining: remaining };
   }
 
-  
-
-
   public override async fetchStream(
     resource: ITrackResource
   ): Promise<TrackStreamInfo | null> {
-    const searchTerm =
-      `${resource.title} ${resource.artists.join(" ")}`.trim();
+    const searchTerm = `${resource.title} , ${resource.artists.join(
+      " "
+    )} , lyrics`.trim();
 
-    const uri = `https://youtube.com/watch?v=${await searchForTrackUsingBrowserWindow(searchTerm)}`;
+    const uri = `https://youtube.com/watch?v=${await searchForTrackUsingBrowserWindow(
+      searchTerm
+    )}`;
 
     console.info("Used", searchTerm, "To fetch", uri);
 

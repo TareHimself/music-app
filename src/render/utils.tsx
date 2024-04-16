@@ -99,7 +99,7 @@ export function getCoverUrl(cover?: string,useFallback = true){
     return AppConstants.DEFAULT_COVER_ART;
   }
 
-  return `${window.bridge.getServerAddress()}/covers/${cover}`;
+  return `app:/covers/${cover}`;
 }
 
 const COVERS_GENERATED: Record<string, string> = {};
@@ -174,20 +174,22 @@ export async function generateNewCover(filename: string, covers: string[]): Prom
   }
 
   await new Promise<number | undefined>((res) => {
-    canvas.toBlob((data) => {
-      if (data) {
-        const form = new FormData();
-        form.append("cover", data, filename);
-        fetch(`${window.bridge.getServerAddress()}/covers`, {
+    const data = canvas.toDataURL('png')
+    fetch(`app://covers/${filename}`, {
           method: "PUT",
-          body: form,
+          body: data,
         })
           .then((a) => a.status)
           .then(res);
-      } else {
-        res(undefined);
-      }
-    });
+    // canvas.toDataURL((data) => {
+    //   if (data) {
+    //     const form = new FormData();
+    //     form.append("cover", data, filename);
+        
+    //   } else {
+    //     res(undefined);
+    //   }
+    // });
   });
 
   canvas.remove();

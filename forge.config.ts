@@ -57,7 +57,7 @@ const config: ForgeConfig = {
           },
         ],
       },
-      devContentSecurityPolicy: `default-src 'self' 'unsafe-inline' 'unsafe-eval' data: * blob:; script-src 'self' 'unsafe-inline' 'unsafe-eval' data: *; media-src 'self' 'unsafe-inline' 'unsafe-eval' data: *;`,
+      devContentSecurityPolicy: `default-src 'self' 'unsafe-inline' 'unsafe-eval' data: * blob: app:; script-src 'self' 'unsafe-inline' 'unsafe-eval' data: * app:; media-src 'self' 'unsafe-inline' 'unsafe-eval' data: * app:;`,
     }),
   ],
 };

@@ -6,12 +6,12 @@ import { generateContextMenu, getCoverUrl, toTimeString } from "@render/utils";
 import { HiPause, HiPlay } from "react-icons/hi2";
 import { StreamManager } from "@render/global";
 import { useLocation } from "react-router";
-import { toast } from "react-toastify";
 import AppConstants from "@root/data";
 import useAppNavigation from "@hooks/useAppNavigation";
 import LikeButton from "./LikeButton";
 import { replaceQueuedTracks } from "@redux/exports";
 import { useIsVirtual } from "@hooks/useIsVirtual";
+import { toast } from "@render/react-basic-toast";
 
 export type TrackItemProps = (
   | { type: "playlist"; playlistInfo: IPlaylistTrack }
@@ -168,10 +168,7 @@ export default function TrackItem(props: TrackItemProps) {
           break;
 
         case "uri-edit":
-          toast.error(AppConstants.UNAVAILABLE_FEATURE_ERROR, {
-            pauseOnFocusLoss: false,
-            pauseOnHover: false,
-          });
+          toast(AppConstants.UNAVAILABLE_FEATURE_ERROR);
           break;
 
         case "uri-reset":

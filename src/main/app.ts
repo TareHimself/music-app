@@ -1,4 +1,4 @@
-import { app, BrowserWindow } from "electron";
+import { app, BrowserWindow, protocol, net } from "electron";
 import { IPlaylist } from "@types";
 import { v4 as uuidv4 } from "uuid";
 import {
@@ -32,13 +32,23 @@ import YoutubeSource from "./sources/youtube";
 import SpotifySource from "./sources/spotify";
 import { SourceManager } from "./sources/source";
 import LocalSource from "./sources/local";
+// import express from "express";
+// import { AddressInfo } from "net";
 // import multer from "multer";
-import express from "express";
-import { AddressInfo } from "net";
-import multer from "multer";
 import * as fsAsync from "fs/promises";
 import * as fsSync from "fs";
 import axios from "axios";
+
+protocol.registerSchemesAsPrivileged([
+  {
+    scheme: "app",
+    privileges: {
+      standard: true,
+      secure: true,
+      supportFetchAPI: true,
+    },
+  },
+]);
 
 declare const MAIN_WINDOW_WEBPACK_ENTRY: string;
 declare const MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY: string;
@@ -53,101 +63,48 @@ mediaSources.useSource(new YoutubeSource());
 if (require("electron-squirrel-startup")) {
   app.quit();
 }
-const upload = multer({ dest: "uploads/" });
-const expressApp = express();
+// const upload = multer({ dest: "uploads/" });
+// const expressApp = express();
 
 // const upload = multer();
 
-expressApp.get(/file\/(.*)/, async (req, res) => {
-  try {
-    res.sendFile(req.params["0"] as string);
-  } catch (error) {
-    res.sendStatus(404);
-  }
-});
-
-expressApp.get(/covers\/(.*)/, async (req, res) => {
-  const coverUrl = req.params["0"] as string;
-
-  const coverHash = hash(coverUrl);
-
-  const filePath = path.join(getCoversPath(), `${coverHash}.png`);
-
-  try {
-    await fsAsync.access(filePath);
-    res.sendFile(filePath);
-    console.log("Sending cached for", filePath, coverHash);
-    return;
-  } catch (error) {
-    console.error(`File not Cached`, coverUrl, coverHash);
-  }
-
-  try {
-    if (coverUrl.startsWith("http")) {
-      const stream = await axios
-        .get(coverUrl, {
-          responseType: "stream",
-        })
-        .then((a) => a.data);
-
-      if (stream) {
-        const fileStream = fsSync.createWriteStream(filePath);
-        res.setHeader("Content-Type", "image/png");
-        stream.pipe(fileStream);
-        stream.pipe(res);
-      } else {
-        res.sendStatus(404);
-      }
-    } else {
-      res.sendStatus(404);
-    }
-  } catch (error) {
-    console.error("FAILED TO PROXY DATA", error);
-    res.sendStatus(404);
-  }
-});
-
-expressApp.put(/covers/, upload.single("cover"), async (req, res) => {
-  try {
-    const file = req.file;
-
-    if (!file || !file.path) {
-      res.sendStatus(404);
-      return;
-    }
-
-    const coverHash = hash(file.originalname);
-
-    const filePath = path.join(getCoversPath(), `${coverHash}.png`);
-
-    await fsAsync.copyFile(path.resolve(file.path), filePath);
-
-    res.sendStatus(200)
-    return;
-  } catch (error) {
-    console.error(error);
-    res.sendStatus(500);
-  }
-});
-
-// expressApp.put(/bg\/(.*)/, upload.single("file"), async (req, res) => {
-//   const file = req.file;
-//   if (!file) {
-//     res.sendStatus(400);
-//     return;
-//   }
-
+// expressApp.get(/file\/(.*)/, async (req, res) => {
 //   try {
-//     await writeFile(
-//       path.join(cachedBackgroundsPath, `${req.params["0"]}.png`),
-//       file.buffer
-//     );
+//     res.sendFile(req.params["0"] as string);
+//   } catch (error) {
+//     res.sendStatus(404);
+//   }
+// });
 
-//     res.sendStatus(200);
+// expressApp.get(/covers\/(.*)/, async (req, res) => {
+
+// });
+
+// expressApp.put(/covers/, upload.single("cover"), async (req, res) => {
+//   try {
+//     const file = req.file;
+
+//     if (!file || !file.path) {
+//       res.sendStatus(404);
+//       return;
+//     }
+
+//     const coverHash = hash(file.originalname);
+
+//     const filePath = path.join(getCoversPath(), `${coverHash}.png`);
+
+//     await fsAsync.copyFile(path.resolve(file.path), filePath);
+
+//     res.sendStatus(200)
+//     return;
 //   } catch (error) {
 //     console.error(error);
 //     res.sendStatus(500);
 //   }
+// });
+
+// expressApp.put(/bg\/(.*)/, upload.single("file"), async (req, res) => {
+
 // });
 
 let mainWindow: BrowserWindow | null = null;
@@ -174,6 +131,92 @@ connectRichPrecence().then((p) => {
 });
 
 const createWindow = (): void => {
+  console.log("Registering protocol handler");
+  protocol.handle("app", async (req) => {
+    const url = new URL(req.url);
+
+    const { host, pathname } = url;
+
+    if (host === "file") {
+      try {
+        return new Response(
+          await fsAsync.readFile(decodeURI(pathname.slice(1))),
+          {}
+        );
+      } catch (error) {
+        return new Response("File Not Found", { status: 404 });
+      }
+    } else if (host === "covers") {
+      if (req.method === "GET") {
+        const coverUrl = pathname.slice(1);
+
+        const coverHash = hash(coverUrl);
+
+        const filePath = path.join(getCoversPath(), `${coverHash}.png`);
+
+        try {
+          await fsAsync.access(filePath);
+          //console.log("Sending cached for", filePath, coverHash);
+
+          return new Response(
+            await fsAsync.readFile(filePath),
+            {}
+          );
+        } catch (error) {
+          console.error(`File not Cached`, coverUrl, coverHash);
+        }
+
+        try {
+          if (coverUrl.startsWith("http")) {
+            const stream = await axios
+              .get(coverUrl, {
+                responseType: "stream",
+              })
+              .then((a) => a.data);
+
+            if (stream) {
+              const fileStream = fsSync.createWriteStream(filePath);
+              stream.pipe(fileStream);
+              return net.fetch(coverUrl);
+            }
+          }
+
+          return new Response(undefined, {
+            status: 404,
+          });
+        } catch (error) {
+          console.error("FAILED TO PROXY DATA", error);
+        }
+      } else if (req.method === "PUT") {
+        try {
+          const data = await req.text();
+
+          const coverHash = hash(pathname.slice(1));
+
+          const filePath = path.join(getCoversPath(), `${coverHash}.png`);
+
+          await fsAsync.writeFile(
+            filePath,
+            Buffer.from(data.replace("data:image/png;base64,", ""), "base64")
+          );
+
+          console.log("Written file",pathname.slice(1),coverHash)
+
+          return new Response(undefined, {
+            status: 200,
+          });
+        } catch (error) {
+          console.error(error);
+        }
+      }
+    }
+
+    return new Response(undefined, {
+      status: 404,
+    });
+  });
+
+  console.log("Creating window");
   // Create the browser window.
   mainWindow = new BrowserWindow({
     icon: "./assets/icon",
@@ -192,33 +235,34 @@ const createWindow = (): void => {
   mainWindow.webContents.on("did-finish-load", () => {
     if (mainWindow && isDev() && getTestId() === undefined) {
       mainWindow.webContents.openDevTools({
-        mode: 'right'
+        mode: "right",
       });
     }
   });
   // and load the index.html of the app.
   mainWindow.loadURL(MAIN_WINDOW_WEBPACK_ENTRY);
-  
 };
 
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
-const server = isDev() ? expressApp.listen(9200,() => {
-  app.whenReady().then(() => {
-    createWindow();
-  });
-  global.SERVER_ADDRESS = `http://localhost:${
-    (server.address() as AddressInfo).port
-  }`;
-}) : expressApp.listen(() => {
-  app.whenReady().then(() => {
-    createWindow();
-  });
-  global.SERVER_ADDRESS = `http://localhost:${
-    (server.address() as AddressInfo).port
-  }`;
-});
+// const server = isDev()
+//   ? expressApp.listen(9200, () => {
+//       app.whenReady().then(() => {
+//         createWindow();
+//       });
+//       global.SERVER_ADDRESS = `http://localhost:${
+//         (server.address() as AddressInfo).port
+//       }`;
+//     })
+//   : expressApp.listen(() => {
+//       app.whenReady().then(() => {
+//         createWindow();
+//       });
+//       global.SERVER_ADDRESS = `http://localhost:${
+//         (server.address() as AddressInfo).port
+//       }`;
+//     });
 // Quit when all windows are closed, except on macOS. There, it's common
 // for applications and their menu bar to stay active until the user quits
 // explicitly with Cmd + Q.
@@ -428,4 +472,8 @@ ipcMain.handle("getServerAddress", () => {
 
 ipcMain.handle("getRandomPlaylistCovers", async (playlistId) => {
   return getRandomPlaylistCovers(playlistId);
+});
+
+app.whenReady().then(() => {
+  createWindow();
 });

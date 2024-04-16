@@ -35,7 +35,7 @@ export default class LocalSource extends MusiczMediaSource {
     if (!filePath) return null;
 
     return {
-      uri: `${path.join(`${SERVER_ADDRESS}/file/`, filePath)}`,
+      uri: `app:/file/${path.resolve(filePath)}`,
       duration: 0, //await getAudioDurationInSeconds(filePath),
       from: this.id,
     };

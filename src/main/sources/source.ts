@@ -71,6 +71,7 @@ export class SourceManager {
   constructor() {}
 
   public async useSource(source: MusiczMediaSource) {
+    console.log("Loading source",source.id)
     await source.load();
     if (source.bSupportsSearch) {
       this.searchSources.push(source.id);
