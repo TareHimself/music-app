@@ -1,7 +1,7 @@
 import { BrowserWindow, app } from "electron";
 import path from "path";
 import { existsSync, mkdirSync } from "fs";
-import { xxh64 } from "@node-rs/xxhash";
+import emotionHash from '@emotion/hash'
 
 export function isDev() {
   if (getTestId() !== undefined) {
@@ -74,7 +74,7 @@ export function hash(data: string) {
     return existing;
   }
 
-  const newHash = xxh64(data).toString();
+  const newHash = emotionHash(data);
 
   HASH_CACHE.set(data, newHash);
 
