@@ -455,11 +455,15 @@ export default class SpotifySource extends MusiczMediaSource {
 
     const selected = i.format[i.format.length - 1];
 
-    if (!(selected && selected.url && selected.approxDurationMs)) return null;
+    if (!(selected && selected.url && selected.approxDurationMs)) {
+      console.info("Failed to select format")
+      return null;
+    }
 
     try {
       await axios.head(selected.url);
     } catch (error) {
+      console.info("Bad stream url",selected.url)
       return null;
     }
 

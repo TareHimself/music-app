@@ -1,7 +1,7 @@
 import { BrowserWindow, app } from "electron";
 import path from "path";
 import { existsSync, mkdirSync } from "fs";
-import { xxh64 } from "@node-rs/xxhash";
+import { xxHash32 } from 'js-xxhash';
 
 export function isDev() {
   if (getTestId() !== undefined) {
@@ -74,7 +74,7 @@ export function hash(data: string) {
     return existing;
   }
 
-  const newHash = xxh64(data).toString();
+  const newHash = xxHash32(data).toString();
 
   HASH_CACHE.set(data, newHash);
 

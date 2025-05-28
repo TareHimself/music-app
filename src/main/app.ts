@@ -289,7 +289,9 @@ ipcMain.handle("getPreloadPath", () => {
 });
 
 ipcMain.handle("getTrackStreamInfo", async (track) => {
-  return await mediaSources.getStream(track);
+  const stream = await mediaSources.getStream(track);
+  console.log(track,"=>",stream);
+  return stream;
 });
 
 ipcMain.handle("windowMaximize", () => {
